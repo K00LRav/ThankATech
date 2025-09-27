@@ -24,83 +24,74 @@ const DEFAULT_LOCATION = '40.7128,-74.0060'; // New York City coordinates
 const SEARCH_RADIUS = 50000; // 50km radius
 
 /**
- * Fetch technicians - prioritize Firebase registered ones, supplement with Google Places
- * @param {string} category - Service category
- * @param {string} location - Lat,lng coordinates
+ * Fetch registered technicians from Firebase only
+ * @param {string} category - Service category filter
  * @param {number} maxResults - Maximum number of results
  */
-export async function fetchTechnicians(category = 'all', location = DEFAULT_LOCATION, maxResults = 10) {
+export async function fetchTechnicians(category = 'all', location = null, maxResults = 20) {
   try {
-    let allTechnicians = [];
-    
-    // First, get registered technicians from Firebase
     console.log('Fetching registered technicians from Firebase...');
-    const registeredTechnicians = await getRegisteredTechnicians();
+    let technicians = await getRegisteredTechnicians();
     
-    if (registeredTechnicians.length > 0) {
-      console.log(`Found ${registeredTechnicians.length} registered technicians`);
-      allTechnicians = registeredTechnicians;
+    // Filter by category if specified
+    if (category !== 'all') {
+      technicians = technicians.filter(tech => 
+        tech.category === category || 
+        tech.title?.toLowerCase().includes(category.toLowerCase())
+      );
     }
     
-    // If we need more technicians, supplement with Google Places
-    const remainingSlots = maxResults - allTechnicians.length;
-    
-    if (remainingSlots > 0 && GOOGLE_PLACES_API_KEY) {
-      console.log(`Fetching ${remainingSlots} more from Google Places...`);
-      
-      const categoriesToFetch = category === 'all' 
-        ? Object.keys(SERVICE_CATEGORIES)
-        : [category];
-
-      for (const cat of categoriesToFetch) {
-        const searchTerm = SERVICE_CATEGORIES[cat];
-        if (!searchTerm) continue;
-
-        const results = await searchPlaces(searchTerm, location);
-        const technicians = await Promise.all(
-          results.slice(0, Math.ceil(remainingSlots / categoriesToFetch.length))
-            .map(place => transformPlaceToTechnician(place, cat))
-        );
-        
-        allTechnicians.push(...technicians);
-        
-        if (allTechnicians.length >= maxResults) break;
-      }
+    // If no registered technicians, show mock data with a message
+    if (technicians.length === 0) {
+      console.log('No registered technicians found, using sample data');
+      const mockTechs = getMockTechnicians();
+      // Add a flag to indicate these are sample profiles
+      return mockTechs.map(tech => ({
+        ...tech,
+        isSample: true,
+        about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
+      }));
     }
 
-    // If still no results, use mock data
-    if (allTechnicians.length === 0) {
-      console.log('No technicians found, using mock data');
-      return getMockTechnicians();
-    }
-
-    return allTechnicians.slice(0, maxResults);
+    console.log(`Found ${technicians.length} registered technicians`);
+    return technicians.slice(0, maxResults);
     
   } catch (error) {
     console.error('Error fetching technicians:', error);
+    console.log('Falling back to sample data due to error');
     return getMockTechnicians();
   }
 }
 
 /**
- * Search for places using Google Places Nearby Search
+ * Search for places using our Next.js API route (bypasses CORS)
  */
 async function searchPlaces(query, location) {
-  const url = `${PLACES_API_URL}/nearbysearch/json?` +
-    `location=${location}&` +
-    `radius=${SEARCH_RADIUS}&` +
-    `keyword=${encodeURIComponent(query)}&` +
-    `type=establishment&` +
-    `key=${GOOGLE_PLACES_API_KEY}`;
-
-  const response = await fetch(url);
-  const data = await response.json();
+  const url = `/api/places?query=${encodeURIComponent(query)}&location=${location}&radius=${SEARCH_RADIUS}`;
   
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    throw new Error(`Places API error: ${data.status}`);
+  console.log('🔄 Calling internal API:', url);
+  
+  try {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    console.log('✅ API Success:', data.results?.length || 0, 'places found');
+    return data.results || [];
+    
+  } catch (error) {
+    console.error('❌ Search Places Error:', error.message);
+    throw error;
   }
-
-  return data.results || [];
 }
 
 /**

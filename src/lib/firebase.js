@@ -2,7 +2,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Firebase configuration
@@ -20,13 +20,18 @@ const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 // Initialize Firebase only if properly configured
-let app, db, auth, storage;
+let app, db, auth, storage, googleProvider;
 
 if (isFirebaseConfigured) {
   app = initializeApp(firebaseConfig);
   db = getFirestore(app);
   auth = getAuth(app);
   storage = getStorage(app);
+  googleProvider = new GoogleAuthProvider();
+  
+  // Configure Google provider
+  googleProvider.addScope('email');
+  googleProvider.addScope('profile');
 } else {
   console.warn('Firebase not configured. Using mock data mode.');
   // Create mock objects that won't throw errors
@@ -34,9 +39,10 @@ if (isFirebaseConfigured) {
   db = null;
   auth = null;
   storage = null;
+  googleProvider = null;
 }
 
-export { db, auth, storage };
+export { db, auth, storage, googleProvider };
 
 // Collection names
 const COLLECTIONS = {
@@ -56,16 +62,47 @@ export async function registerTechnician(technicianData) {
   }
 
   try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.TECHNICIANS), {
-      ...technicianData,
+    // Create a complete technician profile
+    const technicianProfile = {
+      // Basic info
+      name: technicianData.name,
+      email: technicianData.email,
+      phone: technicianData.phone,
+      location: technicianData.location,
+      
+      // Business info
+      businessName: technicianData.businessName,
+      title: `${technicianData.businessName} - ${technicianData.category}`,
+      category: technicianData.category,
+      businessAddress: technicianData.businessAddress,
+      businessPhone: technicianData.businessPhone,
+      businessEmail: technicianData.businessEmail,
+      website: technicianData.website,
+      
+      // Service details
+      experience: technicianData.experience,
+      certifications: technicianData.certifications,
+      about: technicianData.description,
+      serviceArea: technicianData.serviceArea,
+      hourlyRate: technicianData.hourlyRate,
+      availability: technicianData.availability,
+      
+      // Default image - technicians can upload later
+      image: '/api/placeholder/150/150',
+      
+      // System fields
       points: 0,
+      rating: 5.0, // Start with good rating
       createdAt: new Date(),
       isActive: true,
       totalThankYous: 0,
-      totalTips: 0
-    });
+      totalTips: 0,
+      userType: 'technician'
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTIONS.TECHNICIANS), technicianProfile);
     
-    return { id: docRef.id, ...technicianData };
+    return { id: docRef.id, ...technicianProfile };
   } catch (error) {
     console.error('Error registering technician:', error);
     throw error;
@@ -106,21 +143,23 @@ export async function getRegisteredTechnicians() {
   }
 
   try {
-    const q = query(
-      collection(db, COLLECTIONS.TECHNICIANS),
-      where('isActive', '==', true),
-      orderBy('points', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(q);
+    // Simplified query - no index needed for now
+    const querySnapshot = await getDocs(collection(db, COLLECTIONS.TECHNICIANS));
     const technicians = [];
     
     querySnapshot.forEach((doc) => {
-      technicians.push({
-        id: doc.id,
-        ...doc.data()
-      });
+      const data = doc.data();
+      // Filter active technicians in code instead of query
+      if (data.isActive) {
+        technicians.push({
+          id: doc.id,
+          ...data
+        });
+      }
     });
+    
+    // Sort by points in code instead of query
+    technicians.sort((a, b) => (b.points || 0) - (a.points || 0));
     
     return technicians;
   } catch (error) {
@@ -266,9 +305,122 @@ export async function getTopTechnicians(limitCount = 10) {
 }
 
 /**
+ * Claim a business from Google Places
+ */
+export async function claimBusiness(technicianId, claimData) {
+  if (!db) {
+    console.warn('Firebase not configured. Mock business claimed.');
+    return { success: true, id: 'mock-claim-' + Date.now() };
+  }
+
+  try {
+    // Add business claim record
+    const docRef = await addDoc(collection(db, 'businessClaims'), {
+      ...claimData,
+      status: 'pending',
+      createdAt: new Date()
+    });
+
+    // Update the technician record to mark as claimed
+    const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+    await updateDoc(technicianRef, {
+      isClaimed: true,
+      claimedBy: claimData.ownerName,
+      claimedAt: new Date(),
+      claimId: docRef.id
+    });
+
+    return { success: true, claimId: docRef.id };
+  } catch (error) {
+    console.error('Error claiming business:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if user exists in database by email
+ */
+export async function getUserByEmail(email) {
+  if (!db) return null;
+  
+  try {
+    // Check in users collection
+    const usersQuery = query(collection(db, COLLECTIONS.USERS), where('email', '==', email));
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data(), userType: 'customer' };
+    }
+    
+    // Check in technicians collection
+    const techQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('email', '==', email));
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const doc = techSnapshot.docs[0];
+      return { id: doc.id, ...doc.data(), userType: 'technician' };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error checking user:', error);
+    return null;
+  }
+}
+
+/**
  * Authentication helpers
  */
 export const authHelpers = {
+  // Sign in with Google
+  signInWithGoogle: async () => {
+    if (!auth || !googleProvider) {
+      console.warn('Firebase not configured. Using mock Google sign-in.');
+      return {
+        user: {
+          uid: 'mock-google-' + Date.now(),
+          email: 'user@gmail.com',
+          displayName: 'John Doe',
+          photoURL: 'https://via.placeholder.com/150'
+        },
+        isNewUser: true
+      };
+    }
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Check if user already exists in our database
+      const existingUser = await getUserByEmail(user.email);
+      
+      if (existingUser) {
+        // User exists, sign them in
+        return {
+          user: existingUser,
+          isNewUser: false,
+          firebaseUser: user
+        };
+      } else {
+        // New user, they'll need to complete registration
+        return {
+          user: {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName,
+            photoURL: user.photoURL
+          },
+          isNewUser: true,
+          firebaseUser: user
+        };
+      }
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
+    }
+  },
+
   // Sign up new user
   signUp: async (email, password, additionalData = {}) => {
     try {

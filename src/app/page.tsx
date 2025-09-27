@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi';
 import { sendThankYou, sendTip } from '../lib/firebase';
-import UserRegistration from '../components/UserRegistration';
+import Registration from '../components/Registration';
 
 interface Technician {
   id: string;
@@ -16,6 +16,17 @@ interface Technician {
   rating?: number;
   phone?: string;
   address?: string;
+  businessName?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  website?: string;
+  businessAddress?: string;
+  serviceArea?: string;
+  hourlyRate?: string;
+  availability?: string;
+  experience?: string;
+  certifications?: string;
+  isSample?: boolean;
 }
 
 export default function Home() {
@@ -41,7 +52,7 @@ export default function Home() {
     const loadTechnicians = async () => {
       setLoading(true);
       try {
-        const data = await fetchTechnicians('all', '33.7490,-84.3880', 8);
+        const data = await fetchTechnicians('all', null, 8);
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
           setCurrentProfileIndex(0);
@@ -196,10 +207,10 @@ export default function Home() {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-indigo-600 font-semibold">Loading amazing technicians near you...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-400 mx-auto mb-4"></div>
+          <p className="text-indigo-300 font-semibold">Loading amazing technicians near you...</p>
         </div>
       </div>
     );
@@ -208,12 +219,12 @@ export default function Home() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 font-semibold mb-4">{error}</p>
+          <p className="text-red-400 font-semibold mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-colors duration-200"
           >
             Try Again
           </button>
@@ -225,82 +236,185 @@ export default function Home() {
   // Show empty state
   if (profiles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 font-semibold">No technicians found in your area.</p>
+          <p className="text-gray-300 font-semibold">No technicians found in your area.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-8">
-        <div className="text-2xl font-bold text-indigo-600">ThankATech</div>
-        <div className="flex gap-4 items-center">
-          {currentUser ? (
-            <span className="text-gray-600">Welcome, {currentUser.name}!</span>
-          ) : (
-            <button 
-              onClick={() => setShowRegistration(true)}
-              className="text-gray-600 hover:text-indigo-600"
-            >
-              Join Now
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="flex justify-between items-center mb-8">
+          <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            ThankATech
+          </div>
+          <div className="flex gap-4 items-center">
+            {currentUser ? (
+              <div className="flex items-center space-x-3">
+                {currentUser.photoURL && (
+                  <img 
+                    src={currentUser.photoURL} 
+                    alt="Profile" 
+                    className="w-8 h-8 rounded-full border-2 border-white/20"
+                  />
+                )}
+                <span className="text-gray-300">Welcome, {currentUser.name}!</span>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowRegistration(true)}
+                className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
+              >
+                Join Now
+              </button>
+            )}
+            <button className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium">
+              Search
             </button>
-          )}
-          <button className="px-4 py-2 border-2 border-gray-800 rounded hover:bg-gray-100">
-            Search
-          </button>
-        </div>
-      </header>
+          </div>
+        </header>
 
       {/* Main Content */}
       <div className="flex flex-col items-center space-y-8">
-        {/* Rolodex Card */}
+        
+        {/* Sample Data Notice */}
+        {profiles.length > 0 && profiles[0].isSample && (
+          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-6 max-w-2xl text-center">
+            <div className="text-yellow-100">
+              <h3 className="font-semibold mb-2 text-lg">🔧 These are sample profiles!</h3>
+              <p className="text-sm text-yellow-200">
+                Real technicians can <button 
+                  onClick={() => setShowRegistration(true)} 
+                  className="text-yellow-300 hover:text-yellow-100 hover:underline font-semibold transition-colors duration-200"
+                >register here</button> to create their own profile and start receiving thanks and tips from customers!
+              </p>
+            </div>
+          </div>
+        )}
+        {/* Modern Rolodex Card */}
         <div id="rolodex-card" className={`relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
-          {/* Card Shadow/Base */}
-          <div className="absolute top-2 left-2 w-80 h-56 sm:w-96 sm:h-64 lg:w-[28rem] lg:h-80 bg-gray-300 rounded-lg transform rotate-1 transition-all duration-300 group-hover:rotate-2 group-hover:top-3 group-hover:left-3"></div>
-          <div className="absolute top-1 left-1 w-80 h-56 sm:w-96 sm:h-64 lg:w-[28rem] lg:h-80 bg-gray-200 rounded-lg transform rotate-0.5 transition-all duration-300 group-hover:rotate-1 group-hover:top-2 group-hover:left-2"></div>
+          {/* Glass morphism background layers */}
+          <div className="absolute top-3 left-3 w-80 h-80 sm:w-96 sm:h-96 lg:w-[32rem] lg:h-[28rem] bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20"></div>
+          <div className="absolute top-1.5 left-1.5 w-80 h-80 sm:w-96 sm:h-96 lg:w-[32rem] lg:h-[28rem] bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10"></div>
           
-          {/* Main Card */}
-          <div className={`relative w-80 h-56 sm:w-96 sm:h-64 lg:w-[28rem] lg:h-80 bg-white rounded-lg shadow-xl border-2 border-gray-300 p-4 sm:p-6 lg:p-8 transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2 group-hover:border-indigo-300 group-hover:shadow-indigo-200/50 ${isFlipping ? 'scale-105 rotate-1' : ''}`}>
-            {/* Card Holes (like rolodex) */}
-            <div className="absolute left-3 top-3 sm:left-4 sm:top-4 w-2 h-2 sm:w-3 sm:h-3 bg-gray-200 rounded-full border border-gray-300"></div>
-            <div className="absolute left-3 bottom-3 sm:left-4 sm:bottom-4 w-2 h-2 sm:w-3 sm:h-3 bg-gray-200 rounded-full border border-gray-300"></div>
+          {/* Main Modern Card */}
+          <div className={`relative w-80 h-80 sm:w-96 sm:h-96 lg:w-[32rem] lg:h-[28rem] bg-gradient-to-br from-white to-gray-50 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-3xl group-hover:-translate-y-3 group-hover:shadow-indigo-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''}`}>
             
-            {/* Card Tab */}
-            <div className="absolute -top-2 right-6 sm:right-8 w-12 h-5 sm:w-16 sm:h-6 lg:w-20 lg:h-7 bg-yellow-200 rounded-t-lg border-l-2 border-r-2 border-t-2 border-gray-300 flex items-center justify-center">
-              <span className="text-xs lg:text-sm font-bold text-gray-700">{profile.title.split(' ')[0]}</span>
+            {/* Modern Category Badge */}
+            <div className="absolute -top-3 right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg">
+              <span className="text-sm font-semibold tracking-wide">{profile.category || profile.title.split(' ')[0]}</span>
             </div>
 
-            <div className="flex h-full">
-              {/* Left Side - Profile Image */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 mr-3 sm:mr-4 mt-1 sm:mt-2">
-                <img
-                  src={profile.image}
-                  alt={profile.name}
-                  className="w-full h-full object-cover rounded border-2 border-gray-300"
-                />
+            <div className="flex flex-col h-full">
+              {/* Header Section */}
+              <div className="flex items-start space-x-4 mb-4">
+                {/* Profile Image with modern styling */}
+                <div className="relative">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
+                    <img
+                      src={profile.image}
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Rating overlay */}
+                  <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg">
+                    {profile.rating ? `${profile.rating}★` : '5★'}
+                  </div>
+                </div>
+
+                {/* Name and Title */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">{profile.name}</h2>
+                  <p className="text-sm sm:text-base lg:text-lg text-indigo-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
+                  {profile.serviceArea && (
+                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                      <span className="mr-1">📍</span>
+                      {profile.serviceArea}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Right Side - Info */}
-              <div className="flex-1 space-y-1 sm:space-y-2">
-                <div className="border-b border-gray-200 pb-1">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">{profile.name}</h2>
-                  <p className="text-xs sm:text-sm lg:text-base text-indigo-600 font-semibold">{profile.title}</p>
-                </div>
-                
-                <div className="text-xs sm:text-xs lg:text-sm text-gray-600 leading-relaxed">
-                  <p className="mb-2">{profile.about}</p>
+              {/* Content Section */}
+              <div className="flex-1 space-y-3">
+                <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm lg:text-base text-gray-700 leading-relaxed">{profile.about}</p>
                 </div>
 
-                {/* Points Badge */}
-                <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4">
-                  <div className="bg-yellow-100 border-2 border-yellow-300 rounded-full px-2 py-1 sm:px-3 sm:py-1 lg:px-4 lg:py-2 flex items-center space-x-1">
-                    <span className="text-yellow-600 text-sm lg:text-base">🏆</span>
-                    <span className="text-xs sm:text-sm lg:text-base font-bold text-yellow-700">{profile.points}</span>
+                {/* Contact Info Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {profile.businessPhone && (
+                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-blue-500">📞</span>
+                        <span className="text-xs text-blue-700 font-medium truncate">{profile.businessPhone}</span>
+                      </div>
+                    </div>
+                  )}
+                  {profile.website && (
+                    <div className="bg-green-50/80 backdrop-blur-sm rounded-lg p-3 border border-green-100">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-500">🌐</span>
+                        <span className="text-xs text-green-700 font-medium truncate">{profile.website}</span>
+                      </div>
+                    </div>
+                  )}
+                  {profile.hourlyRate && (
+                    <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-3 border border-purple-100">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-purple-500">💰</span>
+                        <span className="text-xs text-purple-700 font-medium">{profile.hourlyRate}/hr</span>
+                      </div>
+                    </div>
+                  )}
+                  {profile.experience && (
+                    <div className="bg-orange-50/80 backdrop-blur-sm rounded-lg p-3 border border-orange-100">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-orange-500">⚡</span>
+                        <span className="text-xs text-orange-700 font-medium">{profile.experience}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Section */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/50">
+                {/* Points Display */}
+                <div className="flex items-center space-x-3">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full px-4 py-2 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">🏆</span>
+                      <span className="text-sm font-bold">{profile.points}</span>
+                      <span className="text-xs opacity-90">pts</span>
+                    </div>
                   </div>
+                  {profile.certifications && (
+                    <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1">
+                      <span className="text-xs font-medium">✓ Certified</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="flex items-center space-x-2">
+                  <button className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-indigo-600 rounded-full p-2 transition-all duration-200 border border-gray-200 hover:border-indigo-300 shadow-sm">
+                    <span className="text-sm">💬</span>
+                  </button>
+                  <button className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-green-600 rounded-full p-2 transition-all duration-200 border border-gray-200 hover:border-green-300 shadow-sm">
+                    <span className="text-sm">📞</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -308,40 +422,41 @@ export default function Home() {
         </div>
 
         {/* Scroll Hint */}
-        <div className="text-center text-gray-500 text-sm flex items-center justify-center space-x-2 flex-wrap">
+        <div className="text-center text-gray-400 text-sm flex items-center justify-center space-x-2 flex-wrap">
           <span>🖱️</span>
           <span className="hidden sm:inline">Scroll to flip through technicians</span>
           <span className="sm:hidden">Swipe up/down to flip through technicians</span>
-          <span className="text-xs bg-gray-100 px-2 py-1 rounded">({currentProfileIndex + 1}/{profiles.length})</span>
+          <span className="text-xs bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">({currentProfileIndex + 1}/{profiles.length})</span>
         </div>
 
         {/* Action Buttons */}
         <div className="flex space-x-6">
           <button 
             onClick={handleThankYou}
-            className="flex items-center space-x-2 px-6 py-3 bg-green-100 border-2 border-green-300 rounded-lg hover:bg-green-200 transition-colors"
+            className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1"
           >
-            <span className="text-green-600">👍</span>
-            <span className="font-semibold text-green-700">Thank You</span>
+            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">👍</span>
+            <span className="font-semibold text-white">Thank You</span>
           </button>
           <button 
             onClick={handleTip}
-            className="flex items-center space-x-2 px-6 py-3 bg-yellow-100 border-2 border-yellow-300 rounded-lg hover:bg-yellow-200 transition-colors"
+            className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 backdrop-blur-sm rounded-2xl hover:from-yellow-400 hover:to-orange-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1"
           >
-            <span className="text-yellow-600">💰</span>
-            <span className="font-semibold text-yellow-700">Tip</span>
+            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💰</span>
+            <span className="font-semibold text-white">Tip $5</span>
           </button>
         </div>
-      </div>
+        </div>
 
-      {/* Footer */}
-      <footer className="mt-16 text-center text-gray-600 text-sm">
-        <p>Appreciating the hard-working technicians who keep our world running.</p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-16 text-center text-gray-300 text-sm">
+          <p>Appreciating the hard-working technicians who keep our world running.</p>
+        </footer>
+      </div>
 
       {/* Registration Modal */}
       {showRegistration && (
-        <UserRegistration 
+        <Registration 
           onRegistrationComplete={handleRegistrationComplete}
           onClose={handleRegistrationClose}
         />
