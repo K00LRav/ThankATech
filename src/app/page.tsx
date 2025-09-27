@@ -361,13 +361,8 @@ export default function Home() {
       <div className="relative z-10">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl font-bold">🔧</span>
-            </div>
-            <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-              ThankATech
-            </div>
+          <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            ThankATech
           </div>
           <div className="flex gap-4 items-center">
             {currentUser ? (
@@ -442,7 +437,7 @@ export default function Home() {
             
             {/* Modern Category Badge */}
             <div className="absolute -top-3 right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg">
-              <span className="text-sm font-semibold tracking-wide">{profile.category || profile.title.split(' ')[0]}</span>
+              <span className="text-sm font-semibold tracking-wide">{(profile.category || profile.title.split(' ')[0]).charAt(0).toUpperCase() + (profile.category || profile.title.split(' ')[0]).slice(1)}</span>
             </div>
 
             <div className="flex flex-col h-full">
@@ -608,7 +603,7 @@ export default function Home() {
                     <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
                       <h4 className="text-sm font-semibold text-gray-800 mb-2">🔧 Service Specialties</h4>
                       <div className="flex flex-wrap gap-1">
-                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs">{profile.category}</span>
+                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs">{profile.category ? profile.category.charAt(0).toUpperCase() + profile.category.slice(1) : ''}</span>
                         {profile.experience && (
                           <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
                         )}
