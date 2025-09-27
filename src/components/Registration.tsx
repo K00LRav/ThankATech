@@ -116,19 +116,32 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 z-50">
+      {/* Animated background elements matching main page */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+      
+      <div className="relative bg-white/95 backdrop-blur-lg rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
+        {/* ThankATech Header */}
+        <div className="text-center mb-6">
+          <div className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent mb-2">
+            ThankATech
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800">
             {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'customer' ? 'Customer' : 'Technician'} Profile`}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ✕
-          </button>
         </div>
+        
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+        >
+          ✕
+        </button>
 
         {/* Google Sign-In Section */}
         {showGoogleOptions && (
@@ -149,17 +162,17 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
         {/* Google User Info */}
         {googleUser && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-4 p-4 bg-green-50/80 backdrop-blur-sm border border-green-200 rounded-xl shadow-sm">
             <div className="flex items-center space-x-3">
               {googleUser.photoURL && (
                 <img 
                   src={googleUser.photoURL} 
                   alt="Profile" 
-                  className="w-10 h-10 rounded-full"
+                  className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
                 />
               )}
               <div>
-                <p className="font-medium text-green-800">Signed in with Google</p>
+                <p className="font-semibold text-green-800">✓ Signed in with Google</p>
                 <p className="text-sm text-green-600">{googleUser.email}</p>
               </div>
             </div>
@@ -173,13 +186,13 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             <button
               type="button"
               onClick={() => setUserType('customer')}
-              className={`flex-1 p-4 rounded-lg border-2 text-center transition-colors ${
+              className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:scale-105 ${
                 userType === 'customer' 
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-indigo-500 bg-indigo-50/80 text-indigo-700 shadow-lg' 
+                  : 'border-gray-300 bg-white/50 hover:border-indigo-300 hover:bg-indigo-50/30'
               }`}
             >
-              <div className="text-2xl mb-2">👤</div>
+              <div className="text-3xl mb-2">👤</div>
               <div className="font-semibold">Customer</div>
               <div className="text-sm text-gray-600">Thank and tip technicians</div>
             </button>
@@ -187,13 +200,13 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             <button
               type="button"
               onClick={() => setUserType('technician')}
-              className={`flex-1 p-4 rounded-lg border-2 text-center transition-colors ${
+              className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:scale-105 ${
                 userType === 'technician' 
-                  ? 'border-green-500 bg-green-50 text-green-700' 
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-green-500 bg-green-50/80 text-green-700 shadow-lg' 
+                  : 'border-gray-300 bg-white/50 hover:border-green-300 hover:bg-green-50/30'
               }`}
             >
-              <div className="text-2xl mb-2">🔧</div>
+              <div className="text-3xl mb-2">🔧</div>
               <div className="font-semibold">Technician</div>
               <div className="text-sm text-gray-600">Receive thanks and tips</div>
             </button>
@@ -214,7 +227,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
               />
             </div>
 
@@ -478,22 +491,31 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{error}</div>
           )}
 
-          <div className="flex space-x-3 pt-4">
+          <div className="flex space-x-3 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="flex-1 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-200 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 px-4 py-2 text-white rounded-md hover:opacity-90 disabled:opacity-50 ${
-                userType === 'customer' ? 'bg-indigo-600' : 'bg-green-600'
+              className={`flex-1 px-6 py-3 text-white rounded-xl font-semibold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg ${
+                userType === 'customer' 
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500' 
+                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500'
               }`}
             >
-              {loading ? 'Joining...' : `Join as ${userType === 'customer' ? 'Customer' : 'Technician'}`}
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Joining...</span>
+                </div>
+              ) : (
+                `Join as ${userType === 'customer' ? 'Customer' : 'Technician'}`
+              )}
             </button>
           </div>
         </form>
