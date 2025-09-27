@@ -51,6 +51,10 @@ export default function Home() {
   const [expandedCard, setExpandedCard] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
+  const [allProfiles, setAllProfiles] = useState<Technician[]>([]);
   
   const profile = profiles[currentProfileIndex] || {};
 
@@ -123,17 +127,83 @@ export default function Home() {
   };
 
   // Format category name with proper capitalization
-  const formatCategoryName = (category: string, title: string) => {
-    const categoryText = category || title.split(' ')[0] || '';
-    const categoryLower = categoryText.toLowerCase();
-    
-    // Special cases for acronyms
-    if (categoryLower === 'hvac') return 'HVAC';
-    if (categoryLower === 'it') return 'IT';
-    
-    // Regular capitalization for other categories
-    return categoryText.charAt(0).toUpperCase() + categoryText.slice(1);
+  const formatCategory = (category: string) => {
+    if (category.toLowerCase() === 'hvac') {
+      return 'HVAC';
+    }
+    return category;
   };
+
+  // Format website URL for display as a readable title
+  const formatWebsiteTitle = (website: string) => {
+    try {
+      const url = new URL(website.startsWith('http') ? website : `https://${website}`);
+      let hostname = url.hostname.replace('www.', '');
+      
+      // Handle specific domains from our sample data
+      if (hostname.includes('janesdoeautoshop')) return "Jane's Auto Shop";
+      if (hostname.includes('johndoeelectric')) return "John Doe Electric";
+      if (hostname.includes('smithplumbingpro')) return "Smith Plumbing Pro";
+      if (hostname.includes('chenheatingcooling')) return "Chen Heating & Cooling";
+      if (hostname.includes('carlostech')) return "Carlos Tech Solutions";
+      if (hostname.includes('johnsonappliances')) return "Johnson Appliances";
+      if (hostname.includes('kimsecurityservices')) return "Kim Security Services";
+      if (hostname.includes('gonzalezbuilders')) return "Gonzalez Builders";
+      if (hostname.includes('wilsonhandymanservices')) return "Wilson Handyman Services";
+      if (hostname.includes('leeroofingatl')) return "Lee Roofing Atlanta";
+      if (hostname.includes('brownlandscapes')) return "Brown Landscapes";
+      if (hostname.includes('daviscleaningservices')) return "Davis Cleaning Services";
+      if (hostname.includes('taylorpainting')) return "Taylor Painting";
+      
+      // Convert common patterns to readable names
+      if (hostname.includes('appliance')) return 'Appliance Services';
+      if (hostname.includes('heating') || hostname.includes('cooling')) return 'HVAC Services';
+      if (hostname.includes('plumbing')) return 'Plumbing Services';
+      if (hostname.includes('electric')) return 'Electrical Services';
+      if (hostname.includes('security')) return 'Security Services';
+      if (hostname.includes('builder') || hostname.includes('construction')) return 'Construction Services';
+      if (hostname.includes('handyman')) return 'Handyman Services';
+      if (hostname.includes('roofing')) return 'Roofing Services';
+      if (hostname.includes('landscape')) return 'Landscaping Services';
+      if (hostname.includes('cleaning')) return 'Cleaning Services';
+      if (hostname.includes('painting')) return 'Painting Services';
+      
+      // Otherwise, capitalize the domain name nicely
+      const domainName = hostname.split('.')[0];
+      return domainName.charAt(0).toUpperCase() + domainName.slice(1);
+    } catch {
+      const cleaned = website.replace(/^https?:\/\/(www\.)?/, '');
+      const domainName = cleaned.split('.')[0];
+      return domainName.charAt(0).toUpperCase() + domainName.slice(1);
+    }
+  };
+
+  // Search filter function
+  const filterTechnicians = (query: string) => {
+    if (!query.trim()) {
+      setFilteredProfiles(allProfiles);
+      setProfiles(allProfiles);
+      return;
+    }
+    
+    const filtered = allProfiles.filter(technician => 
+      technician.name.toLowerCase().includes(query.toLowerCase()) ||
+      technician.category.toLowerCase().includes(query.toLowerCase()) ||
+      technician.title.toLowerCase().includes(query.toLowerCase()) ||
+      technician.businessName?.toLowerCase().includes(query.toLowerCase()) ||
+      technician.businessAddress?.toLowerCase().includes(query.toLowerCase()) ||
+      technician.serviceArea?.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    setFilteredProfiles(filtered);
+    setProfiles(filtered);
+    setCurrentProfileIndex(0);
+  };
+
+  // Handle search query changes
+  useEffect(() => {
+    filterTechnicians(searchQuery);
+  }, [searchQuery, allProfiles]);
 
   const achievementBadges = getAchievementBadges(profile);
 
@@ -187,6 +257,8 @@ export default function Home() {
         const data = await fetchTechnicians('all', location || undefined, 20);
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
+          setAllProfiles(data);
+          setFilteredProfiles(data);
           setCurrentProfileIndex(0);
         } else {
           setError('No technician data available');
@@ -419,11 +491,47 @@ export default function Home() {
                 Join Now
               </button>
             )}
-            <button className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium">
-              Search
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium"
+            >
+              {showSearch ? 'Close' : 'Search'}
             </button>
           </div>
         </header>
+
+        {/* Search Input */}
+        {showSearch && (
+          <div className="w-full max-w-2xl mx-auto px-4 py-4 animate-fadeIn">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search technicians by name, category, business, or location..."
+                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {setSearchQuery(''); filterTechnicians('');}}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {filteredProfiles.length > 0 && searchQuery && (
+              <div className="mt-2 text-center text-white/70 text-sm">
+                Found {filteredProfiles.length} technician{filteredProfiles.length !== 1 ? 's' : ''}
+              </div>
+            )}
+            {filteredProfiles.length === 0 && searchQuery && (
+              <div className="mt-2 text-center text-orange-300 text-sm">
+                No technicians found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Main Content */}
       <div className="flex flex-col items-center space-y-8">
@@ -474,7 +582,7 @@ export default function Home() {
             <div className="absolute -top-3 right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg">
               <span className="text-sm font-semibold tracking-wide flex items-center gap-1">
                 <span className="text-base">{getCategoryIcon(profile.category, profile.title)}</span>
-                {formatCategoryName(profile.category, profile.title)}
+                {formatCategory(profile.category)}
               </span>
             </div>
 
@@ -498,7 +606,7 @@ export default function Home() {
 
                 {/* Name and Title */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">{profile.name}</h2>
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{profile.name}</h2>
                   <p className="text-sm sm:text-base lg:text-lg text-indigo-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
                   {profile.serviceArea && (
                     <p className="text-xs text-gray-500 mt-1 flex items-center">
@@ -554,7 +662,7 @@ export default function Home() {
                     <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-blue-500">📞</span>
-                        <span className="text-xs text-blue-700 font-medium truncate">{profile.businessPhone}</span>
+                        <span className="text-xs text-blue-700 font-medium">{profile.businessPhone}</span>
                       </div>
                     </div>
                   )}
@@ -562,7 +670,7 @@ export default function Home() {
                     <div className="bg-indigo-50/80 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-indigo-500">✉️</span>
-                        <span className="text-xs text-indigo-700 font-medium truncate">{profile.businessEmail}</span>
+                        <span className="text-xs text-indigo-700 font-medium">{profile.businessEmail}</span>
                       </div>
                     </div>
                   )}
@@ -570,7 +678,14 @@ export default function Home() {
                     <div className="bg-green-50/80 backdrop-blur-sm rounded-lg p-3 border border-green-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-green-500">🌐</span>
-                        <span className="text-xs text-green-700 font-medium truncate">{profile.website}</span>
+                        <a 
+                          href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-green-700 font-medium hover:text-green-800 hover:underline transition-colors"
+                        >
+                          {formatWebsiteTitle(profile.website)}
+                        </a>
                       </div>
                     </div>
                   )}
@@ -578,7 +693,14 @@ export default function Home() {
                     <div className="bg-red-50/80 backdrop-blur-sm rounded-lg p-3 border border-red-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-red-500">📍</span>
-                        <span className="text-xs text-red-700 font-medium truncate">{profile.businessAddress}</span>
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.businessAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-red-700 font-medium hover:text-red-800 hover:underline transition-colors break-words"
+                        >
+                          {profile.businessAddress}
+                        </a>
                       </div>
                     </div>
                   )}
@@ -602,7 +724,7 @@ export default function Home() {
                     <div className="bg-teal-50/80 backdrop-blur-sm rounded-lg p-3 border border-teal-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-teal-500">🕐</span>
-                        <span className="text-xs text-teal-700 font-medium truncate">{profile.availability}</span>
+                        <span className="text-xs text-teal-700 font-medium">{profile.availability}</span>
                       </div>
                     </div>
                   )}
@@ -610,7 +732,7 @@ export default function Home() {
                     <div className="bg-cyan-50/80 backdrop-blur-sm rounded-lg p-3 border border-cyan-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-cyan-500">🗺️</span>
-                        <span className="text-xs text-cyan-700 font-medium truncate">{profile.serviceArea}</span>
+                        <span className="text-xs text-cyan-700 font-medium">{profile.serviceArea}</span>
                       </div>
                     </div>
                   )}
@@ -643,7 +765,7 @@ export default function Home() {
                       <div className="flex flex-wrap gap-1">
                         <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
                           <span>{getCategoryIcon(profile.category, profile.title)}</span>
-                          {formatCategoryName(profile.category, profile.title)}
+                          {formatCategory(profile.category)}
                         </span>
                         {profile.experience && (
                           <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
