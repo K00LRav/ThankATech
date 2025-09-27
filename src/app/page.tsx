@@ -131,7 +131,10 @@ export default function Home() {
     if (category.toLowerCase() === 'hvac') {
       return 'HVAC';
     }
-    return category;
+    // Capitalize first letter of each word
+    return category.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
   };
 
   // Format website URL for display as a readable title
