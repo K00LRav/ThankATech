@@ -64,7 +64,7 @@ export default function Contact() {
             Contact & Support
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Need help? Have questions? We're here to support you every step of the way.
+            Need help? Have questions? We&apos;re here to support you every step of the way.
           </p>
         </div>
 

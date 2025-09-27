@@ -527,7 +527,7 @@ export default function Home() {
             )}
             {filteredProfiles.length === 0 && searchQuery && (
               <div className="mt-2 text-center text-orange-300 text-sm">
-                No technicians found matching "{searchQuery}"
+                No technicians found matching &quot;{searchQuery}&quot;
               </div>
             )}
           </div>

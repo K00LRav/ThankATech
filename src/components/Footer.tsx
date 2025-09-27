@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Footer() {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
@@ -116,9 +117,9 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-4 text-indigo-400">Quick Links</h4>
               <ul className="space-y-3">
-                <li><a href="/" className="text-gray-300 hover:text-white transition-colors">Find Technicians</a></li>
-                <li><a href="/#register" className="text-gray-300 hover:text-white transition-colors">Register as Technician</a></li>
-                <li><a href="/about" className="text-gray-300 hover:text-white transition-colors">How It Works</a></li>
+                <li><Link href="/" className="text-gray-300 hover:text-white transition-colors">Find Technicians</Link></li>
+                <li><Link href="/#register" className="text-gray-300 hover:text-white transition-colors">Register as Technician</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">How It Works</Link></li>
               </ul>
             </div>
 
@@ -126,8 +127,8 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-4 text-indigo-400">Support</h4>
               <ul className="space-y-3">
-                <li><a href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Support</a></li>
-                <li><a href="/about" className="text-gray-300 hover:text-white transition-colors">Help Center</a></li>
+                <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Support</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">Help Center</Link></li>
                 <li><a href="mailto:support@thankatech.com" className="text-gray-300 hover:text-white transition-colors">Report an Issue</a></li>
               </ul>
             </div>
@@ -143,8 +144,8 @@ export default function Footer() {
               © 2025 ThankATech. All rights reserved. Built with ❤️ for amazing technicians.
             </div>
             <div className="flex gap-6 text-sm">
-              <a href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
-              <a href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
+              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>

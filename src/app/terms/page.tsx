@@ -50,8 +50,8 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-bold text-indigo-400 mb-4">Agreement to Terms</h2>
             <p className="text-gray-300 leading-relaxed">
-              By accessing or using ThankATech ("Service"), you agree to be bound by these Terms of Service 
-              ("Terms"). If you disagree with any part of these terms, then you may not access the Service. 
+              By accessing or using ThankATech (&quot;Service&quot;), you agree to be bound by these Terms of Service 
+              (&quot;Terms&quot;). If you disagree with any part of these terms, then you may not access the Service. 
               These Terms apply to all visitors, users, and others who access or use the Service.
             </p>
           </section>
@@ -178,7 +178,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-bold text-pink-400 mb-4">Disclaimer of Warranties</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
-              The Service is provided on an "AS IS" and "AS AVAILABLE" basis. ThankATech disclaims all 
+              The Service is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. ThankATech disclaims all 
               warranties, whether express or implied, including:
             </p>
             <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
@@ -235,7 +235,7 @@ export default function Terms() {
             <h2 className="text-2xl font-bold text-pink-400 mb-4">Changes to Terms</h2>
             <p className="text-gray-300 leading-relaxed">
               We reserve the right to modify these Terms at any time. We will notify users of any material 
-              changes by posting the new Terms on this page and updating the "Last updated" date. Your 
+              changes by posting the new Terms on this page and updating the &quot;Last updated&quot; date. Your 
               continued use of the Service after such modifications constitutes acceptance of the updated Terms.
             </p>
           </section>

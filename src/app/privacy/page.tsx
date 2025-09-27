@@ -50,7 +50,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-bold text-indigo-400 mb-4">Introduction</h2>
             <p className="text-gray-300 leading-relaxed">
-              ThankATech ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains 
+              ThankATech (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains 
               how we collect, use, disclose, and safeguard your information when you use our platform that connects 
               customers with skilled technicians.
             </p>
@@ -170,7 +170,7 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Children's Privacy</h2>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Children&apos;s Privacy</h2>
             <p className="text-gray-300 leading-relaxed">
               Our platform is not intended for children under 13 years of age. We do not knowingly collect 
               personal information from children under 13. If you become aware that a child has provided us 
@@ -199,7 +199,7 @@ export default function Privacy() {
             <h2 className="text-2xl font-bold text-purple-400 mb-4">Changes to This Policy</h2>
             <p className="text-gray-300 leading-relaxed">
               We may update this Privacy Policy from time to time. We will notify you of any changes by posting 
-              the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review 
+              the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. You are advised to review 
               this Privacy Policy periodically for any changes.
             </p>
           </section>
