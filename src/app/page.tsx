@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi';
+import { useState, useEffect, useCallback } from 'react';
+import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip } from '../lib/firebase';
 import Registration from '../components/Registration';
 import Footer from '../components/Footer';
@@ -179,7 +179,7 @@ export default function Home() {
   };
 
   // Search filter function
-  const filterTechnicians = (query: string) => {
+  const filterTechnicians = useCallback((query: string) => {
     if (!query.trim()) {
       setFilteredProfiles(allProfiles);
       setProfiles(allProfiles);
@@ -198,12 +198,12 @@ export default function Home() {
     setFilteredProfiles(filtered);
     setProfiles(filtered);
     setCurrentProfileIndex(0);
-  };
+  }, [allProfiles]);
 
   // Handle search query changes
   useEffect(() => {
     filterTechnicians(searchQuery);
-  }, [searchQuery, allProfiles]);
+  }, [searchQuery, filterTechnicians]);
 
   const achievementBadges = getAchievementBadges(profile);
 
@@ -274,19 +274,19 @@ export default function Home() {
     loadTechnicians();
   }, []);
 
-  const flipToNext = () => {
+  const flipToNext = useCallback(() => {
     if (isFlipping) return;
     setIsFlipping(true);
     setCurrentProfileIndex((prev) => (prev + 1) % profiles.length);
     setTimeout(() => setIsFlipping(false), 600);
-  };
+  }, [isFlipping, profiles.length]);
 
-  const flipToPrevious = () => {
+  const flipToPrevious = useCallback(() => {
     if (isFlipping) return;
     setIsFlipping(true);
     setCurrentProfileIndex((prev) => (prev - 1 + profiles.length) % profiles.length);
     setTimeout(() => setIsFlipping(false), 600);
-  };
+  }, [isFlipping, profiles.length]);
 
   const handleThankYou = async () => {
     if (!currentUser) {
