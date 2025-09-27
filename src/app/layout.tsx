@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "ThankATech - Appreciate Your Local Technicians",
   description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
   keywords: "technicians, local services, thank you, tips, appreciation, skilled workers",
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   openGraph: {
     title: "ThankATech - Appreciate Your Local Technicians",
     description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
