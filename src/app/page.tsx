@@ -361,8 +361,13 @@ export default function Home() {
       <div className="relative z-10">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
-          <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            ThankATech
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl font-bold">🔧</span>
+            </div>
+            <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+              ThankATech
+            </div>
           </div>
           <div className="flex gap-4 items-center">
             {currentUser ? (

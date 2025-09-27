@@ -16,6 +16,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ThankATech - Appreciate Your Local Technicians",
   description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
+  keywords: "technicians, local services, thank you, tips, appreciation, skilled workers",
+  openGraph: {
+    title: "ThankATech - Appreciate Your Local Technicians",
+    description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ThankATech - Appreciate Your Local Technicians",
+    description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
+  },
 };
 
 export default function RootLayout({
