@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi';
 import { sendThankYou, sendTip } from '../lib/firebase';
 import Registration from '../components/Registration';
+import Footer from '../components/Footer';
 
 interface Technician {
   id: string;
@@ -27,6 +28,12 @@ interface Technician {
   experience?: string;
   certifications?: string;
   isSample?: boolean;
+  totalThankYous?: number;
+  totalTips?: number;
+  totalTipAmount?: number;
+  coordinates?: {lat: number, lng: number};
+  distance?: number;
+  isNearby?: boolean;
 }
 
 export default function Home() {
@@ -42,18 +49,107 @@ export default function Home() {
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
   const [expandedCard, setExpandedCard] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null);
   
   const profile = profiles[currentProfileIndex] || {};
 
+  // Calculate dynamic rating based on thank yous and tips
+  const calculateRating = (thankYous: number, tips: number, tipAmount: number) => {
+    // Base algorithm: convert engagement to 1-5 star rating
+    const totalEngagement = thankYous + (tips * 2); // Tips count double
+    const baseRating = 3.0; // Everyone starts at 3 stars
+    const engagementBonus = Math.min(totalEngagement / 30, 2.0); // Max 2 extra stars
+    return Math.min(baseRating + engagementBonus, 5.0);
+  };
+
+  // Get dynamic rating for current profile
+  const dynamicRating = profile.totalThankYous && profile.totalTips 
+    ? calculateRating(profile.totalThankYous, profile.totalTips, profile.totalTips * 5)
+    : profile.rating || 5.0;
+
+  // Achievement badges based on milestones
+  const getAchievementBadges = (profile: Technician) => {
+    const badges = [];
+    const totalThankYous = profile.totalThankYous || 0;
+    const totalTips = profile.totalTips || 0;
+
+    // Thank you milestones
+    if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalThankYous >= 50) badges.push({ icon: '🥉', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
+    else if (totalThankYous >= 25) badges.push({ icon: '⭐', text: 'Rising Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    else if (totalThankYous >= 10) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
+
+    // Tip milestones
+    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
+    else if (totalTips >= 5) badges.push({ icon: '💰', text: 'Tip Earner', color: 'bg-green-100 text-green-800 border-green-300' });
+
+    // Rating milestones
+    if (dynamicRating >= 4.8) badges.push({ icon: '🌟', text: 'Excellence', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (dynamicRating >= 4.5) badges.push({ icon: '✨', text: 'Outstanding', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' });
+
+    // Experience badges (based on profile data)
+    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    else if (profile.experience?.includes('5+')) badges.push({ icon: '🔧', text: 'Expert', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+
+    // Certification badge
+    if (profile.certifications) badges.push({ icon: '📜', text: 'Certified', color: 'bg-green-100 text-green-800 border-green-300' });
+
+    return badges.slice(0, 3); // Show max 3 badges to keep clean
+  };
+
+  const achievementBadges = getAchievementBadges(profile);
+
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
+
+  // Request user location
+  const requestUserLocation = () => {
+    return new Promise<{lat: number, lng: number} | null>((resolve) => {
+      if (!navigator.geolocation) {
+        console.log('Geolocation not supported');
+        setLocationPermission('denied');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(location);
+          setLocationPermission('granted');
+          console.log('User location obtained:', location);
+          resolve(location);
+        },
+        (error) => {
+          console.log('Location permission denied or error:', error);
+          setLocationPermission('denied');
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    });
+  };
 
   // Get technician data
   useEffect(() => {
     const loadTechnicians = async () => {
       setLoading(true);
       try {
-        const data = await fetchTechnicians('all', null, 8);
+        // Try to get user location first
+        const location = await requestUserLocation();
+        
+        // Fetch technicians with location data
+        const data = await fetchTechnicians('all', location || undefined, 8);
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
           setCurrentProfileIndex(0);
@@ -95,14 +191,18 @@ export default function Home() {
       const currentTechnician = profiles[currentProfileIndex];
       await sendThankYou(currentTechnician.id, currentUser.id, 'Thank you for your great service!');
       
-      // Update the technician's points locally
+      // Update the technician's stats locally
       setProfiles(prev => prev.map((tech, index) => 
         index === currentProfileIndex 
-          ? { ...tech, points: tech.points + 1 }
+          ? { 
+              ...tech, 
+              points: tech.points + 1,
+              totalThankYous: (tech.totalThankYous || 0) + 1
+            }
           : tech
       ));
 
-      setThankYouMessage('Thank you sent successfully! 🎉');
+      setThankYouMessage('Thank you sent successfully! 👍');
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 3000);
     } catch (error) {
@@ -124,10 +224,15 @@ export default function Home() {
       const currentTechnician = profiles[currentProfileIndex];
       await sendTip(currentTechnician.id, currentUser.id, tipAmount, 'Tip for excellent service!');
       
-      // Update the technician's points locally (tips give more points)
+      // Update the technician's stats locally (tips give more points and improve rating)
       setProfiles(prev => prev.map((tech, index) => 
         index === currentProfileIndex 
-          ? { ...tech, points: tech.points + tipAmount }
+          ? { 
+              ...tech, 
+              points: tech.points + tipAmount,
+              totalTips: (tech.totalTips || 0) + 1,
+              totalTipAmount: (tech.totalTipAmount || 0) + tipAmount
+            }
           : tech
       ));
 
@@ -289,8 +394,27 @@ export default function Home() {
       <div className="flex flex-col items-center space-y-8">
         
         {/* Sample Data Notice */}
-        {profiles.length > 0 && profiles[0].isSample && (
-          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-6 max-w-2xl text-center">
+                {/* Location Permission Banner */}
+        {locationPermission === 'denied' && (
+          <div className="mb-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm border border-blue-300/30 rounded-2xl p-4">
+            <div className="text-blue-100">
+              <h3 className="font-semibold mb-2 text-lg">📍 Location Services Disabled</h3>
+              <p className="text-sm text-blue-200">
+                Enable location services to see technicians sorted by distance and find the nearest help! 
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="text-blue-300 hover:text-blue-100 hover:underline font-semibold ml-1 transition-colors duration-200"
+                >
+                  Try again
+                </button>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Sample Profile Warning */}
+        {profile.isSample && (
+          <div className="mb-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border border-yellow-300/30 rounded-2xl p-4">
             <div className="text-yellow-100">
               <h3 className="font-semibold mb-2 text-lg">🔧 These are sample profiles!</h3>
               <p className="text-sm text-yellow-200">
@@ -328,9 +452,9 @@ export default function Home() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  {/* Rating overlay */}
-                  <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg">
-                    {profile.rating ? `${profile.rating}★` : '5★'}
+                  {/* Dynamic Rating overlay */}
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">
+                    {dynamicRating.toFixed(1)}⭐
                   </div>
                 </div>
 
@@ -343,6 +467,36 @@ export default function Home() {
                       <span className="mr-1">📍</span>
                       {profile.serviceArea}
                     </p>
+                  )}
+                  
+                  {/* Distance and Location Info */}
+                  {profile.distance !== undefined && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-500 flex items-center">
+                        🚗 {profile.distance.toFixed(1)} miles away
+                      </span>
+                      {profile.isNearby && (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
+                          📍 Near You
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Achievement Badges */}
+                  {achievementBadges.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {achievementBadges.map((badge, index) => (
+                        <span 
+                          key={index}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${badge.color} shadow-sm`}
+                          title={`Achievement: ${badge.text}`}
+                        >
+                          <span className="text-xs">{badge.icon}</span>
+                          <span className="hidden sm:inline">{badge.text}</span>
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -458,6 +612,44 @@ export default function Home() {
                         )}
                       </div>
                     </div>
+
+                    {/* Achievement Badges Section */}
+                    {achievementBadges.length > 0 && (
+                      <div className="bg-gradient-to-r from-purple-50/80 to-indigo-50/80 backdrop-blur-sm rounded-xl p-3 border border-purple-200">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Achievements</h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          {achievementBadges.map((badge, index) => (
+                            <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${badge.color}`}>
+                              <span className="text-lg">{badge.icon}</span>
+                              <div className="flex-1">
+                                <span className="text-xs font-medium">{badge.text}</span>
+                                <div className="text-xs text-gray-500 mt-0.5">
+                                  {badge.text.includes('Thank') && `${profile.totalThankYous || 0} thank yous received`}
+                                  {badge.text.includes('Tip') && `${profile.totalTips || 0} tips received`}
+                                  {badge.text.includes('Excellence') && 'Top-rated technician'}
+                                  {badge.text.includes('Outstanding') && 'Highly rated by customers'}
+                                  {badge.text.includes('Master') && 'Decade+ of experience'}
+                                  {badge.text.includes('Expert') && 'Years of proven expertise'}
+                                  {badge.text.includes('Certified') && 'Professional certifications'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rating Explanation */}
+                    <div className="bg-gradient-to-r from-yellow-50/80 to-orange-50/80 backdrop-blur-sm rounded-xl p-3 border border-yellow-200">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ Community Rating</h4>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">Based on customer feedback</span>
+                        <span className="font-bold text-yellow-700">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips received
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -478,13 +670,20 @@ export default function Home() {
 
               {/* Bottom Section - Fixed at bottom */}
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200/50">
-                {/* Points Display */}
+                {/* Thank You Points Display */}
                 <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full px-4 py-2 shadow-lg">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-4 py-2 shadow-lg">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm">🏆</span>
-                      <span className="text-sm font-bold">{profile.points}</span>
-                      <span className="text-xs opacity-90">pts</span>
+                      <span className="text-sm">👍</span>
+                      <span className="text-sm font-bold">{profile.totalThankYous || 0}</span>
+                      <span className="text-xs opacity-90">thanks</span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-full px-4 py-2 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">💰</span>
+                      <span className="text-sm font-bold">{profile.totalTips || 0}</span>
+                      <span className="text-xs opacity-90">tips</span>
                     </div>
                   </div>
                   {profile.certifications && (
@@ -560,6 +759,11 @@ export default function Home() {
           <span className="hidden sm:inline">Scroll to flip through technicians</span>
           <span className="sm:hidden">Swipe up/down to flip through technicians</span>
           <span className="text-xs bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">({currentProfileIndex + 1}/{profiles.length})</span>
+          {userLocation && (
+            <span className="text-xs bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-green-400/30 text-green-300">
+              📍 Sorted by distance
+            </span>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -579,13 +783,15 @@ export default function Home() {
             <span className="font-semibold text-white">Tip $5</span>
           </button>
         </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="mt-16 text-center text-gray-300 text-sm">
-          <p>Appreciating the hard-working technicians who keep our world running.</p>
-        </footer>
       </div>
+
+      {/* Spacer before footer */}
+      <div className="h-24 lg:h-32"></div>
+
+      {/* Comprehensive Footer */}
+      <Footer />
+      
+    </div>
 
       {/* Registration Modal */}
       {showRegistration && (

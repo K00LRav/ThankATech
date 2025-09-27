@@ -24,8 +24,49 @@ const DEFAULT_LOCATION = '40.7128,-74.0060'; // New York City coordinates
 const SEARCH_RADIUS = 50000; // 50km radius
 
 /**
- * Fetch registered technicians from Firebase only
+ * Calculate distance between two coordinates using Haversine formula
+ * @param {number} lat1 - User latitude
+ * @param {number} lon1 - User longitude  
+ * @param {number} lat2 - Technician latitude
+ * @param {number} lon2 - Technician longitude
+ * @returns {number} Distance in miles
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Parse address to get approximate coordinates (simple geocoding fallback)
+ * @param {string} address - Address string
+ * @returns {object} Approximate coordinates
+ */
+function parseAddressToCoords(address) {
+  // Atlanta metro area coordinates for sample data
+  const atlantaCoords = [
+    { lat: 33.7490, lng: -84.3880 }, // Downtown Atlanta
+    { lat: 33.8034, lng: -84.3963 }, // Midtown
+    { lat: 33.7701, lng: -84.2920 }, // Decatur
+    { lat: 33.8150, lng: -84.5120 }, // Marietta
+    { lat: 33.6839, lng: -84.2641 }  // Stone Mountain
+  ];
+  
+  // For sample data, assign random Atlanta area coordinates
+  const randomCoord = atlantaCoords[Math.floor(Math.random() * atlantaCoords.length)];
+  return randomCoord;
+}
+
+/**
+ * Fetch registered technicians from Firebase with location-based sorting
  * @param {string} category - Service category filter
+ * @param {object} location - User location {lat, lng}
  * @param {number} maxResults - Maximum number of results
  */
 export async function fetchTechnicians(category = 'all', location = null, maxResults = 20) {
@@ -41,20 +82,75 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
       );
     }
     
-    // If no registered technicians, show mock data with a message
+    // If no registered technicians, show mock data with location processing
     if (technicians.length === 0) {
       console.log('No registered technicians found, using sample data');
-      const mockTechs = getMockTechnicians();
-      // Add a flag to indicate these are sample profiles
-      return mockTechs.map(tech => ({
-        ...tech,
-        isSample: true,
-        about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
-      }));
+      let mockTechs = getMockTechnicians();
+      
+      // Add coordinates and calculate distances for sample data
+      mockTechs = mockTechs.map(tech => {
+        const coords = parseAddressToCoords(tech.businessAddress);
+        const techWithCoords = {
+          ...tech,
+          isSample: true,
+          coordinates: coords,
+          about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
+        };
+        
+        // Calculate distance if user location is available
+        if (location) {
+          techWithCoords.distance = calculateDistance(
+            location.lat, 
+            location.lng, 
+            coords.lat, 
+            coords.lng
+          );
+          techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
+        }
+        
+        return techWithCoords;
+      });
+      
+      // Sort by distance if location is available
+      if (location) {
+        mockTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+        console.log('Sorted technicians by distance from user location');
+      }
+      
+      return mockTechs.slice(0, maxResults);
     }
 
-    console.log(`Found ${technicians.length} registered technicians`);
-    return technicians.slice(0, maxResults);
+    // Process registered technicians with location data
+    let processedTechs = technicians.map(tech => {
+      const techWithLocation = { ...tech };
+      
+      // Try to get coordinates from business address
+      if (tech.businessAddress) {
+        techWithLocation.coordinates = parseAddressToCoords(tech.businessAddress);
+      }
+      
+      // Calculate distance if user location is available
+      if (location && techWithLocation.coordinates) {
+        techWithLocation.distance = calculateDistance(
+          location.lat,
+          location.lng,
+          techWithLocation.coordinates.lat,
+          techWithLocation.coordinates.lng
+        );
+        techWithLocation.isNearby = techWithLocation.distance <= 25; // Within 25 miles
+      }
+      
+      return techWithLocation;
+    });
+
+    // Sort by distance if location is available
+    if (location) {
+      processedTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+      console.log('Sorted registered technicians by distance from user location');
+    }
+
+    console.log(`Found ${processedTechs.length} registered technicians`);
+    return processedTechs.slice(0, maxResults);
     
   } catch (error) {
     console.error('Error fetching technicians:', error);
@@ -213,8 +309,8 @@ function getMockTechnicians() {
       userType: "technician",
       createdAt: new Date('2024-01-15'),
       isActive: true,
-      totalThankYous: 45,
-      totalTips: 380
+      totalThankYous: 35,
+      totalTips: 12
     },
     {
       id: "sample-jane-doe",
@@ -241,8 +337,8 @@ function getMockTechnicians() {
       userType: "technician",
       createdAt: new Date('2023-11-20'),
       isActive: true,
-      totalThankYous: 67,
-      totalTips: 485
+      totalThankYous: 75,
+      totalTips: 28
     },
     {
       id: "sample-mike-smith",
@@ -269,8 +365,8 @@ function getMockTechnicians() {
       userType: "technician",
       createdAt: new Date('2023-08-10'),
       isActive: true,
-      totalThankYous: 52,
-      totalTips: 420
+      totalThankYous: 125,
+      totalTips: 55
     }
   ];
 }
