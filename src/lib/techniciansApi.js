@@ -189,20 +189,89 @@ function generateAboutText(place, category) {
 function getMockTechnicians() {
   return [
     {
+      id: "sample-john-doe",
       name: "John Doe",
-      title: "Auto Mechanic",
-      about: "John is an auto mechanic with 10+ years of experience in engine repair, diagnostics, and routine maintenance. He is known for his attention to detail and dedication to helping customers get back on the road safely.",
-      image: "/mechanic-cartoon.png",
+      title: "Auto Mechanic - Doe's Auto Repair",
+      businessName: "Doe's Auto Repair",
+      category: "Auto Mechanic",
+      about: "John is a certified auto mechanic with 10+ years of experience in engine repair, diagnostics, and routine maintenance. He specializes in foreign and domestic vehicles, offering honest service and competitive prices. John is ASE certified and known for his attention to detail and dedication to helping customers get back on the road safely.",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format",
       points: 128,
+      rating: 4.8,
+      // Contact Information
+      businessPhone: "(555) 123-4567",
+      businessEmail: "john@doesautorepair.com",
+      website: "www.doesautorepair.com",
+      businessAddress: "123 Main Street, Atlanta, GA 30309",
+      // Service Details
+      experience: "10+ years",
+      certifications: "ASE Certified Master Technician, EPA 609 Certified, State Inspection License",
+      serviceArea: "Atlanta Metro Area - 25 mile radius",
+      hourlyRate: "$85-$120",
+      availability: "Monday-Friday 8AM-6PM, Saturday 9AM-4PM, Emergency towing 24/7",
+      // System fields
+      userType: "technician",
+      createdAt: new Date('2024-01-15'),
+      isActive: true,
+      totalThankYous: 45,
+      totalTips: 380
     },
     {
+      id: "sample-jane-doe",
       name: "Jane Doe",
-      title: "Electrician",
-      about: "Jane is an electrician with 8+ years of experience in electrical diagnostics, wiring, and vehicle electronics. She is passionate about solving complex electrical issues and helping customers stay safe on the road.",
-      image: "/jane-doe.jpg",
-      points: 142,
+      title: "Master Electrician - Spark & Wire Electric",
+      businessName: "Spark & Wire Electric",
+      category: "Electrician",
+      about: "Jane is a master electrician with 12+ years of experience in residential and commercial electrical work. She specializes in electrical panel upgrades, smart home installations, and emergency electrical repairs. Jane is known for her meticulous work, safety-first approach, and excellent customer service. She stays current with all electrical codes and green energy solutions.",
+      image: "https://images.unsplash.com/photo-1494790108755-2616b612b829?w=150&h=150&fit=crop&crop=face&auto=format",
+      points: 196,
+      rating: 4.9,
+      // Contact Information
+      businessPhone: "(555) 987-6543",
+      businessEmail: "jane@sparkandwire.com",
+      website: "www.sparkandwire.com",
+      businessAddress: "456 Electric Avenue, Atlanta, GA 30309",
+      // Service Details
+      experience: "12+ years",
+      certifications: "Master Electrician License, NECA Certified, OSHA 30-Hour Safety Certified, Tesla Powerwall Certified Installer",
+      serviceArea: "Atlanta Metro & North Georgia - 30 mile radius",
+      hourlyRate: "$95-$140",
+      availability: "Monday-Friday 7AM-7PM, Saturday 8AM-5PM, 24/7 emergency service available",
+      // System fields
+      userType: "technician",
+      createdAt: new Date('2023-11-20'),
+      isActive: true,
+      totalThankYous: 67,
+      totalTips: 485
     },
-    // Add more mock data as needed...
+    {
+      id: "sample-mike-smith",
+      name: "Mike Smith",
+      title: "Master Plumber - Smith Plumbing Solutions",
+      businessName: "Smith Plumbing Solutions",
+      category: "Plumber",
+      about: "Mike is a licensed master plumber with 15+ years of experience serving residential and commercial clients. He specializes in pipe repairs, water heater installations, drain cleaning, and bathroom renovations. Mike is known for his punctuality, fair pricing, and quality workmanship that lasts.",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format",
+      points: 234,
+      rating: 4.7,
+      // Contact Information
+      businessPhone: "(555) 246-8135",
+      businessEmail: "mike@smithplumbing.com",
+      website: "www.smithplumbing.com",
+      businessAddress: "789 Water Way, Atlanta, GA 30310",
+      // Service Details
+      experience: "15+ years",
+      certifications: "Master Plumber License, Backflow Prevention Certified, Green Plumber Certified",
+      serviceArea: "Greater Atlanta Area - 40 mile radius",
+      hourlyRate: "$90-$130",
+      availability: "Monday-Friday 7AM-6PM, Weekend emergency calls, 24/7 emergency service",
+      // System fields
+      userType: "technician",
+      createdAt: new Date('2023-08-10'),
+      isActive: true,
+      totalThankYous: 52,
+      totalTips: 420
+    }
   ];
 }
 

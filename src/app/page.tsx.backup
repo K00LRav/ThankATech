@@ -355,9 +355,8 @@ export default function Home() {
                     <p className="text-sm lg:text-base text-gray-700 leading-relaxed">{profile.about}</p>
                   </div>
 
-                  {/* Basic Contact Info Grid - Only show when expanded */}
-                  {expandedCard && (
-                    <div className="grid grid-cols-2 gap-2">
+                  {/* Basic Contact Info Grid */}
+                  <div className="grid grid-cols-2 gap-2">
                   {profile.businessPhone && (
                     <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
                       <div className="flex items-center space-x-2">
@@ -422,8 +421,7 @@ export default function Home() {
                       </div>
                     </div>
                   )}
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Right Column - Expandable Details (only when expanded) */}
