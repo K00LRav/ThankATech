@@ -100,6 +100,41 @@ export default function Home() {
     return badges.slice(0, 3); // Show max 3 badges to keep clean
   };
 
+  // Get category icon based on category/title
+  const getCategoryIcon = (category: string, title: string) => {
+    const categoryLower = (category || title || '').toLowerCase();
+    
+    if (categoryLower.includes('auto') || categoryLower.includes('mechanic') || categoryLower.includes('car')) return '🚗';
+    if (categoryLower.includes('electric') || categoryLower.includes('electrical')) return '⚡';
+    if (categoryLower.includes('plumb') || categoryLower.includes('pipe')) return '🔧';
+    if (categoryLower.includes('hvac') || categoryLower.includes('air') || categoryLower.includes('heat')) return '🌡️';
+    if (categoryLower.includes('computer') || categoryLower.includes('tech') || categoryLower.includes('it')) return '💻';
+    if (categoryLower.includes('appliance') || categoryLower.includes('repair')) return '🔧';
+    if (categoryLower.includes('lock') || categoryLower.includes('security')) return '🔐';
+    if (categoryLower.includes('contractor') || categoryLower.includes('construction')) return '🏗️';
+    if (categoryLower.includes('handyman') || categoryLower.includes('handy')) return '🔨';
+    if (categoryLower.includes('paint') || categoryLower.includes('decorator')) return '🎨';
+    if (categoryLower.includes('roof') || categoryLower.includes('gutter')) return '🏠';
+    if (categoryLower.includes('garden') || categoryLower.includes('landscape')) return '🌱';
+    if (categoryLower.includes('clean') || categoryLower.includes('janitor')) return '🧹';
+    
+    // Default fallback
+    return '🔧';
+  };
+
+  // Format category name with proper capitalization
+  const formatCategoryName = (category: string, title: string) => {
+    const categoryText = category || title.split(' ')[0] || '';
+    const categoryLower = categoryText.toLowerCase();
+    
+    // Special cases for acronyms
+    if (categoryLower === 'hvac') return 'HVAC';
+    if (categoryLower === 'it') return 'IT';
+    
+    // Regular capitalization for other categories
+    return categoryText.charAt(0).toUpperCase() + categoryText.slice(1);
+  };
+
   const achievementBadges = getAchievementBadges(profile);
 
   // Minimum swipe distance (in px)
@@ -149,7 +184,7 @@ export default function Home() {
         const location = await requestUserLocation();
         
         // Fetch technicians with location data
-        const data = await fetchTechnicians('all', location || undefined, 8);
+        const data = await fetchTechnicians('all', location || undefined, 20);
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
           setCurrentProfileIndex(0);
@@ -437,7 +472,10 @@ export default function Home() {
             
             {/* Modern Category Badge */}
             <div className="absolute -top-3 right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg">
-              <span className="text-sm font-semibold tracking-wide">{(profile.category || profile.title.split(' ')[0]).charAt(0).toUpperCase() + (profile.category || profile.title.split(' ')[0]).slice(1)}</span>
+              <span className="text-sm font-semibold tracking-wide flex items-center gap-1">
+                <span className="text-base">{getCategoryIcon(profile.category, profile.title)}</span>
+                {formatCategoryName(profile.category, profile.title)}
+              </span>
             </div>
 
             <div className="flex flex-col h-full">
@@ -603,7 +641,10 @@ export default function Home() {
                     <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
                       <h4 className="text-sm font-semibold text-gray-800 mb-2">🔧 Service Specialties</h4>
                       <div className="flex flex-wrap gap-1">
-                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs">{profile.category ? profile.category.charAt(0).toUpperCase() + profile.category.slice(1) : ''}</span>
+                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                          <span>{getCategoryIcon(profile.category, profile.title)}</span>
+                          {formatCategoryName(profile.category, profile.title)}
+                        </span>
                         {profile.experience && (
                           <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
                         )}
