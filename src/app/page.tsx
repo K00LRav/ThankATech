@@ -308,7 +308,7 @@ export default function Home() {
         cardElement.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isFlipping, profiles.length, touchStart, touchEnd]);
+  }, [isFlipping, profiles.length, touchStart, touchEnd, flipToNext, flipToPrevious]);
   
   // Show loading state
   if (loading) {
