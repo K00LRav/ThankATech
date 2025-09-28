@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/stripe';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, migrateTechnicianProfile } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import Link from 'next/link';
@@ -68,12 +68,15 @@ export default function TechnicianDashboard() {
         setUser(firebaseUser);
         
         try {
-          // Try to fetch technician profile from technicians collection
+          let technicianFound = false;
+          
+          // First, try to fetch technician profile from technicians collection
           const techDoc = await getDoc(doc(db, 'technicians', firebaseUser.uid));
           
           if (techDoc.exists()) {
             const techData = { id: techDoc.id, ...techDoc.data() } as TechnicianProfile;
             setTechnicianProfile(techData);
+            technicianFound = true;
             
             // Calculate earnings from profile data
             const totalTipAmount = techData.totalTipAmount || 0;
@@ -86,12 +89,85 @@ export default function TechnicianDashboard() {
               totalTips: totalTips,
               thisMonthEarnings: totalTipAmount / 100, // For demo, show all as this month
             });
-          } else {
-            // Check if user is in users collection but registered as technician
+          }
+          
+          // If not found in technicians collection, check users collection
+          if (!technicianFound) {
             const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDoc.exists() && userDoc.data().userType === 'technician') {
-              const userData = { id: userDoc.id, ...userDoc.data() } as TechnicianProfile;
-              setTechnicianProfile(userData);
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              
+              // Check if user registered as a technician
+              if (userData.userType === 'technician') {
+                const techData = { 
+                  id: userDoc.id, 
+                  ...userData,
+                  // Map user fields to technician fields for compatibility
+                  businessName: userData.businessName || '',
+                  category: userData.category || '',
+                  points: userData.points || 0,
+                  totalThankYous: userData.totalThankYous || 0,
+                  totalTips: userData.totalTips || 0,
+                  totalTipAmount: userData.totalTipAmount || 0
+                } as TechnicianProfile;
+                
+                setTechnicianProfile(techData);
+                technicianFound = true;
+                
+                // Calculate earnings from profile data
+                const totalTipAmount = userData.totalTipAmount || 0;
+                const totalTips = userData.totalTips || 0;
+                
+                setEarnings({
+                  totalEarnings: totalTipAmount / 100,
+                  availableBalance: (totalTipAmount * 0.85) / 100,
+                  pendingBalance: (totalTipAmount * 0.15) / 100,
+                  totalTips: totalTips,
+                  thisMonthEarnings: totalTipAmount / 100,
+                });
+              }
+            }
+          }
+          
+          // If still not found, search in both collections by email as fallback
+          if (!technicianFound && firebaseUser.email) {
+            console.log('Searching for technician by email:', firebaseUser.email);
+            
+            // Search technicians collection
+            const techQuery = query(
+              collection(db, 'technicians'),
+              where('email', '==', firebaseUser.email),
+              limit(1)
+            );
+            const techSnapshot = await getDocs(techQuery);
+            
+            if (!techSnapshot.empty) {
+              const techDoc = techSnapshot.docs[0];
+              const techData = { id: techDoc.id, ...techDoc.data() } as TechnicianProfile;
+              setTechnicianProfile(techData);
+              technicianFound = true;
+            } else {
+              // Search users collection
+              const userQuery = query(
+                collection(db, 'users'),
+                where('email', '==', firebaseUser.email),
+                where('userType', '==', 'technician'),
+                limit(1)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              
+              if (!userSnapshot.empty) {
+                const userDoc = userSnapshot.docs[0];
+                const userData = userDoc.data();
+                const techData = { 
+                  id: userDoc.id, 
+                  ...userData,
+                  businessName: userData.businessName || '',
+                  category: userData.category || ''
+                } as TechnicianProfile;
+                setTechnicianProfile(techData);
+                technicianFound = true;
+              }
             }
           }
           
@@ -115,6 +191,41 @@ export default function TechnicianDashboard() {
               platformFee: 80,
             },
           ]);
+          
+          // Debug logging and migration attempt
+          if (!technicianFound) {
+            console.log('No technician profile found for user:', {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName
+            });
+            
+            // Try to migrate from users collection
+            try {
+              console.log('Attempting to migrate technician profile...');
+              const migratedProfile = await migrateTechnicianProfile(firebaseUser.uid);
+              if (migratedProfile && 'name' in migratedProfile) {
+                const techProfile = migratedProfile as TechnicianProfile;
+                setTechnicianProfile(techProfile);
+                technicianFound = true;
+                console.log('Successfully migrated and loaded technician profile');
+                
+                // Calculate earnings from migrated profile
+                const totalTipAmount = techProfile.totalTipAmount || 0;
+                const totalTips = techProfile.totalTips || 0;
+                
+                setEarnings({
+                  totalEarnings: totalTipAmount / 100,
+                  availableBalance: (totalTipAmount * 0.85) / 100,
+                  pendingBalance: (totalTipAmount * 0.15) / 100,
+                  totalTips: totalTips,
+                  thisMonthEarnings: totalTipAmount / 100,
+                });
+              }
+            } catch (migrationError) {
+              console.error('Error during migration:', migrationError);
+            }
+          }
           
         } catch (error) {
           console.error('Error loading technician profile:', error);

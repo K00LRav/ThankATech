@@ -1,7 +1,7 @@
 // Firebase configuration and services for ThankATech
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -525,5 +525,92 @@ export const authHelpers = {
     return onAuthStateChanged(auth, callback);
   }
 };
+
+/**
+ * Migration helper: Move technician from users collection to technicians collection
+ */
+export async function migrateTechnicianProfile(userId) {
+  if (!db) {
+    console.warn('Firebase not configured. Cannot migrate.');
+    return null;
+  }
+
+  try {
+    // Get user from users collection
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    
+    if (!userDoc.exists()) {
+      console.log('User not found in users collection');
+      return null;
+    }
+    
+    const userData = userDoc.data();
+    
+    // Check if user is a technician
+    if (userData.userType !== 'technician') {
+      console.log('User is not a technician');
+      return null;
+    }
+    
+    // Check if already exists in technicians collection
+    const existingTechDoc = await getDoc(doc(db, 'technicians', userId));
+    if (existingTechDoc.exists()) {
+      console.log('Technician profile already exists');
+      return { id: existingTechDoc.id, ...existingTechDoc.data() };
+    }
+    
+    // Create technician profile
+    const technicianProfile = {
+      // Basic info
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone || '',
+      location: userData.location || '',
+      
+      // Business info
+      businessName: userData.businessName || '',
+      title: userData.title || `${userData.businessName || 'Technician'} - ${userData.category || 'Service'}`,
+      category: userData.category || '',
+      businessAddress: userData.businessAddress || '',
+      businessPhone: userData.businessPhone || userData.phone || '',
+      businessEmail: userData.businessEmail || userData.email,
+      website: userData.website || '',
+      
+      // Service details
+      experience: userData.experience || '',
+      certifications: userData.certifications || '',
+      about: userData.about || userData.description || '',
+      serviceArea: userData.serviceArea || '',
+      hourlyRate: userData.hourlyRate || '',
+      availability: userData.availability || '',
+      
+      // Profile image - prioritize Google photo
+      image: userData.photoURL || userData.profileImage || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      photoURL: userData.photoURL || null,
+      
+      // Stats
+      points: userData.points || 0,
+      rating: userData.rating || 5.0,
+      totalThankYous: userData.totalThankYous || 0,
+      totalTips: userData.totalTips || 0,
+      totalTipAmount: userData.totalTipAmount || 0,
+      
+      // System fields
+      createdAt: userData.createdAt || new Date(),
+      isActive: true,
+      userType: 'technician'
+    };
+    
+    // Add to technicians collection with the same ID
+    await setDoc(doc(db, 'technicians', userId), technicianProfile);
+    
+    console.log('Successfully migrated technician profile');
+    return { id: userId, ...technicianProfile };
+    
+  } catch (error) {
+    console.error('Error migrating technician profile:', error);
+    throw error;
+  }
+}
 
 export default app;
