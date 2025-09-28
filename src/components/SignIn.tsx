@@ -33,6 +33,7 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
   };
 
   const handleGoogleSignInSuccess = (result: any) => {
+    // Pass the full user data (which includes userType)
     onSignInComplete(result.user);
     onClose();
   };

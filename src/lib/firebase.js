@@ -491,7 +491,19 @@ export const authHelpers = {
   signIn: async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
+      
+      // Get the full user profile from our database
+      const userProfile = await getUserByEmail(email);
+      
+      if (userProfile) {
+        return userProfile;
+      } else {
+        // Fallback to basic Firebase user if no profile found
+        return {
+          ...userCredential.user,
+          userType: 'customer' // Default userType
+        };
+      }
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
