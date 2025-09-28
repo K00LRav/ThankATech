@@ -653,4 +653,37 @@ export async function migrateTechnicianProfile(userId) {
   }
 }
 
+// Delete user profile and related data
+export async function deleteUserProfile(userId, userType = 'customer') {
+  if (!isFirebaseConfigured) {
+    console.log('Firebase not configured - simulating profile deletion');
+    return;
+  }
+
+  try {
+    const { deleteDoc } = await import('firebase/firestore');
+    
+    // Delete from appropriate collection based on user type
+    if (userType === 'technician') {
+      // Delete from technicians collection
+      await deleteDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
+      console.log('Technician profile deleted successfully');
+    } else {
+      // Delete from users collection
+      await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
+      console.log('Customer profile deleted successfully');
+    }
+    
+    // Note: In a production app, you might also want to:
+    // - Delete user's photos from storage
+    // - Clean up related data (tips, thank yous, etc.)
+    // - Delete the Firebase Auth user account
+    // For now, we're just deleting the profile document
+    
+  } catch (error) {
+    console.error('Error deleting user profile:', error);
+    throw error;
+  }
+}
+
 export default app;

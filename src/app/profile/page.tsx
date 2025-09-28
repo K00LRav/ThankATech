@@ -664,21 +664,7 @@ Please complete your profile information below and click "Save Changes" to creat
                   </div>
                 </div>
 
-                {/* Danger Zone */}
-                <div className="border-t border-red-500/20 pt-6">
-                  <h3 className="text-lg font-medium text-red-400 mb-4">Danger Zone</h3>
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white font-medium">Delete Account</p>
-                        <p className="text-red-200 text-sm">Permanently delete your account and all data</p>
-                      </div>
-                      <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                        Delete Account
-                      </button>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             </div>
           )}
