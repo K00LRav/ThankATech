@@ -519,7 +519,7 @@ export default function Home() {
             {currentUser ? (
               <div className="flex items-center space-x-4">
                 {/* Technician Dashboard Button */}
-                {currentUser.userType === 'technician' && (
+                {currentUser?.userType === 'technician' && (
                   <button
                     onClick={() => setShowTechDashboard(true)}
                     className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -529,14 +529,14 @@ export default function Home() {
                 )}
                 
                 <div className="flex items-center space-x-3">
-                  {currentUser.photoURL && (
+                  {currentUser?.photoURL && (
                     <img 
                       src={currentUser.photoURL} 
                       alt="Profile" 
                       className="w-8 h-8 rounded-full border-2 border-white/20"
                     />
                   )}
-                  <span className="text-gray-300">Welcome, {currentUser.name}!</span>
+                  <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
                 </div>
               </div>
             ) : (
@@ -1094,7 +1094,7 @@ export default function Home() {
                     <span className="text-2xl">⭐</span>
                     <div>
                       <p className="text-sm text-gray-400">Rating</p>
-                      <p className="text-xl font-semibold text-white">{currentUser.rating?.toFixed(1) || '5.0'}</p>
+                      <p className="text-xl font-semibold text-white">{currentUser?.rating?.toFixed(1) || '5.0'}</p>
                     </div>
                   </div>
                 </div>
@@ -1104,7 +1104,7 @@ export default function Home() {
                     <span className="text-2xl">🙏</span>
                     <div>
                       <p className="text-sm text-gray-400">Thank Yous</p>
-                      <p className="text-xl font-semibold text-white">{currentUser.totalThankYous || 0}</p>
+                      <p className="text-xl font-semibold text-white">{currentUser?.totalThankYous || 0}</p>
                     </div>
                   </div>
                 </div>
@@ -1114,7 +1114,7 @@ export default function Home() {
                     <span className="text-2xl">💰</span>
                     <div>
                       <p className="text-sm text-gray-400">Total Tips</p>
-                      <p className="text-xl font-semibold text-white">${currentUser.totalTips || 0}</p>
+                      <p className="text-xl font-semibold text-white">${currentUser?.totalTips || 0}</p>
                     </div>
                   </div>
                 </div>
@@ -1126,19 +1126,19 @@ export default function Home() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-400">Business Name</p>
-                    <p className="text-white font-medium">{currentUser.businessName || 'Not set'}</p>
+                    <p className="text-white font-medium">{currentUser?.businessName || 'Not set'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400">Category</p>
-                    <p className="text-white font-medium">{currentUser.category || 'Not set'}</p>
+                    <p className="text-white font-medium">{currentUser?.category || 'Not set'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400">Experience</p>
-                    <p className="text-white font-medium">{currentUser.experience || 'Not set'}</p>
+                    <p className="text-white font-medium">{currentUser?.experience || 'Not set'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-400">Hourly Rate</p>
-                    <p className="text-white font-medium">${currentUser.hourlyRate || 'Not set'}</p>
+                    <p className="text-white font-medium">${currentUser?.hourlyRate || 'Not set'}</p>
                   </div>
                 </div>
               </div>
@@ -1160,11 +1160,11 @@ export default function Home() {
               </div>
 
               {/* Achievement Badges */}
-              {currentUser.achievements && currentUser.achievements.length > 0 && (
+              {currentUser?.achievements && currentUser.achievements.length > 0 && (
                 <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
                   <h3 className="text-xl font-semibold text-white mb-4">Your Achievements</h3>
                   <div className="flex flex-wrap gap-2">
-                    {currentUser.achievements.map((achievement: any, index: number) => (
+                    {currentUser?.achievements?.map((achievement: any, index: number) => (
                       <span
                         key={index}
                         className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-full text-yellow-200 text-sm font-medium"
