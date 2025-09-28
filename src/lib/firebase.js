@@ -1328,24 +1328,20 @@ export async function getTechnicianEarnings(technicianId) {
     const allTips = await getTipsForTechnician(actualTechnicianId, technicianData.email, technicianData.uniqueId);
     
     console.log('💰 Found', allTips.length, 'total completed tips for technician');
-    let totalEarnings = 0;
+    let totalGrossAmount = 0;
+    let totalNetAmount = 0;
     allTips.forEach(tip => {
       console.log('💰 Processing tip:', tip);
-      totalEarnings += tip.amount || 0;
+      totalGrossAmount += tip.amount || 0; // Total amount customers paid
+      totalNetAmount += tip.technicianPayout || 0; // Amount technician receives (after fees)
     });
     
-    console.log('💰 Total earnings (cents):', totalEarnings);
-    
-    // Calculate platform fee (stored in cents)
-    const platformFee = parseInt(process.env.PLATFORM_FLAT_FEE || '99');
-    const availableBalance = Math.max(0, totalEarnings - (allTips.length * platformFee));
-    
-    console.log('💰 Platform fee per tip:', platformFee, 'cents');
-    console.log('💰 Available balance (cents):', availableBalance);
+    console.log('💰 Total gross amount (cents):', totalGrossAmount);
+    console.log('💰 Total net amount to technician (cents):', totalNetAmount);
     
     const result = {
-      totalEarnings: totalEarnings / 100, // Convert to dollars
-      availableBalance: availableBalance / 100, // Convert to dollars
+      totalEarnings: totalNetAmount / 100, // Convert to dollars - what technician actually earned
+      availableBalance: totalNetAmount / 100, // Convert to dollars - available to withdraw
       pendingBalance: 0, // For now, no pending payments
       tipCount: allTips.length
     };

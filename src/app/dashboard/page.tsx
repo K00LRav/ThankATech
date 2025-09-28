@@ -43,6 +43,7 @@ interface Transaction {
   date: string;
   status: 'completed' | 'pending';
   platformFee: number;
+  technicianPayout?: number; // Net amount technician receives after fees
 }
 
 export default function TechnicianDashboard() {
@@ -677,7 +678,7 @@ export default function TechnicianDashboard() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-green-400">
-                    +{formatCurrency(transaction.amount - transaction.platformFee)}
+                    +{formatCurrency(transaction.technicianPayout || (transaction.amount - transaction.platformFee))}
                   </p>
                   <p className="text-sm text-blue-300">
                     {formatCurrency(transaction.amount)} - {formatCurrency(transaction.platformFee)} fee
