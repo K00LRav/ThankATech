@@ -53,3 +53,45 @@ export const dollarsToCents = (dollars: number): number => {
 export const centsToDollars = (cents: number): number => {
   return cents / 100;
 };
+
+// Payout configuration
+export const PAYOUT_CONFIG = {
+  minimumPayout: 100, // $1.00 minimum payout in cents
+  standardProcessingDays: 2, // Standard payout processing time
+  expressFee: 50, // $0.50 fee for express payouts in cents
+};
+
+// Validate payout amount
+export const validatePayoutAmount = (amount: number): { valid: boolean; error?: string } => {
+  if (amount < PAYOUT_CONFIG.minimumPayout) {
+    return {
+      valid: false,
+      error: `Minimum payout amount is ${formatCurrency(PAYOUT_CONFIG.minimumPayout)}`
+    };
+  }
+  return { valid: true };
+};
+
+// Calculate payout processing time
+export const getPayoutProcessingTime = (method: 'standard' | 'express' = 'standard'): string => {
+  if (method === 'express') {
+    return '30 minutes';
+  }
+  return `${PAYOUT_CONFIG.standardProcessingDays} business days`;
+};
+
+// Payout method configuration
+export const PAYOUT_METHODS = {
+  standard: {
+    name: 'Standard',
+    fee: 0,
+    processingTime: getPayoutProcessingTime('standard'),
+    description: 'Free transfer, arrives in 1-2 business days'
+  },
+  express: {
+    name: 'Express',
+    fee: PAYOUT_CONFIG.expressFee,
+    processingTime: getPayoutProcessingTime('express'),
+    description: 'Fast transfer for $0.50 fee, arrives in 30 minutes'
+  }
+};

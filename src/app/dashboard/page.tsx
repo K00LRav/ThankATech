@@ -6,6 +6,7 @@ import { auth, db, migrateTechnicianProfile } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import Link from 'next/link';
+import PayoutModal from '@/components/PayoutModal';
 
 interface TechnicianProfile {
   id: string;
@@ -55,6 +56,7 @@ export default function TechnicianDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stripeAccountStatus, setStripeAccountStatus] = useState<'none' | 'pending' | 'active'>('none');
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   // Load user and technician profile
   useEffect(() => {
@@ -260,14 +262,100 @@ export default function TechnicianDashboard() {
   };
 
   const handleStripeConnect = async () => {
-    // TODO: Implement Stripe Connect account creation
-    alert('Stripe Connect integration coming soon!');
+    if (!user?.uid || !technicianProfile?.email) {
+      alert('Unable to connect account. Please ensure your profile is complete.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-express-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          technicianId: user.uid,
+          email: technicianProfile.email,
+          returnUrl: `${window.location.origin}/dashboard?setup=complete`,
+          refreshUrl: `${window.location.origin}/dashboard?refresh=true`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.onboardingUrl) {
+        // Redirect to Stripe onboarding
+        window.location.href = data.onboardingUrl;
+      } else {
+        throw new Error(data.error || 'Failed to create payment account');
+      }
+    } catch (error) {
+      console.error('Stripe Connect error:', error);
+      alert('Failed to set up payment account. Please try again.');
+    }
   };
 
-  const handleWithdraw = async () => {
-    // TODO: Implement withdrawal functionality
-    alert('Withdrawal feature coming soon!');
+  const checkStripeAccountStatus = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const response = await fetch('/api/check-express-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          technicianId: user.uid,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.status) {
+        setStripeAccountStatus(data.status);
+        console.log('Stripe account status:', data.status, data.message);
+      }
+    } catch (error) {
+      console.error('Failed to check Stripe account status:', error);
+    }
   };
+
+  // Check for setup completion or refresh from URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const setup = urlParams.get('setup');
+    const refresh = urlParams.get('refresh');
+
+    if (setup === 'complete') {
+      // Account setup completed, check status
+      setTimeout(() => {
+        checkStripeAccountStatus();
+      }, 2000); // Give Stripe a moment to process
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, '/dashboard');
+    } else if (refresh === 'true') {
+      // User needs to refresh setup
+      checkStripeAccountStatus();
+      window.history.replaceState({}, document.title, '/dashboard');
+    }
+  }, [user]);
+
+  // Check account status periodically
+  useEffect(() => {
+    if (user && technicianProfile) {
+      checkStripeAccountStatus();
+      
+      // Check status every 30 seconds if account is pending
+      const interval = setInterval(() => {
+        if (stripeAccountStatus === 'pending') {
+          checkStripeAccountStatus();
+        }
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [user, technicianProfile, stripeAccountStatus]);
 
   if (!user) {
     return (
@@ -356,8 +444,8 @@ export default function TechnicianDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stripe Account Status */}
-        {stripeAccountStatus === 'none' && (
+        {/* Stripe Account Status - Only show if user has earnings to withdraw */}
+        {stripeAccountStatus === 'none' && earnings.availableBalance >= 1.00 && (
           <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-6 mb-8">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
@@ -366,9 +454,9 @@ export default function TechnicianDashboard() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-yellow-300 mb-1">Payment Setup Required</h3>
+                <h3 className="font-semibold text-yellow-300 mb-1">Bank Account Setup Required</h3>
                 <p className="text-yellow-200 mb-4">
-                  Connect your bank account to receive tips and payments from customers.
+                  Connect your bank account to withdraw your earnings. You can continue receiving tips while setting this up.
                 </p>
                 <button
                   onClick={handleStripeConnect}
@@ -411,6 +499,16 @@ export default function TechnicianDashboard() {
               {formatCurrency(earnings.availableBalance * 100)}
             </p>
             <p className="text-sm text-blue-200 mt-1">Ready to withdraw</p>
+            {earnings.availableBalance >= 1.00 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowPayoutModal(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Withdraw Funds
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
@@ -450,8 +548,8 @@ export default function TechnicianDashboard() {
             <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button
-                onClick={handleWithdraw}
-                disabled={earnings.availableBalance === 0}
+                onClick={() => setShowPayoutModal(true)}
+                disabled={earnings.availableBalance < 1.00}
                 className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 {earnings.availableBalance > 0 
@@ -612,6 +710,24 @@ export default function TechnicianDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Payout Modal */}
+      {showPayoutModal && (
+        <PayoutModal
+          isOpen={showPayoutModal}
+          onClose={() => setShowPayoutModal(false)}
+          availableBalance={earnings.availableBalance}
+          technicianId={user?.uid || ''}
+          onPayoutSuccess={(amount) => {
+            // Update the available balance after successful payout
+            setEarnings(prev => ({
+              ...prev,
+              availableBalance: prev.availableBalance - amount
+            }));
+            setShowPayoutModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
