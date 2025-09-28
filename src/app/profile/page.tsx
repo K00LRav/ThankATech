@@ -7,33 +7,41 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-interface TechnicianProfile {
+interface UserProfile {
   uid: string;
   name: string;
   email: string;
   phone: string;
   location: string;
-  businessName: string;
-  category: string;
-  experience: string;
-  certifications: string;
-  description: string;
-  businessAddress: string;
-  website: string;
-  businessPhone: string;
-  businessEmail: string;
-  serviceArea: string;
-  hourlyRate: string;
-  availability: string;
   photoURL?: string;
   userType: 'technician' | 'customer';
+  // Customer-specific fields
+  favoriteCategories?: string[];
+  notificationPreferences?: {
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    tipReceipts: boolean;
+  };
+  // Technician-specific fields (for backwards compatibility)
+  businessName?: string;
+  category?: string;
+  experience?: string;
+  certifications?: string;
+  description?: string;
+  businessAddress?: string;
+  website?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  serviceArea?: string;
+  hourlyRate?: string;
+  availability?: string;
 }
 
-export default function EditProfile() {
+export default function ProfilePage() {
   const [user, loading, error] = useAuthState(auth);
   const router = useRouter();
-  const [profile, setProfile] = useState<TechnicianProfile | null>(null);
-  const [formData, setFormData] = useState<Partial<TechnicianProfile>>({});
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -52,7 +60,7 @@ export default function EditProfile() {
         let userData = null;
         
         if (userDoc.exists()) {
-          userData = userDoc.data() as TechnicianProfile;
+          userData = userDoc.data() as UserProfile;
           console.log('Profile data loaded from users collection:', userData);
         } else {
           // If not found in users, check technicians collection by email
@@ -91,7 +99,7 @@ export default function EditProfile() {
               // Prioritize current Google photo, then stored image
               photoURL: user.photoURL || technicianData.image || '',
               userType: 'technician'
-            } as TechnicianProfile;
+            } as UserProfile;
           }
         }
         
@@ -108,7 +116,7 @@ export default function EditProfile() {
           });
           
           // Create a basic profile structure if none exists
-          const basicProfile: Partial<TechnicianProfile> = {
+          const basicProfile: Partial<UserProfile> = {
             uid: user.uid,
             name: user.displayName || '',
             email: user.email || '',
@@ -127,9 +135,9 @@ export default function EditProfile() {
             hourlyRate: '',
             availability: '',
             photoURL: user.photoURL || '',
-            userType: 'technician'
+            userType: 'customer' // Default to customer for new profiles
           };
-          setProfile(basicProfile as TechnicianProfile);
+          setProfile(basicProfile as UserProfile);
           setFormData(basicProfile);
           setFormError(`Profile not found for user ${user.email}. This might be because:
           
@@ -176,21 +184,24 @@ Please complete your profile information below and click "Save Changes" to creat
         updatedAt: new Date().toISOString()
       };
 
+      // Determine which collection to use based on user type
+      const collection = profile?.userType === 'technician' ? 'technicians' : 'users';
+      
       // Try to update first, if that fails, create the document
       try {
-        await updateDoc(doc(db, 'users', user.uid), profileData);
+        await updateDoc(doc(db, collection, user.uid), profileData);
         setSaveMessage('Profile updated successfully!');
       } catch (updateError) {
         // If update fails (document doesn't exist), create it
         console.log('Document does not exist, creating new profile...');
-        await setDoc(doc(db, 'users', user.uid), {
+        await setDoc(doc(db, collection, user.uid), {
           ...profileData,
           createdAt: new Date().toISOString()
         });
         setSaveMessage('Profile created successfully!');
       }
       
-      setProfile({ ...profile, ...profileData } as TechnicianProfile);
+      setProfile({ ...profile, ...profileData } as UserProfile);
     } catch (error) {
       console.error('Error saving profile:', error);
       setFormError('Failed to save profile. Please try again.');
@@ -247,21 +258,37 @@ Please complete your profile information below and click "Save Changes" to creat
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">Edit Profile</h1>
-              <p className="text-blue-200 mt-1">Update your technician information</p>
+              <h1 className="text-3xl font-bold text-white">
+                {profile?.userType === 'technician' ? 'Edit Profile' : 'My Profile'}
+              </h1>
+              <p className="text-blue-200 mt-1">
+                {profile?.userType === 'technician' 
+                  ? 'Update your technician information' 
+                  : 'Manage your account settings and preferences'
+                }
+              </p>
             </div>
             <div className="flex gap-3">
-              <Link
-                href="/dashboard"
-                className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-xl transition-colors"
-              >
-                Back to Dashboard
-              </Link>
+              {profile?.userType === 'technician' ? (
+                <Link
+                  href="/dashboard"
+                  className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-xl transition-colors"
+                >
+                  Back to Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/"
+                  className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-xl transition-colors"
+                >
+                  Back to Home
+                </Link>
+              )}
               <Link
                 href="/"
                 className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl transition-colors"
               >
-                View Profile
+                View Technicians
               </Link>
             </div>
           </div>
@@ -380,6 +407,129 @@ Please complete your profile information below and click "Save Changes" to creat
               </div>
             </div>
           </div>
+
+          {/* Customer Preferences */}
+          {profile.userType === 'customer' && (
+            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+              <h2 className="text-xl font-bold text-white mb-6">Preferences & Settings</h2>
+              <div className="space-y-6">
+                {/* Notification Preferences */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-4">Notification Preferences</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificationPreferences?.emailNotifications ?? true}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationPreferences: {
+                            ...prev.notificationPreferences,
+                            emailNotifications: e.target.checked,
+                            smsNotifications: prev.notificationPreferences?.smsNotifications ?? false,
+                            tipReceipts: prev.notificationPreferences?.tipReceipts ?? true
+                          }
+                        }))}
+                        className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="text-white">Email notifications</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificationPreferences?.smsNotifications ?? false}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationPreferences: {
+                            ...prev.notificationPreferences,
+                            emailNotifications: prev.notificationPreferences?.emailNotifications ?? true,
+                            smsNotifications: e.target.checked,
+                            tipReceipts: prev.notificationPreferences?.tipReceipts ?? true
+                          }
+                        }))}
+                        className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="text-white">SMS notifications</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.notificationPreferences?.tipReceipts ?? true}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationPreferences: {
+                            ...prev.notificationPreferences,
+                            emailNotifications: prev.notificationPreferences?.emailNotifications ?? true,
+                            smsNotifications: prev.notificationPreferences?.smsNotifications ?? false,
+                            tipReceipts: e.target.checked
+                          }
+                        }))}
+                        className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <span className="text-white">Tip receipts</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Favorite Categories */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-4">Favorite Service Categories</h3>
+                  <p className="text-blue-200 text-sm mb-4">Select categories you're most interested in to see relevant technicians first.</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {['plumber', 'electrician', 'hvac', 'mechanic', 'appliance', 'handyman'].map((category) => (
+                      <label key={category} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.favoriteCategories?.includes(category) ?? false}
+                          onChange={(e) => {
+                            const currentFavorites = formData.favoriteCategories || [];
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                favoriteCategories: [...currentFavorites, category]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                favoriteCategories: currentFavorites.filter(c => c !== category)
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <span className="text-white capitalize">{category === 'hvac' ? 'HVAC' : category}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tip History for Customers */}
+          {profile.userType === 'customer' && (
+            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+              <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">No tips yet</h3>
+                <p className="text-blue-200 mb-4">When you tip technicians, your history will appear here.</p>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Find Technicians
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Business Information */}
           {profile.userType === 'technician' && (
@@ -590,7 +740,7 @@ Please complete your profile information below and click "Save Changes" to creat
           {/* Save Button */}
           <div className="flex justify-end gap-4">
             <Link
-              href="/dashboard"
+              href={profile?.userType === 'technician' ? '/dashboard' : '/'}
               className="px-8 py-3 border border-blue-500/30 rounded-xl text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200 font-medium"
             >
               Cancel
