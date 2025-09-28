@@ -27,21 +27,6 @@ export async function POST(request: NextRequest) {
     const techDoc = await getDoc(doc(db, 'technicians', technicianId));
     const techData = techDoc.data();
 
-    if (!techData?.stripeAccountId) {
-      return NextResponse.json(
-        { error: 'Technician payment setup incomplete. Please ask them to set up their payment account.' },
-        { status: 400 }
-      );
-    }
-
-    // Check if technician's account can receive payments
-    if (techData.stripeAccountStatus !== 'active') {
-      return NextResponse.json(
-        { error: 'Technician payment account is not ready to receive payments.' },
-        { status: 400 }
-      );
-    }
-
     // Calculate fees
     const platformFee = calculatePlatformFee(amount);
     const technicianPayout = calculateTechnicianPayout(amount);
@@ -49,32 +34,67 @@ export async function POST(request: NextRequest) {
     // Get server-side Stripe instance
     const stripe = getServerStripe();
 
-    // Create payment intent with direct payment to technician's Express account
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'usd',
-      application_fee_amount: platformFee, // Your platform fee
-      transfer_data: {
-        destination: techData.stripeAccountId, // Send to technician's account
-      },
-      metadata: {
-        technicianId,
-        customerId,
-        platformFee: platformFee.toString(),
-        technicianPayout: technicianPayout.toString(),
-        type: 'tip',
-      },
-      description: `Tip for technician ${technicianId}`,
-    });
+    // Check if technician has Express account set up
+    if (techData?.stripeAccountId && techData.stripeAccountStatus === 'active') {
+      // Create payment intent with direct payment to technician's Express account
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'usd',
+        application_fee_amount: platformFee, // Your platform fee
+        transfer_data: {
+          destination: techData.stripeAccountId, // Send to technician's account
+        },
+        metadata: {
+          technicianId,
+          customerId,
+          platformFee: platformFee.toString(),
+          technicianPayout: technicianPayout.toString(),
+          type: 'tip',
+          paymentMethod: 'express_account',
+        },
+        description: `Tip for technician ${technicianId}`,
+      });
 
-    console.log(`Created payment intent for technician ${technicianId} (${techData.stripeAccountId}): $${amount/100}`);
+      console.log(`Created Express payment intent for technician ${technicianId} (${techData.stripeAccountId}): $${amount/100}`);
+      
+      return NextResponse.json({
+        clientSecret: paymentIntent.client_secret,
+        platformFee,
+        technicianPayout,
+        technicianAccountStatus: techData.stripeAccountStatus,
+        paymentMethod: 'express_account',
+      });
+    } else {
+      // Fallback: Create regular payment intent (money goes to platform account for now)
+      // This allows testing while technicians set up their Express accounts
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'usd',
+        metadata: {
+          technicianId,
+          customerId,
+          platformFee: platformFee.toString(),
+          technicianPayout: technicianPayout.toString(),
+          type: 'tip',
+          paymentMethod: 'platform_account',
+          note: 'Payment to platform account - technician Express account not set up yet',
+        },
+        description: `Tip for technician ${technicianId} (via platform)`,
+      });
 
-    return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      platformFee,
-      technicianPayout,
-      technicianAccountStatus: techData.stripeAccountStatus,
-    });
+      console.log(`Created platform payment intent for technician ${technicianId} (no Express account): $${amount/100}`);
+      
+      return NextResponse.json({
+        clientSecret: paymentIntent.client_secret,
+        platformFee,
+        technicianPayout,
+        technicianAccountStatus: techData?.stripeAccountStatus || 'none',
+        paymentMethod: 'platform_account',
+        message: 'Payment processed via platform account. Technician can set up direct payments in their dashboard.',
+      });
+    }
+
+
   } catch (error) {
     console.error('Payment intent creation error:', error);
     return NextResponse.json(
