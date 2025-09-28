@@ -1,5 +1,4 @@
 import { loadStripe } from '@stripe/stripe-js';
-import Stripe from 'stripe';
 
 // Initialize Stripe.js (client-side)
 let stripePromise: Promise<any>;
@@ -10,10 +9,17 @@ export const getStripe = () => {
   return stripePromise;
 };
 
-// Initialize Stripe SDK (server-side)
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+// Server-side Stripe initialization (only for API routes)
+export const getServerStripe = () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Server-side Stripe should not be used on the client');
+  }
+  
+  const Stripe = require('stripe');
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-08-27.basil',
+  });
+};
 
 // Platform fee configuration
 export const PLATFORM_CONFIG = {

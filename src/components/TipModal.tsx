@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { formatCurrency, dollarsToCents, calculatePlatformFee, calculateTechnicianPayout } from '@/lib/stripe';
+import { getStripe, formatCurrency, dollarsToCents, calculatePlatformFee, calculateTechnicianPayout } from '@/lib/stripe';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = getStripe();
 
 interface TipModalProps {
   isOpen: boolean;
@@ -242,6 +241,30 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
 
 export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician, customerId }) => {
   if (!isOpen) return null;
+
+  // Check if Stripe is configured
+  const isStripeConfigured = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+  if (!isStripeConfigured) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-gradient-to-br from-slate-800/90 to-blue-900/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-white mb-4">Payment System Coming Soon!</h3>
+            <p className="text-blue-200 mb-6">
+              We're working on integrating secure payments. For now, you can send a thank you message!
+            </p>
+            <button
+              onClick={onClose}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
