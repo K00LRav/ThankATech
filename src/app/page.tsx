@@ -8,6 +8,15 @@ import SignIn from '../components/SignIn';
 import { TipModal } from '../components/TipModal';
 import Footer from '../components/Footer';
 import Link from 'next/link';
+import { useTechnicianEarnings } from '../hooks/useTechnicianEarnings';
+
+// Utility function to format currency
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amount);
+};
 
 interface Technician {
   id: string;
@@ -62,6 +71,11 @@ export default function Home() {
   const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
   const [allProfiles, setAllProfiles] = useState<Technician[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // Hook to fetch technician earnings for header display
+  const { earnings, loading: earningsLoading } = useTechnicianEarnings(
+    currentUser?.userType === 'technician' ? currentUser?.uid : null
+  );
   
   const profile = profiles[currentProfileIndex] || {
     name: '',
@@ -528,6 +542,21 @@ export default function Home() {
                     />
                   )}
                   <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
+                  
+                  {/* Technician Balance Display */}
+                  {currentUser?.userType === 'technician' && (
+                    <div 
+                      className="flex items-center space-x-2 px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-lg cursor-pointer hover:bg-green-500/30 transition-colors duration-200"
+                      title={earningsLoading ? 'Loading earnings...' : `Available: ${formatCurrency(earnings.availableBalance)} | Total Earned: ${formatCurrency(earnings.totalEarnings)}`}
+                    >
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                      <span className="text-green-300 font-semibold text-sm">
+                        {earningsLoading ? '...' : formatCurrency(earnings.availableBalance)}
+                      </span>
+                    </div>
+                  )}
                   
                   {/* Logout Button */}
                   <button
