@@ -215,39 +215,7 @@ export default function TechnicianDashboard() {
     return Math.round((completedFields / fields.length) * 100);
   };
 
-  const handleStripeConnect = async () => {
-    if (!user?.uid || !technicianProfile?.email) {
-      alert('Unable to connect account. Please ensure your profile is complete.');
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/create-express-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          technicianId: user.uid,
-          email: technicianProfile.email,
-          returnUrl: `${window.location.origin}/dashboard?setup=complete`,
-          refreshUrl: `${window.location.origin}/dashboard?refresh=true`,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.onboardingUrl) {
-        // Redirect to Stripe onboarding
-        window.location.href = data.onboardingUrl;
-      } else {
-        throw new Error(data.error || 'Failed to create payment account');
-      }
-    } catch (error) {
-      console.error('Stripe Connect error:', error);
-      alert('Failed to set up payment account. Please try again.');
-    }
-  };
 
   const checkStripeAccountStatus = async () => {
     if (!user?.uid) return;
@@ -430,30 +398,7 @@ export default function TechnicianDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Stripe Account Status - Only show if user has earnings to withdraw */}
-        {stripeAccountStatus === 'none' && realEarnings.availableBalance >= 1.00 && (
-          <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-6 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.982 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-yellow-300 mb-1">Bank Account Setup Required</h3>
-                <p className="text-yellow-200 mb-4">
-                  Connect your bank account to withdraw your earnings. You can continue receiving tips while setting this up.
-                </p>
-                <button
-                  onClick={handleStripeConnect}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-6 py-2 rounded-xl transition-colors"
-                >
-                  Connect Bank Account
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Earnings Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
