@@ -59,52 +59,6 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
     console.log('Fetching registered technicians from Firebase...');
     let technicians = await getRegisteredTechnicians();
     
-    // Filter by category if specified
-    if (category !== 'all') {
-      technicians = technicians.filter(tech => 
-        tech.category === category || 
-        tech.title?.toLowerCase().includes(category.toLowerCase())
-      );
-    }
-    
-    // If no registered technicians, show mock data with location processing
-    if (technicians.length === 0) {
-      console.log('No registered technicians found, using sample data');
-      let mockTechs = getMockTechnicians();
-      
-      // Add coordinates and calculate distances for sample data
-      mockTechs = mockTechs.map(tech => {
-        const coords = parseAddressToCoords(tech.businessAddress);
-        const techWithCoords = {
-          ...tech,
-          isSample: true,
-          coordinates: coords,
-          about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
-        };
-        
-        // Calculate distance if user location is available
-        if (location) {
-          techWithCoords.distance = calculateDistance(
-            location.lat, 
-            location.lng, 
-            coords.lat, 
-            coords.lng
-          );
-          techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
-        }
-        
-        return techWithCoords;
-      });
-      
-      // Sort by distance if location is available
-      if (location) {
-        mockTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-        console.log('Sorted technicians by distance from user location');
-      }
-      
-      return mockTechs.slice(0, maxResults);
-    }
-
     // Process registered technicians with location data
     let processedTechs = technicians.map(tech => {
       const techWithLocation = { ...tech };
@@ -128,14 +82,53 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
       return techWithLocation;
     });
 
-    // Sort by distance if location is available
-    if (location) {
-      processedTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-      console.log('Sorted registered technicians by distance from user location');
+    // Always include mock data alongside registered technicians for demonstration
+    console.log(`Found ${technicians.length} registered technicians, adding sample data for demo`);
+    let mockTechs = getMockTechnicians();
+    
+    // Add coordinates and calculate distances for sample data
+    mockTechs = mockTechs.map(tech => {
+      const coords = parseAddressToCoords(tech.businessAddress);
+      const techWithCoords = {
+        ...tech,
+        isSample: true,
+        coordinates: coords,
+        about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
+      };
+      
+      // Calculate distance if user location is available
+      if (location) {
+        techWithCoords.distance = calculateDistance(
+          location.lat, 
+          location.lng, 
+          coords.lat, 
+          coords.lng
+        );
+        techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
+      }
+      
+      return techWithCoords;
+    });
+
+    // Combine registered and mock technicians
+    let allTechs = [...processedTechs, ...mockTechs];
+
+    // Filter by category if specified
+    if (category !== 'all') {
+      allTechs = allTechs.filter(tech => 
+        tech.category === category || 
+        tech.title?.toLowerCase().includes(category.toLowerCase())
+      );
     }
 
-    console.log(`Found ${processedTechs.length} registered technicians`);
-    return processedTechs.slice(0, maxResults);
+    // Sort by distance if location is available
+    if (location) {
+      allTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+      console.log('Sorted all technicians by distance from user location');
+    }
+
+    console.log(`Returning ${allTechs.length} total technicians (${processedTechs.length} registered + ${mockTechs.length} sample)`);
+    return allTechs.slice(0, maxResults)
 
   } catch (error) {
     console.error('Error fetching technicians:', error);
