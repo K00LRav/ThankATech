@@ -1222,22 +1222,58 @@ export async function getTechnicianEarnings(technicianId) {
   }
   
   try {
-    // Get unified technician data
+    // Get unified technician data - handle both document IDs and Firebase Auth UIDs
     let technicianData = null;
+    let actualTechnicianId = technicianId;
     
-    // Try technicians collection first
+    // First try as a document ID in technicians collection
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
       technicianData = techDoc.data();
+      actualTechnicianId = techDoc.id;
     } else {
-      // Try users collection
+      // Try users collection as document ID
       const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
       if (userDoc.exists()) {
         technicianData = userDoc.data();
+        actualTechnicianId = userDoc.id;
+      } else {
+        // If not found as document ID, try as Firebase Auth UID
+        console.log('💰 Not found as document ID, searching by authUid:', technicianId);
+        
+        // Search technicians collection by authUid
+        const techQuery = query(
+          collection(db, COLLECTIONS.TECHNICIANS),
+          where('authUid', '==', technicianId),
+          limit(1)
+        );
+        const techSnapshot = await getDocs(techQuery);
+        
+        if (!techSnapshot.empty) {
+          const doc = techSnapshot.docs[0];
+          technicianData = doc.data();
+          actualTechnicianId = doc.id;
+        } else {
+          // Search users collection by authUid
+          const userQuery = query(
+            collection(db, COLLECTIONS.USERS),
+            where('authUid', '==', technicianId),
+            where('userType', '==', 'technician'),
+            limit(1)
+          );
+          const userSnapshot = await getDocs(userQuery);
+          
+          if (!userSnapshot.empty) {
+            const doc = userSnapshot.docs[0];
+            technicianData = doc.data();
+            actualTechnicianId = doc.id;
+          }
+        }
       }
     }
     
     console.log('💰 Unified technician data:', technicianData);
+    console.log('💰 Using technician ID:', actualTechnicianId);
     
     if (!technicianData?.email) {
       console.warn('💰 No email found for technician:', technicianId);
@@ -1245,7 +1281,7 @@ export async function getTechnicianEarnings(technicianId) {
     }
     
     // Get all tips for this technician using unified lookup
-    const allTips = await getTipsForTechnician(technicianId, technicianData.email, technicianData.uniqueId);
+    const allTips = await getTipsForTechnician(actualTechnicianId, technicianData.email, technicianData.uniqueId);
     
     console.log('💰 Found', allTips.length, 'total completed tips for technician');
     let totalEarnings = 0;
