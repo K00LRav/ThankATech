@@ -329,19 +329,26 @@ export async function getRegisteredTechnicians() {
       allTips.forEach(tipStr => {
         const tip = JSON.parse(tipStr);
         totalCount += 1;
-        totalAmount += tip.amount || 0;
+        // Use technician payout (net amount after fees) instead of gross amount
+        totalAmount += tip.technicianPayout || tip.amount || 0;
       });
       
       // Set the calculated values
       tech.totalTips = totalCount || tech.totalTips || 0;
       tech.totalTipAmount = totalAmount || tech.totalTipAmount || 0;
       
-      // Debug logging for the user with $1500 in tips
-      if (totalAmount > 1000) {
-        console.log(`🔍 High-tip technician found: ${tech.name} (${tech.email})`);
-        console.log(`📊 Calculated: ${totalCount} tips, $${totalAmount / 100}`);
-        console.log(`🆔 IDs: doc=${tech.id}, email=${tech.email}, unique=${tech.uniqueId}`);
-        console.log(`💰 Matched tips: ${allTips.size}`);
+      // Debug logging for high-value tip recipients  
+      if (totalAmount >= 50000) { // $500 or more
+        console.log(`🔍 HIGH-VALUE TECHNICIAN FOUND: ${tech.name || tech.businessName} (${tech.email})`);
+        console.log(`📊 CALCULATED TOTALS: ${totalCount} tips, $${(totalAmount / 100).toFixed(2)}`);
+        console.log(`🆔 TECHNICIAN IDs: doc=${tech.id}, email=${tech.email}, unique=${tech.uniqueId}`);
+        console.log(`💰 MATCHED TIPS COUNT: ${allTips.size}`);
+        console.log('🔍 MATCHED TIPS BREAKDOWN:', Array.from(allTips).map(tipStr => {
+          const tip = JSON.parse(tipStr);
+          const gross = tip.amount || 0;
+          const net = tip.technicianPayout || tip.amount || 0;
+          return `Gross: $${(gross / 100).toFixed(2)}, Net: $${(net / 100).toFixed(2)} (${tip.paymentIntentId})`;
+        }));
       }
     });
     
