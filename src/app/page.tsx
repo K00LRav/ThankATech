@@ -53,6 +53,7 @@ export default function Home() {
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showTechDashboard, setShowTechDashboard] = useState(false);
   const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
   const [allProfiles, setAllProfiles] = useState<Technician[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -386,9 +387,16 @@ export default function Home() {
   const handleRegistrationComplete = (user: any) => {
     setCurrentUser(user);
     setShowRegistration(false);
-    setThankYouMessage('Welcome to ThankATech! You can now thank technicians.');
+    
+    // Different welcome messages based on user type
+    if (user.userType === 'technician') {
+      setThankYouMessage('Welcome to ThankATech! Your technician profile is now live. Customers can now find and thank you!');
+    } else {
+      setThankYouMessage('Welcome to ThankATech! You can now thank technicians and show your appreciation.');
+    }
+    
     setShowThankYou(true);
-    setTimeout(() => setShowThankYou(false), 3000);
+    setTimeout(() => setShowThankYou(false), 4000); // Longer timeout for technician message
   };
 
   const handleRegistrationClose = () => {
@@ -509,15 +517,27 @@ export default function Home() {
           </div>
           <div className="flex gap-4 items-center">
             {currentUser ? (
-              <div className="flex items-center space-x-3">
-                {currentUser.photoURL && (
-                  <img 
-                    src={currentUser.photoURL} 
-                    alt="Profile" 
-                    className="w-8 h-8 rounded-full border-2 border-white/20"
-                  />
+              <div className="flex items-center space-x-4">
+                {/* Technician Dashboard Button */}
+                {currentUser.userType === 'technician' && (
+                  <button
+                    onClick={() => setShowTechDashboard(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Dashboard
+                  </button>
                 )}
-                <span className="text-gray-300">Welcome, {currentUser.name}!</span>
+                
+                <div className="flex items-center space-x-3">
+                  {currentUser.photoURL && (
+                    <img 
+                      src={currentUser.photoURL} 
+                      alt="Profile" 
+                      className="w-8 h-8 rounded-full border-2 border-white/20"
+                    />
+                  )}
+                  <span className="text-gray-300">Welcome, {currentUser.name}!</span>
+                </div>
               </div>
             ) : (
               <button 
@@ -1040,6 +1060,123 @@ export default function Home() {
       {showThankYou && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
           {thankYouMessage}
+        </div>
+      )}
+
+      {/* Technician Dashboard Modal */}
+      {showTechDashboard && currentUser?.userType === 'technician' && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
+            {/* Dashboard Header */}
+            <div className="p-6 border-b border-white/10">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                    Technician Dashboard
+                  </h2>
+                  <p className="text-gray-300 mt-1">Manage your profile and view your stats</p>
+                </div>
+                <button
+                  onClick={() => setShowTechDashboard(false)}
+                  className="text-gray-400 hover:text-white transition-colors p-2"
+                >
+                  <span className="text-2xl">×</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dashboard Content */}
+            <div className="p-6 space-y-6">
+              {/* Profile Stats */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <p className="text-sm text-gray-400">Rating</p>
+                      <p className="text-xl font-semibold text-white">{currentUser.rating?.toFixed(1) || '5.0'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🙏</span>
+                    <div>
+                      <p className="text-sm text-gray-400">Thank Yous</p>
+                      <p className="text-xl font-semibold text-white">{currentUser.totalThankYous || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">💰</span>
+                    <div>
+                      <p className="text-sm text-gray-400">Total Tips</p>
+                      <p className="text-xl font-semibold text-white">${currentUser.totalTips || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Information */}
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                <h3 className="text-xl font-semibold text-white mb-4">Profile Information</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-400">Business Name</p>
+                    <p className="text-white font-medium">{currentUser.businessName || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Category</p>
+                    <p className="text-white font-medium">{currentUser.category || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Experience</p>
+                    <p className="text-white font-medium">{currentUser.experience || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Hourly Rate</p>
+                    <p className="text-white font-medium">${currentUser.hourlyRate || 'Not set'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <button className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg text-white font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
+                    📝 Edit Profile
+                  </button>
+                  <button className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200">
+                    📊 View Analytics
+                  </button>
+                </div>
+                <p className="text-sm text-gray-400 mt-3">
+                  🚧 Profile editing and analytics features coming soon!
+                </p>
+              </div>
+
+              {/* Achievement Badges */}
+              {currentUser.achievements && currentUser.achievements.length > 0 && (
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+                  <h3 className="text-xl font-semibold text-white mb-4">Your Achievements</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {currentUser.achievements.map((achievement: any, index: number) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-full text-yellow-200 text-sm font-medium"
+                      >
+                        {achievement.icon} {achievement.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
