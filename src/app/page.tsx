@@ -512,6 +512,7 @@ export default function Home() {
                   <Link
                     href={currentUser.userType === 'technician' ? '/dashboard' : '/profile'}
                     className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl text-center"
+
                   >
                     {currentUser.userType === 'technician' ? 'Dashboard' : 'Profile'}
                   </Link>
