@@ -23,10 +23,12 @@ export const useTechnicianEarnings = (technicianId: string | null) => {
       setLoading(true);
       try {
         // Dynamically import to avoid potential circular dependencies
-        console.log('Fetching earnings for technician:', technicianId);
+        console.log('💰 Fetching earnings for technician:', technicianId);
         
         const { getTechnicianEarnings } = await import('../lib/firebase');
         const realEarnings: any = await getTechnicianEarnings(technicianId);
+        
+        console.log('💰 Raw earnings data:', realEarnings);
         
         setEarnings({
           availableBalance: realEarnings.availableBalance || 0,
@@ -34,8 +36,15 @@ export const useTechnicianEarnings = (technicianId: string | null) => {
           pendingBalance: realEarnings.pendingBalance || 0,
           tipCount: realEarnings.tipCount || 0,
         });
+        
+        console.log('💰 Set earnings state:', {
+          availableBalance: realEarnings.availableBalance || 0,
+          totalEarnings: realEarnings.totalEarnings || 0,
+          pendingBalance: realEarnings.pendingBalance || 0,
+          tipCount: realEarnings.tipCount || 0,
+        });
       } catch (error) {
-        console.error('Failed to fetch technician earnings:', error);
+        console.error('❌ Failed to fetch technician earnings:', error);
         // Fallback to zero earnings on error
         setEarnings({
           availableBalance: 0,

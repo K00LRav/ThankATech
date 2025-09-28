@@ -81,13 +81,34 @@ export default function DebugTransactions() {
                       <strong>Technician ID:</strong> {transaction.technicianId}
                     </div>
                     <div>
+                      <strong>Technician Name:</strong> {transaction.technicianName || 'N/A'}
+                    </div>
+                    <div>
+                      <strong>Technician Email:</strong> {transaction.technicianEmail || 'N/A'}
+                    </div>
+                    <div>
+                      <strong>Technician Unique ID:</strong> {transaction.technicianUniqueId || 'N/A'}
+                    </div>
+                    <div>
                       <strong>Customer ID:</strong> {transaction.customerId}
+                    </div>
+                    <div>
+                      <strong>Customer Name:</strong> {transaction.customerName || 'N/A'}
+                    </div>
+                    <div>
+                      <strong>Customer Unique ID:</strong> {transaction.customerUniqueId || 'N/A'}
                     </div>
                     <div>
                       <strong>Payment Intent:</strong> {transaction.paymentIntentId}
                     </div>
                     <div>
                       <strong>Created:</strong> {new Date(transaction.createdAt).toLocaleString()}
+                    </div>
+                    <div className="col-span-2">
+                      <strong>Full Data:</strong> 
+                      <pre className="bg-slate-600 p-2 rounded mt-1 text-xs overflow-x-auto">
+                        {JSON.stringify(transaction, null, 2)}
+                      </pre>
                     </div>
                   </div>
                 </div>

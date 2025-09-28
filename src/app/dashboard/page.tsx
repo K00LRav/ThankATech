@@ -299,16 +299,25 @@ export default function TechnicianDashboard() {
     const loadTransactions = async () => {
       if (technicianProfile) {
         try {
-          console.log('Loading transactions for technician:', technicianProfile);
+          console.log('🔍 Loading transactions for technician:', {
+            id: technicianProfile.id,
+            email: technicianProfile.email,
+            uniqueId: (technicianProfile as any).uniqueId,
+            name: technicianProfile.name
+          });
+          
           const realTransactions = await getTechnicianTransactions(
             technicianProfile.id, 
             technicianProfile.email, 
             (technicianProfile as any).uniqueId
           );
-          console.log('Loaded real transactions:', realTransactions);
+          
+          console.log('📊 Loaded real transactions:', realTransactions);
+          console.log('📊 Transaction count:', realTransactions.length);
+          
           setTransactions(realTransactions);
         } catch (error) {
-          console.error('Error loading transactions:', error);
+          console.error('❌ Error loading transactions:', error);
           setTransactions([]); // Set empty array on error
         }
       }
