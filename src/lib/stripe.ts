@@ -23,13 +23,12 @@ export const getServerStripe = () => {
 
 // Platform fee configuration
 export const PLATFORM_CONFIG = {
-  feePercentage: parseInt(process.env.PLATFORM_FEE_PERCENTAGE || '5'), // 5%
-  feeFixed: parseInt(process.env.PLATFORM_FEE_FIXED || '30'), // $0.30 in cents
+  flatFee: parseInt(process.env.PLATFORM_FLAT_FEE || '99'), // $0.99 flat fee in cents
 };
 
 // Calculate platform fee
 export const calculatePlatformFee = (amount: number): number => {
-  return Math.round((amount * PLATFORM_CONFIG.feePercentage) / 100) + PLATFORM_CONFIG.feeFixed;
+  return PLATFORM_CONFIG.flatFee;
 };
 
 // Calculate technician payout (after platform fee)

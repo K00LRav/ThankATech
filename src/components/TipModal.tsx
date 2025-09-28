@@ -185,7 +185,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
               <span>{formatCurrency(currentAmountCents)}</span>
             </div>
             <div className="flex justify-between text-blue-300">
-              <span>Platform Fee (5% + $0.30):</span>
+              <span>ThankATech Platform Fee:</span>
               <span>{formatCurrency(platformFee)}</span>
             </div>
             <div className="flex justify-between font-semibold text-green-300 border-t border-white/20 pt-2">

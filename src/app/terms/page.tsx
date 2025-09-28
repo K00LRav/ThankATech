@@ -136,19 +136,87 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-blue-400 mb-4">Payments and Fees</h2>
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">Payments, Tips, and Platform Fees</h2>
             <div className="space-y-4">
-              <p className="text-gray-300 leading-relaxed">
-                ThankATech facilitates connections between users but does not process service payments. 
-                Payment arrangements are between customers and technicians directly.
-              </p>
-              <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                <li>Tips sent through our platform are processed securely</li>
-                <li>We may charge fees for premium features in the future</li>
-                <li>All transactions are subject to applicable taxes</li>
-                <li>Refund policies apply to platform fees only</li>
-                <li>Service disputes are between customers and technicians</li>
-              </ul>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Service Payments</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  ThankATech facilitates connections between users but does not process service payments directly. 
+                  Payment arrangements for services are between customers and technicians directly.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Tips and Appreciation Payments</h3>
+                <p className="text-gray-300 leading-relaxed mb-2">
+                  Tips sent through our platform are processed securely using Stripe, Inc. as our payment processor:
+                </p>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Payment Processing:</strong> All tip transactions are handled by Stripe with bank-level security</li>
+                  <li><strong>Supported Payment Methods:</strong> Credit cards, debit cards, and other methods supported by Stripe</li>
+                  <li><strong>Transaction Security:</strong> PCI DSS Level 1 compliance and end-to-end encryption</li>
+                  <li><strong>Receipt Generation:</strong> Automatic receipts provided for all transactions</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Platform Fee Structure</h3>
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <p className="text-gray-300 leading-relaxed mb-2">
+                    <strong>Flat Platform Fee:</strong> $0.99 per tip transaction
+                  </p>
+                  <p className="text-gray-300 leading-relaxed mb-2">This fee covers:</p>
+                  <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                    <li>Secure payment processing through Stripe</li>
+                    <li>Platform maintenance, security, and infrastructure</li>
+                    <li>Customer support and dispute resolution</li>
+                    <li>Fraud protection and transaction monitoring</li>
+                    <li>Compliance with financial regulations (PCI DSS, AML, KYC)</li>
+                    <li>Data security and privacy protection</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Payment Terms and Conditions</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Authorization:</strong> By submitting payment information, you authorize the transaction</li>
+                  <li><strong>Accuracy:</strong> You are responsible for providing accurate payment information</li>
+                  <li><strong>Declined Payments:</strong> Failed transactions may result in fees from your financial institution</li>
+                  <li><strong>Currency:</strong> All transactions are processed in US Dollars (USD)</li>
+                  <li><strong>Taxes:</strong> You are responsible for any applicable taxes on tips and fees</li>
+                  <li><strong>Receipts:</strong> Electronic receipts are provided for all successful transactions</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Refunds and Disputes</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Tip Refunds:</strong> Tips are generally non-refundable once processed</li>
+                  <li><strong>Platform Fee Refunds:</strong> Platform fees may be refunded in cases of technical errors</li>
+                  <li><strong>Disputed Transactions:</strong> Contact us immediately for unauthorized transactions</li>
+                  <li><strong>Chargeback Policy:</strong> Chargebacks may result in account suspension pending investigation</li>
+                  <li><strong>Resolution Process:</strong> We work with Stripe to resolve payment disputes fairly</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Technician Payouts</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Technicians receive tips minus the $0.99 platform fee</li>
+                  <li>Payouts are processed according to Stripe&apos;s standard schedule</li>
+                  <li>Technicians are responsible for tax reporting on received tips</li>
+                  <li>Valid bank account information required for payouts</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Third-Party Payment Processor</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  By using our payment features, you also agree to Stripe&apos;s Terms of Service and Privacy Policy. 
+                  Stripe may collect additional information and have their own data practices separate from ours.
+                </p>
+              </div>
             </div>
           </section>
 

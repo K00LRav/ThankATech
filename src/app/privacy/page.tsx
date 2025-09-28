@@ -154,15 +154,85 @@ export default function Privacy() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">Payment Processing & Stripe Integration</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                We use Stripe, Inc. (&quot;Stripe&quot;) as our payment processor to handle all financial transactions 
+                securely. This section explains how your payment information is handled:
+              </p>
+              
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Payment Data Security</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>PCI DSS Compliance:</strong> Stripe is certified as a PCI Level 1 Service Provider</li>
+                  <li><strong>Card Data:</strong> We never store your complete credit card information</li>
+                  <li><strong>Tokenization:</strong> Card details are converted to secure tokens by Stripe</li>
+                  <li><strong>Encryption:</strong> All payment data is encrypted in transit and at rest</li>
+                  <li><strong>3D Secure:</strong> Additional authentication for enhanced security</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Information Collected for Payments</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Billing name and address</li>
+                  <li>Credit/debit card information (processed by Stripe)</li>
+                  <li>Transaction history and receipt information</li>
+                  <li>Device and browser information for fraud prevention</li>
+                  <li>IP address and geolocation data for security verification</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Payment Data Usage</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Processing tips and payments to technicians</li>
+                  <li>Calculating and collecting platform fees</li>
+                  <li>Generating receipts and transaction records</li>
+                  <li>Fraud detection and prevention</li>
+                  <li>Compliance with financial regulations (AML, KYC)</li>
+                  <li>Resolving payment disputes and chargebacks</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Stripe&apos;s Role and Responsibilities</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Stripe acts as our payment processor and may collect additional information</li>
+                  <li>Stripe&apos;s privacy policy governs their handling of your payment data</li>
+                  <li>Stripe may use your information for their own fraud prevention and compliance</li>
+                  <li>You can review Stripe&apos;s privacy policy at <a href="https://stripe.com/privacy" className="text-blue-400 hover:text-blue-300 transition-colors" target="_blank" rel="noopener noreferrer">stripe.com/privacy</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Platform Fee Structure</h3>
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <p className="text-gray-300 leading-relaxed">
+                    ThankATech charges a flat platform fee of $0.99 per transaction. This fee covers:
+                  </p>
+                  <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4 mt-2">
+                    <li>Payment processing through Stripe</li>
+                    <li>Platform maintenance and security</li>
+                    <li>Customer support and dispute resolution</li>
+                    <li>Fraud protection and monitoring</li>
+                    <li>Compliance with financial regulations</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-bold text-green-400 mb-4">Third-Party Services</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
               Our platform integrates with third-party services to enhance functionality:
             </p>
             <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-              <li>Google Sign-In for authentication</li>
-              <li>Firebase for data storage and authentication</li>
-              <li>Payment processors for secure transactions</li>
-              <li>Analytics services for platform improvement</li>
+              <li><strong>Google Sign-In:</strong> For secure authentication and profile management</li>
+              <li><strong>Firebase:</strong> For data storage, authentication, and real-time features</li>
+              <li><strong>Stripe:</strong> For secure payment processing (see Payment Processing section above)</li>
+              <li><strong>Analytics services:</strong> For platform improvement and usage insights</li>
             </ul>
             <p className="text-gray-300 leading-relaxed mt-4">
               These services have their own privacy policies, and we encourage you to review them.

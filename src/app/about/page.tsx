@@ -159,6 +159,59 @@ export default function About() {
           </div>
         </section>
 
+        {/* Payment Security */}
+        <section className="mb-16">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+            <h2 className="text-3xl font-bold text-green-400 mb-8 text-center">Secure Payment Processing</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-blue-400">Bank-Level Security</h3>
+                <ul className="space-y-3 text-gray-300">
+                  <li className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    Powered by Stripe - PCI DSS Level 1 certified
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    End-to-end encryption for all transactions
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    We never store your credit card information
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    3D Secure authentication for added protection
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                    Real-time fraud detection and prevention
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-blue-400">Simple Fee Structure</h3>
+                <div className="bg-white/5 rounded-lg p-6 border border-white/10">
+                  <div className="text-center mb-4">
+                    <span className="text-3xl font-bold text-green-400">$0.99</span>
+                    <p className="text-gray-300">Flat platform fee per tip</p>
+                  </div>
+                  <ul className="space-y-2 text-gray-300 text-sm">
+                    <li>✅ Secure payment processing</li>
+                    <li>✅ Platform maintenance & security</li>
+                    <li>✅ Customer support</li>
+                    <li>✅ Fraud protection</li>
+                    <li>✅ Regulatory compliance</li>
+                  </ul>
+                  <p className="text-xs text-gray-400 mt-4 text-center">
+                    Technicians receive tips minus the platform fee
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Get Started CTA */}
         <section className="text-center">
           <div className="bg-gradient-to-r from-indigo-500/20 to-blue-800/20 backdrop-blur-sm rounded-2xl border border-white/10 p-12">

@@ -191,12 +191,23 @@ export async function sendThankYou(technicianId, userId, message = '') {
       points: 10 // 10 points per thank you
     });
 
-    // Update technician points
+    // Update technician points (with existence check for mock data)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
-    await updateDoc(technicianRef, {
-      points: increment(10),
-      totalThankYous: increment(1)
-    });
+    try {
+      // First check if the document exists
+      const techDoc = await getDoc(technicianRef);
+      if (techDoc.exists()) {
+        await updateDoc(technicianRef, {
+          points: increment(10),
+          totalThankYous: increment(1)
+        });
+      } else {
+        console.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
+      }
+    } catch (error) {
+      console.warn(`Unable to update technician document ${technicianId}:`, error.message);
+      // Continue execution - this is OK for mock data
+    }
 
     // Update user stats (with existence check)
     if (userId) {
@@ -240,12 +251,23 @@ export async function sendTip(technicianId, userId, amount, message = '') {
       points
     });
 
-    // Update technician points
+    // Update technician points (with existence check for mock data)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
-    await updateDoc(technicianRef, {
-      points: increment(points),
-      totalTips: increment(amount)
-    });
+    try {
+      // First check if the document exists
+      const techDoc = await getDoc(technicianRef);
+      if (techDoc.exists()) {
+        await updateDoc(technicianRef, {
+          points: increment(points),
+          totalTips: increment(amount)
+        });
+      } else {
+        console.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
+      }
+    } catch (error) {
+      console.warn(`Unable to update technician document ${technicianId}:`, error.message);
+      // Continue execution - this is OK for mock data
+    }
 
     // Update user stats (with existence check)
     if (userId) {
@@ -276,11 +298,20 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
     await uploadBytes(photoRef, photoFile);
     const downloadURL = await getDownloadURL(photoRef);
     
-    // Update technician record with photo URL
+    // Update technician record with photo URL (with existence check)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
-    await updateDoc(technicianRef, {
-      image: downloadURL
-    });
+    try {
+      const techDoc = await getDoc(technicianRef);
+      if (techDoc.exists()) {
+        await updateDoc(technicianRef, {
+          image: downloadURL
+        });
+      } else {
+        console.warn(`Technician document ${technicianId} not found for photo update. This is normal for mock data.`);
+      }
+    } catch (error) {
+      console.warn(`Unable to update technician photo for ${technicianId}:`, error.message);
+    }
     
     return downloadURL;
   } catch (error) {
@@ -335,14 +366,23 @@ export async function claimBusiness(technicianId, claimData) {
       createdAt: new Date()
     });
 
-    // Update the technician record to mark as claimed
+    // Update the technician record to mark as claimed (with existence check)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
-    await updateDoc(technicianRef, {
-      isClaimed: true,
-      claimedBy: claimData.ownerName,
-      claimedAt: new Date(),
-      claimId: docRef.id
-    });
+    try {
+      const techDoc = await getDoc(technicianRef);
+      if (techDoc.exists()) {
+        await updateDoc(technicianRef, {
+          isClaimed: true,
+          claimedBy: claimData.ownerName,
+          claimedAt: new Date(),
+          claimId: docRef.id
+        });
+      } else {
+        console.warn(`Technician document ${technicianId} not found for business claim. This is normal for mock data.`);
+      }
+    } catch (error) {
+      console.warn(`Unable to update technician claim status for ${technicianId}:`, error.message);
+    }
 
     return { success: true, claimId: docRef.id };
   } catch (error) {

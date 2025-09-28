@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '@/lib/firebase.js';
+import { auth, db, registerUser, deleteUserProfile, authHelpers } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -207,6 +208,33 @@ Please complete your profile information below and click "Save Changes" to creat
       setFormError('Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!user || !profile) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete your ${profile.userType} profile? This action cannot be undone and will permanently delete your account and all associated data.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      setFormError(null);
+      
+      await deleteUserProfile(user.uid, profile.userType);
+      
+      // Sign out and redirect to home
+      await auth.signOut();
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      setFormError('Failed to delete profile. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -869,30 +897,53 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Save Button */}
-          <div className="flex justify-end gap-4">
-            <Link
-              href={profile?.userType === 'technician' ? '/dashboard' : '/'}
-              className="px-8 py-3 border border-blue-500/30 rounded-xl text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200 font-medium"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-8 py-3 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 disabled:opacity-50"
-            >
-              {isSaving ? (
-                <div className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Saving...
-                </div>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
+          <div className="flex justify-between items-center">
+            <div>
+              <button
+                type="button"
+                onClick={handleDeleteProfile}
+                disabled={isDeleting}
+                className="px-6 py-3 bg-red-600/20 border border-red-500/50 text-red-300 rounded-xl font-medium hover:bg-red-600/30 hover:text-red-200 transition-all duration-200 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Deleting...
+                  </div>
+                ) : (
+                  'Delete Profile'
+                )}
+              </button>
+            </div>
+            
+            <div className="flex gap-4">
+              <Link
+                href={profile?.userType === 'technician' ? '/dashboard' : '/'}
+                className="px-8 py-3 border border-blue-500/30 rounded-xl text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200 font-medium"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-8 py-3 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
