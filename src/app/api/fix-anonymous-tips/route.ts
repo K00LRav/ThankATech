@@ -1,10 +1,12 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔧 Starting to fix anonymous tips...');
+    
+    // Dynamically import Firebase Admin to avoid build-time issues
+    const { adminDb } = await import('@/lib/firebase-admin');
     
     if (!adminDb) {
       return NextResponse.json(

@@ -1,19 +1,40 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// Initialize Stripe only if secret key is available
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
 export async function POST(request: Request) {
   try {
+    // Check if required services are available
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+
     const { technicianId } = await request.json();
 
     if (!technicianId) {
       return NextResponse.json(
         { error: 'Missing technician ID' },
         { status: 400 }
+      );
+    }
+
+    // Dynamically import Firebase to avoid build-time issues
+    const { doc, updateDoc, getDoc } = await import('firebase/firestore');
+    const { db } = await import('@/lib/firebase');
+
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Firebase not configured' },
+        { status: 503 }
       );
     }
 
