@@ -105,7 +105,7 @@ export default function Home() {
 
     // Rating milestones
     if (dynamicRating >= 4.8) badges.push({ icon: '🌟', text: 'Excellence', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (dynamicRating >= 4.5) badges.push({ icon: '✨', text: 'Outstanding', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' });
+    else if (dynamicRating >= 4.5) badges.push({ icon: '✨', text: 'Outstanding', color: 'bg-blue-100 text-blue-800 border-blue-300' });
 
     // Experience badges (based on profile data)
     if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-purple-100 text-purple-800 border-purple-300' });
@@ -463,8 +463,8 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-400 mx-auto mb-4"></div>
-          <p className="text-indigo-300 font-semibold">Loading amazing technicians near you...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-blue-300 font-semibold">Loading amazing technicians near you...</p>
         </div>
       </div>
     );
@@ -478,7 +478,7 @@ export default function Home() {
           <p className="text-red-400 font-semibold mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-colors duration-200"
+            className="px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-500 transition-colors duration-200"
           >
             Try Again
           </button>
@@ -503,7 +503,7 @@ export default function Home() {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       <div className="relative z-10">
@@ -558,7 +558,7 @@ export default function Home() {
               <div className="flex gap-3 items-center">
                 <button 
                   onClick={() => setShowSignIn(true)}
-                  className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
+                  className="text-gray-300 hover:text-blue-400 transition-colors duration-200 font-medium"
                 >
                   Sign In
                 </button>
@@ -586,7 +586,7 @@ export default function Home() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
             >
               {getAvailableCategories().map((category) => (
                 <option key={category.value} value={category.value} className="bg-slate-800 text-white">
@@ -629,7 +629,7 @@ export default function Home() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search technicians by name, category, business, or location..."
-                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
               />
               {searchQuery && (
                 <button
@@ -659,7 +659,7 @@ export default function Home() {
         {/* Sample Data Notice */}
                 {/* Location Permission Banner */}
         {locationPermission === 'denied' && (
-          <div className="mb-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm border border-blue-300/30 rounded-2xl p-4">
+          <div className="mb-6 bg-gradient-to-r from-blue-500/20 to-blue-600/20 backdrop-blur-sm border border-blue-300/30 rounded-2xl p-4">
             <div className="text-blue-100">
               <h3 className="font-semibold mb-2 text-lg">📍 Location Services Disabled</h3>
               <p className="text-sm text-blue-200">
@@ -679,7 +679,7 @@ export default function Home() {
         <div id="rolodex-card" className={`card-container relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
           {/* Glass morphism background layers - Wider and dynamic height */}
           <div className={`absolute top-3 left-3 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/20 to-blue-700/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
-          <div className={`absolute top-1.5 left-1.5 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
+          <div className={`absolute top-1.5 left-1.5 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/15 to-blue-700/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
           
           {/* Main Modern Card - Responsive width with proper overflow control */}
           <div className="relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
@@ -718,7 +718,7 @@ export default function Home() {
                 {/* Name and Title */}
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{profile.name}</h2>
-                  <p className="text-sm sm:text-base lg:text-lg text-indigo-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
+                  <p className="text-sm sm:text-base lg:text-lg text-blue-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
                   {profile.serviceArea && (
                     <p className="text-xs text-gray-500 mt-1 flex items-center">
                       <span className="mr-1">📍</span>
@@ -778,10 +778,10 @@ export default function Home() {
                     </div>
                   )}
                   {profile.businessEmail && (
-                    <div className="bg-indigo-50/80 backdrop-blur-sm rounded-lg p-3 border border-indigo-100 col-span-2">
+                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100 col-span-2">
                       <div className="flex items-start space-x-2">
-                        <span className="text-indigo-500 mt-0.5">✉️</span>
-                        <span className="text-xs sm:text-sm text-indigo-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
+                        <span className="text-blue-500 mt-0.5">✉️</span>
+                        <span className="text-xs sm:text-sm text-blue-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
                       </div>
                     </div>
                   )}
@@ -874,7 +874,7 @@ export default function Home() {
                     <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
                       <h4 className="text-sm font-semibold text-gray-800 mb-2">🔧 Service Specialties</h4>
                       <div className="flex flex-wrap gap-1">
-                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
                           <span>{getCategoryIcon(profile.category, profile.title)}</span>
                           {formatCategory(profile.category)}
                         </span>
@@ -889,7 +889,7 @@ export default function Home() {
 
                     {/* Achievement Badges Section */}
                     {achievementBadges.length > 0 && (
-                      <div className="bg-gradient-to-r from-purple-50/80 to-indigo-50/80 backdrop-blur-sm rounded-xl p-3 border border-purple-200">
+                      <div className="bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm rounded-xl p-3 border border-blue-200">
                         <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Achievements</h4>
                         <div className="grid grid-cols-1 gap-2">
                           {achievementBadges.map((badge, index) => (

@@ -54,7 +54,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
       {/* FAQ Section */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             Frequently Asked Questions
           </h2>
           <p className="text-gray-300 mt-2">Everything you need to know about ThankATech</p>
@@ -71,7 +71,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
                 className="w-full text-left p-6 hover:bg-white/5 transition-colors duration-200 flex justify-between items-center"
               >
                 <span className="font-semibold text-white pr-4">{faq.question}</span>
-                <span className={`text-indigo-400 transition-transform duration-200 ${expandedFAQ === index ? 'rotate-180' : ''}`}>
+                <span className={`text-blue-400 transition-transform duration-200 ${expandedFAQ === index ? 'rotate-180' : ''}`}>
                   ▼
                 </span>
               </button>
@@ -93,10 +93,10 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
             {/* Company Info */}
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
                   <span className="text-xl font-bold">🔧</span>
                 </div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                   ThankATech
                 </h3>
               </div>
@@ -133,7 +133,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-indigo-400">Quick Links</h4>
+              <h4 className="text-lg font-semibold mb-4 text-blue-400">Quick Links</h4>
               <ul className="space-y-3">
                 <li><Link href="/" className="text-gray-300 hover:text-white transition-colors">Find Technicians</Link></li>
                 <li>
@@ -150,7 +150,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
             {/* Support */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-indigo-400">Support</h4>
+              <h4 className="text-lg font-semibold mb-4 text-blue-400">Support</h4>
               <ul className="space-y-3">
                 <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Support</Link></li>
                 <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">Help Center</Link></li>

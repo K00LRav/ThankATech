@@ -188,8 +188,8 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               onClick={() => setUserType('customer')}
               className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:scale-105 ${
                 userType === 'customer' 
-                  ? 'border-indigo-500 bg-indigo-50/80 text-indigo-700 shadow-lg' 
-                  : 'border-gray-300 bg-white/50 hover:border-indigo-300 hover:bg-indigo-50/30'
+                  ? 'border-blue-500 bg-blue-50/80 text-blue-700 shadow-lg' 
+                  : 'border-gray-300 bg-white/50 hover:border-blue-300 hover:bg-blue-50/30'
               }`}
             >
               <div className="text-3xl mb-2">👤</div>
@@ -227,7 +227,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
 
@@ -243,7 +243,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 onChange={handleInputChange}
                 required
                 readOnly={!!googleUser}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   googleUser ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -261,7 +261,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -276,7 +276,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 value={formData.location}
                 onChange={handleInputChange}
                 placeholder="Atlanta, GA"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
