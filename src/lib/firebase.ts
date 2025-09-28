@@ -270,34 +270,78 @@ export async function getRegisteredTechnicians() {
     const tipsSnapshot = await getDocs(collection(db, 'tips'));
     const tipsByTechnician = new Map();
     
+    // First pass: group tips by various identifiers
+    const tipsByTechId = new Map();
+    const tipsByEmail = new Map();
+    const tipsByUniqueId = new Map();
+    
     tipsSnapshot.forEach((tipDoc) => {
       const tipData = tipDoc.data();
-      const techId = tipData.technicianId;
       
-      if (techId) {
-        if (!tipsByTechnician.has(techId)) {
-          tipsByTechnician.set(techId, {
-            count: 0,
-            totalAmount: 0
-          });
+      // Group by technician ID
+      if (tipData.technicianId) {
+        if (!tipsByTechId.has(tipData.technicianId)) {
+          tipsByTechId.set(tipData.technicianId, []);
         }
-        
-        const current = tipsByTechnician.get(techId);
-        current.count += 1;
-        current.totalAmount += tipData.amount || 0;
+        tipsByTechId.get(tipData.technicianId).push(tipData);
+      }
+      
+      // Group by technician email
+      if (tipData.technicianEmail) {
+        if (!tipsByEmail.has(tipData.technicianEmail)) {
+          tipsByEmail.set(tipData.technicianEmail, []);
+        }
+        tipsByEmail.get(tipData.technicianEmail).push(tipData);
+      }
+      
+      // Group by technician unique ID
+      if (tipData.technicianUniqueId) {
+        if (!tipsByUniqueId.has(tipData.technicianUniqueId)) {
+          tipsByUniqueId.set(tipData.technicianUniqueId, []);
+        }
+        tipsByUniqueId.get(tipData.technicianUniqueId).push(tipData);
       }
     });
 
-    // Enhance technicians with calculated tip data
+    // Enhance technicians with calculated tip data using multiple matching strategies
     technicians.forEach(tech => {
-      const tips = tipsByTechnician.get(tech.id);
-      if (tips) {
-        tech.totalTips = tips.count;
-        tech.totalTipAmount = tips.totalAmount;
-      } else {
-        // Ensure these fields exist even if no tips
-        tech.totalTips = tech.totalTips || 0;
-        tech.totalTipAmount = tech.totalTipAmount || 0;
+      const allTips = new Set(); // Use Set to avoid duplicates
+      
+      // Match by technician document ID
+      if (tipsByTechId.has(tech.id)) {
+        tipsByTechId.get(tech.id).forEach(tip => allTips.add(JSON.stringify(tip)));
+      }
+      
+      // Match by email
+      if (tech.email && tipsByEmail.has(tech.email)) {
+        tipsByEmail.get(tech.email).forEach(tip => allTips.add(JSON.stringify(tip)));
+      }
+      
+      // Match by unique ID
+      if (tech.uniqueId && tipsByUniqueId.has(tech.uniqueId)) {
+        tipsByUniqueId.get(tech.uniqueId).forEach(tip => allTips.add(JSON.stringify(tip)));
+      }
+      
+      // Calculate totals from all matched tips
+      let totalCount = 0;
+      let totalAmount = 0;
+      
+      allTips.forEach(tipStr => {
+        const tip = JSON.parse(tipStr);
+        totalCount += 1;
+        totalAmount += tip.amount || 0;
+      });
+      
+      // Set the calculated values
+      tech.totalTips = totalCount || tech.totalTips || 0;
+      tech.totalTipAmount = totalAmount || tech.totalTipAmount || 0;
+      
+      // Debug logging for the user with $1500 in tips
+      if (totalAmount > 1000) {
+        console.log(`🔍 High-tip technician found: ${tech.name} (${tech.email})`);
+        console.log(`📊 Calculated: ${totalCount} tips, $${totalAmount / 100}`);
+        console.log(`🆔 IDs: doc=${tech.id}, email=${tech.email}, unique=${tech.uniqueId}`);
+        console.log(`💰 Matched tips: ${allTips.size}`);
       }
     });
     
