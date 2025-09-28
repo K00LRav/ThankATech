@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/stripe';
-import { auth, db, migrateTechnicianProfile } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { auth, db, migrateTechnicianProfile, getTechnicianTransactions } from '@/lib/firebase';
+import { onAuthStateChanged, Auth } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore } from 'firebase/firestore';
 import Link from 'next/link';
 import PayoutModal from '@/components/PayoutModal';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
@@ -13,6 +13,7 @@ interface TechnicianProfile {
   id: string;
   name: string;
   email: string;
+  uniqueId?: string;
   businessName?: string;
   category: string;
   title?: string;
@@ -57,12 +58,12 @@ export default function TechnicianDashboard() {
 
   // Load user and technician profile
   useEffect(() => {
-    if (!auth) {
+    if (!(auth as Auth)) {
       setIsLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth as Auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         
@@ -70,7 +71,7 @@ export default function TechnicianDashboard() {
           let technicianFound = false;
           
           // First, try to fetch technician profile from technicians collection
-          const techDoc = await getDoc(doc(db, 'technicians', firebaseUser.uid));
+          const techDoc = await getDoc(doc(db as Firestore, 'technicians', firebaseUser.uid));
           
           if (techDoc.exists()) {
             const techData = { id: techDoc.id, ...techDoc.data() } as TechnicianProfile;
@@ -86,7 +87,7 @@ export default function TechnicianDashboard() {
           
           // If not found in technicians collection, check users collection
           if (!technicianFound) {
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            const userDoc = await getDoc(doc(db as Firestore, 'users', firebaseUser.uid));
             if (userDoc.exists()) {
               const userData = userDoc.data();
               
@@ -118,7 +119,7 @@ export default function TechnicianDashboard() {
             
             // Search technicians collection
             const techQuery = query(
-              collection(db, 'technicians'),
+              collection(db as Firestore, 'technicians'),
               where('email', '==', firebaseUser.email),
               limit(1)
             );
@@ -132,7 +133,7 @@ export default function TechnicianDashboard() {
             } else {
               // Search users collection
               const userQuery = query(
-                collection(db, 'users'),
+                collection(db as Firestore, 'users'),
                 where('email', '==', firebaseUser.email),
                 where('userType', '==', 'technician'),
                 limit(1)
@@ -154,26 +155,7 @@ export default function TechnicianDashboard() {
             }
           }
           
-          // TODO: Load real transactions from Firestore
-          // For now, using mock data
-          setTransactions([
-            {
-              id: '1',
-              amount: 2500,
-              customerName: 'Sarah Johnson',
-              date: '2025-09-28',
-              status: 'completed',
-              platformFee: 155,
-            },
-            {
-              id: '2',
-              amount: 1000,
-              customerName: 'Mike Chen',
-              date: '2025-09-27',
-              status: 'completed',
-              platformFee: 80,
-            },
-          ]);
+          // Transactions will be loaded in a separate useEffect when technicianProfile is set
           
           // Debug logging and migration attempt
           if (!technicianFound) {
@@ -311,6 +293,29 @@ export default function TechnicianDashboard() {
       window.history.replaceState({}, document.title, '/dashboard');
     }
   }, [user]);
+
+  // Load transactions when technician profile is available
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (technicianProfile) {
+        try {
+          console.log('Loading transactions for technician:', technicianProfile);
+          const realTransactions = await getTechnicianTransactions(
+            technicianProfile.id, 
+            technicianProfile.email, 
+            (technicianProfile as any).uniqueId
+          );
+          console.log('Loaded real transactions:', realTransactions);
+          setTransactions(realTransactions);
+        } catch (error) {
+          console.error('Error loading transactions:', error);
+          setTransactions([]); // Set empty array on error
+        }
+      }
+    };
+
+    loadTransactions();
+  }, [technicianProfile]);
 
   // Check account status periodically
   useEffect(() => {

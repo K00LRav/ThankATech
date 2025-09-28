@@ -54,6 +54,29 @@ const COLLECTIONS = {
   TIPS: 'tips'
 };
 
+// Helper functions for unique ID generation
+/**
+ * Create a unique ID from email, first name, and last name
+ * @param {string} email - User's email address
+ * @param {string} firstName - User's first name (optional)
+ * @param {string} lastName - User's last name (optional)
+ * @returns {string} Unique ID string
+ */
+function createUniqueId(email, firstName = '', lastName = '') {
+  const emailPart = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const namePart = `${firstName}_${lastName}`.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  return `${namePart}_${emailPart}`.replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
+
+/**
+ * Create a unique ID from email only (for cases where names aren't available)
+ * @param {string} email - User's email address
+ * @returns {string} Unique ID string
+ */
+function createUniqueIdFromEmail(email) {
+  return email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
 /**
  * Register a new technician in Firebase
  */
@@ -64,14 +87,38 @@ export async function registerTechnician(technicianData) {
   }
 
   try {
-    // Check if technician with this email already exists
+    // Generate unique ID from email and names
+    const uniqueId = createUniqueId(
+      technicianData.email, 
+      technicianData.name?.split(' ')[0] || '', 
+      technicianData.name?.split(' ').slice(1).join(' ') || ''
+    );
+    
+    // Check if unique ID is already taken
+    const existingUser = await findUserByUniqueId(uniqueId);
+    if (existingUser) {
+      console.log('❌ User already exists with unique ID:', uniqueId);
+      throw new Error(`An account is already registered with this name and email combination. Please sign in instead or use different details.`);
+    }
+    
+    // Double-check by email for legacy users
     const existingTechnician = await findTechnicianByEmail(technicianData.email);
-    if (existingTechnician) {
+    if (existingTechnician && !existingTechnician.uniqueId) {
+      // Migrate existing technician to use unique ID
+      console.log('🔄 Migrating existing technician to unique ID system');
+      await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, existingTechnician.id), {
+        uniqueId: uniqueId
+      });
+      return { ...existingTechnician, uniqueId };
+    } else if (existingTechnician) {
       console.log('❌ Technician already exists with this email:', technicianData.email);
       throw new Error(`A technician is already registered with email ${technicianData.email}. Please sign in instead or use a different email.`);
     }
     // Create a complete technician profile
     const technicianProfile = {
+      // Unique identifier
+      uniqueId: uniqueId,
+      
       // Basic info
       name: technicianData.name,
       email: technicianData.email,
@@ -127,8 +174,22 @@ export async function registerUser(userData) {
   }
 
   try {
+    // Generate unique ID from email and display name
+    const displayName = userData.displayName || userData.name || '';
+    const firstName = displayName.split(' ')[0] || '';
+    const lastName = displayName.split(' ').slice(1).join(' ') || '';
+    const uniqueId = createUniqueId(userData.email, firstName, lastName);
+    
+    // Check if unique ID is already taken
+    const existingUser = await findUserByUniqueId(uniqueId);
+    if (existingUser) {
+      console.log('❌ User already exists with unique ID:', uniqueId);
+      throw new Error(`An account is already registered with this name and email combination. Please sign in instead.`);
+    }
+    
     const docRef = await addDoc(collection(db, COLLECTIONS.USERS), {
       ...userData,
+      uniqueId: uniqueId,
       createdAt: new Date(),
       totalThankYousSent: 0,
       totalTipsSent: 0,
@@ -136,7 +197,7 @@ export async function registerUser(userData) {
       profileImage: userData.photoURL || null
     });
     
-    return { id: docRef.id, ...userData };
+    return { id: docRef.id, uniqueId, ...userData };
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
@@ -487,46 +548,80 @@ export const authHelpers = {
       
       console.log('🔍 Google sign-in for:', user.email);
       
-      // Check if technician already exists with this email (unified lookup)
-      const existingTechnician = await findTechnicianByEmail(user.email);
+      // Generate unique ID for this user
+      const displayName = user.displayName || '';
+      const firstName = displayName.split(' ')[0] || '';
+      const lastName = displayName.split(' ').slice(1).join(' ') || '';
+      const uniqueId = createUniqueId(user.email, firstName, lastName);
       
-      if (existingTechnician) {
-        console.log('✅ Found existing technician, linking Google account');
+      // Check if user already exists with this unique ID
+      const existingUser = await findUserByUniqueId(uniqueId);
+      
+      if (existingUser) {
+        console.log('✅ Found existing user with unique ID, linking Google account');
         
-        // Link Google account to existing technician if not already linked
-        if (existingTechnician.uid !== user.uid) {
-          await linkGoogleAccountToTechnician(existingTechnician.id, user);
+        // Link Google account to existing user if not already linked
+        if (existingUser.uid !== user.uid) {
+          const collectionName = existingUser.userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.USERS;
+          await updateDoc(doc(db, collectionName, existingUser.id), {
+            uid: user.uid,
+            photoURL: user.photoURL // Update photo from Google
+          });
         }
         
         return {
-          user: existingTechnician,
+          user: { ...existingUser, uid: user.uid, photoURL: user.photoURL },
           isNewUser: false,
           firebaseUser: user,
           linkedExisting: true
         };
       } else {
-        // Check if user exists in users collection (non-technician)
-        const existingUser = await getUserByEmail(user.email);
-        
-        if (existingUser) {
+        // Check legacy users by email (for migration)
+        const legacyTechnician = await findTechnicianByEmail(user.email);
+        if (legacyTechnician && !legacyTechnician.uniqueId) {
+          console.log('🔄 Migrating legacy technician to unique ID system');
+          await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, legacyTechnician.id), {
+            uniqueId: uniqueId,
+            uid: user.uid,
+            photoURL: user.photoURL
+          });
+          
           return {
-            user: existingUser,
+            user: { ...legacyTechnician, uniqueId, uid: user.uid, photoURL: user.photoURL },
+            isNewUser: false,
+            firebaseUser: user,
+            linkedExisting: true
+          };
+        }
+        
+        const legacyUser = await getUserByEmail(user.email);
+        if (legacyUser && !legacyUser.uniqueId) {
+          console.log('🔄 Migrating legacy user to unique ID system');
+          await updateDoc(doc(db, COLLECTIONS.USERS, legacyUser.id), {
+            uniqueId: uniqueId,
+            uid: user.uid,
+            photoURL: user.photoURL
+          });
+          
+          return {
+            user: { ...legacyUser, uniqueId, uid: user.uid, photoURL: user.photoURL },
             isNewUser: false,
             firebaseUser: user
           };
-        } else {
-          // New user, they'll need to complete registration
-          return {
-            user: {
-              uid: user.uid,
-              email: user.email,
-              name: user.displayName,
-              photoURL: user.photoURL
-            },
-            isNewUser: true,
-            firebaseUser: user
-          };
         }
+        
+        // New user, they'll need to complete registration
+        return {
+          user: {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            uniqueId: uniqueId
+          },
+          isNewUser: true,
+          firebaseUser: user
+        };
       }
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -740,8 +835,30 @@ export async function recordTransaction(transactionData) {
   }
   
   try {
+    // Find the technician to get their unique ID
+    const technician = transactionData.technicianId ? 
+      await getTechnician(transactionData.technicianId) : 
+      await findTechnicianByEmail(transactionData.technicianEmail);
+      
+    if (!technician) {
+      console.error('❌ Technician not found for transaction');
+      throw new Error('Technician not found');
+    }
+    
+    // Find customer if provided
+    let customerUniqueId = null;
+    if (transactionData.customerId) {
+      const customer = await getUser(transactionData.customerId);
+      customerUniqueId = customer?.uniqueId;
+    } else if (transactionData.customerEmail) {
+      const customer = await getUserByEmail(transactionData.customerEmail);
+      customerUniqueId = customer?.uniqueId;
+    }
+    
     const transaction = {
       ...transactionData,
+      technicianUniqueId: technician.uniqueId || technician.id, // Fallback for legacy data
+      customerUniqueId: customerUniqueId,
       createdAt: new Date().toISOString(),
       status: 'completed'
     };
@@ -752,14 +869,21 @@ export async function recordTransaction(transactionData) {
     const docRef = await addDoc(collection(db, COLLECTIONS.TIPS), transaction);
     console.log('✅ Tips collection document created:', docRef.id);
     
-    // Update technician's total earnings
-    const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
-    console.log('🔥 Updating technician earnings for:', transactionData.technicianId);
-    
-    await updateDoc(technicianRef, {
-      totalEarnings: increment(transactionData.amount),
-      lastTipDate: new Date().toISOString()
-    });
+    // Update technician's total earnings (only if technician document exists)
+    if (transactionData.technicianId) {
+      try {
+        const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
+        console.log('🔥 Updating technician earnings for:', transactionData.technicianId);
+        
+        await updateDoc(technicianRef, {
+          totalEarnings: increment(transactionData.amount),
+          lastTipDate: new Date().toISOString()
+        });
+      } catch (updateError) {
+        console.warn('⚠️ Could not update technician document earnings:', updateError);
+        // Continue execution - the transaction is still recorded in tips collection
+      }
+    }
     
     console.log('✅ Transaction recorded successfully:', docRef.id);
     return docRef.id;
@@ -774,6 +898,65 @@ export async function recordTransaction(transactionData) {
  * @param {string} technicianId - Technician ID
  * @returns {Promise<Object>} Earnings data
  */
+/**
+ * Find user by unique ID across all collections
+ * @param {string} uniqueId - Unique ID to search for
+ * @returns {Promise<Object|null>} User profile or null
+ */
+export async function findUserByUniqueId(uniqueId) {
+  if (!db || !uniqueId) return null;
+  
+  try {
+    console.log('🔍 Searching for user with unique ID:', uniqueId);
+    
+    // Search in technicians collection first
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('uniqueId', '==', uniqueId),
+      limit(1)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const techDoc = techSnapshot.docs[0];
+      const techData = { id: techDoc.id, ...techDoc.data() };
+      console.log('✅ Found user in technicians collection:', techData.id);
+      return techData;
+    }
+    
+    // Search in users collection
+    const userQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('uniqueId', '==', uniqueId),
+      limit(1)
+    );
+    const userSnapshot = await getDocs(userQuery);
+    
+    if (!userSnapshot.empty) {
+      const userDoc = userSnapshot.docs[0];
+      const userData = { id: userDoc.id, ...userDoc.data() };
+      console.log('✅ Found user in users collection:', userData.id);
+      return userData;
+    }
+    
+    console.log('❌ No user found for unique ID:', uniqueId);
+    return null;
+  } catch (error) {
+    console.error('❌ Error finding user by unique ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if a unique ID is already taken
+ * @param {string} uniqueId - Unique ID to check
+ * @returns {Promise<boolean>} True if taken, false if available
+ */
+export async function isUniqueIdTaken(uniqueId) {
+  const existingUser = await findUserByUniqueId(uniqueId);
+  return existingUser !== null;
+}
+
 /**
  * Find technician by email across all collections
  * @param {string} email - Email to search for
@@ -867,48 +1050,88 @@ export async function isTechnicianEmailTaken(email) {
  * @param {string} technicianEmail - Technician email
  * @returns {Promise<Array>} Array of tip documents
  */
-export async function getTipsForTechnician(technicianId, technicianEmail) {
+export async function getTipsForTechnician(technicianId, technicianEmail, technicianUniqueId = null) {
   if (!db) return [];
   
   try {
     let allTips = [];
     
-    // Get tips by direct technician ID
-    const directTipsQuery = query(
-      collection(db, COLLECTIONS.TIPS),
-      where('technicianId', '==', technicianId),
-      where('status', '==', 'completed')
-    );
-    const directTipsSnapshot = await getDocs(directTipsQuery);
-    
-    directTipsSnapshot.forEach(doc => {
-      allTips.push({ id: doc.id, ...doc.data() });
-    });
-    
-    // Get tips that might be linked to this technician's email/identity
-    // This handles legacy tips sent to sample technicians before proper registration
-    const allTipsQuery = query(
-      collection(db, COLLECTIONS.TIPS),
-      where('status', '==', 'completed')
-    );
-    const allTipsSnapshot = await getDocs(allTipsQuery);
-    
-    allTipsSnapshot.forEach(doc => {
-      const tip = doc.data();
-      const tipId = doc.id;
+    // First priority: Get tips by unique ID (most accurate)
+    if (technicianUniqueId) {
+      const uniqueIdTipsQuery = query(
+        collection(db, COLLECTIONS.TIPS),
+        where('technicianUniqueId', '==', technicianUniqueId),
+        where('status', '==', 'completed')
+      );
+      const uniqueIdTipsSnapshot = await getDocs(uniqueIdTipsQuery);
       
-      // Skip if we already have this tip
-      if (allTips.some(t => t.id === tipId)) return;
+      uniqueIdTipsSnapshot.forEach(doc => {
+        allTips.push({ id: doc.id, ...doc.data() });
+      });
       
-      // Check for email-based matching (for testing scenarios)
-      if (technicianEmail && technicianEmail.includes('k00lrav')) {
-        // Match tips sent to "Ray" sample technician for k00lrav email
-        if (tip.technicianName && tip.technicianName.toLowerCase().includes('ray')) {
-          allTips.push({ id: tipId, ...tip });
-          console.log('💰 Matched legacy tip by identity:', tip);
-        }
+      console.log('💰 Found', allTips.length, 'tips by unique ID:', technicianUniqueId);
+    }
+    
+    // Second priority: Get tips by direct technician ID
+    if (technicianId) {
+      const directTipsQuery = query(
+        collection(db, COLLECTIONS.TIPS),
+        where('technicianId', '==', technicianId),
+        where('status', '==', 'completed')
+      );
+      const directTipsSnapshot = await getDocs(directTipsQuery);
+      
+      directTipsSnapshot.forEach(doc => {
+        const tipId = doc.id;
+        // Skip if we already have this tip from unique ID search
+        if (allTips.some(t => t.id === tipId)) return;
+        allTips.push({ id: tipId, ...doc.data() });
+      });
+      
+      console.log('💰 Found', allTips.length, 'total tips after technician ID search');
+    }
+    
+    // Third priority: Legacy email-based matching for migration
+    if (technicianEmail) {
+      const emailTipsQuery = query(
+        collection(db, COLLECTIONS.TIPS),
+        where('technicianEmail', '==', technicianEmail),
+        where('status', '==', 'completed')
+      );
+      const emailTipsSnapshot = await getDocs(emailTipsQuery);
+      
+      emailTipsSnapshot.forEach(doc => {
+        const tipId = doc.id;
+        // Skip if we already have this tip
+        if (allTips.some(t => t.id === tipId)) return;
+        allTips.push({ id: tipId, ...doc.data() });
+      });
+      
+      // Handle legacy tips for testing scenarios  
+      if (technicianEmail.includes('k00lrav')) {
+        const allTipsQuery = query(
+          collection(db, COLLECTIONS.TIPS),
+          where('status', '==', 'completed')
+        );
+        const allTipsSnapshot = await getDocs(allTipsQuery);
+        
+        allTipsSnapshot.forEach(doc => {
+          const tip = doc.data();
+          const tipId = doc.id;
+          
+          // Skip if we already have this tip
+          if (allTips.some(t => t.id === tipId)) return;
+          
+          // Match tips sent to "Ray" sample technician for k00lrav email
+          if (tip.technicianName && tip.technicianName.toLowerCase().includes('ray')) {
+            allTips.push({ id: tipId, ...tip });
+            console.log('💰 Matched legacy tip by identity:', tip);
+          }
+        });
       }
-    });
+      
+      console.log('💰 Found', allTips.length, 'total tips after email search');
+    }
     
     // Remove duplicates
     const uniqueTips = allTips.filter((tip, index, self) => 
@@ -958,7 +1181,7 @@ export async function getTechnicianEarnings(technicianId) {
     }
     
     // Get all tips for this technician using unified lookup
-    const allTips = await getTipsForTechnician(technicianId, technicianData.email);
+    const allTips = await getTipsForTechnician(technicianId, technicianData.email, technicianData.uniqueId);
     
     console.log('💰 Found', allTips.length, 'total completed tips for technician');
     let totalEarnings = 0;
@@ -992,6 +1215,42 @@ export async function getTechnicianEarnings(technicianId) {
       availableBalance: 0,
       pendingBalance: 0
     };
+  }
+}
+
+/**
+ * Get transaction history for a technician
+ * @param {string} technicianId - Technician ID
+ * @param {string} technicianEmail - Technician email
+ * @param {string} technicianUniqueId - Technician unique ID
+ * @returns {Promise<Array>} Array of transactions
+ */
+export async function getTechnicianTransactions(technicianId, technicianEmail, technicianUniqueId = null) {
+  if (!db) return [];
+  
+  try {
+    const tips = await getTipsForTechnician(technicianId, technicianEmail, technicianUniqueId);
+    
+    // Convert tips to transaction format expected by dashboard
+    const transactions = tips.map(tip => ({
+      id: tip.id,
+      amount: (tip.amount || 0) / 100, // Convert cents to dollars
+      customerName: tip.customerName || tip.fromName || 'Anonymous',
+      date: tip.createdAt ? new Date(tip.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      status: tip.status || 'completed',
+      platformFee: parseInt(process.env.PLATFORM_FLAT_FEE || '99') / 100, // Convert platform fee to dollars
+      paymentIntent: tip.paymentIntent,
+      technicianName: tip.technicianName
+    }));
+    
+    // Sort by date, newest first
+    transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    console.log('💰 Loaded', transactions.length, 'transactions for technician');
+    return transactions;
+  } catch (error) {
+    console.error('❌ Error loading technician transactions:', error);
+    return [];
   }
 }
 
