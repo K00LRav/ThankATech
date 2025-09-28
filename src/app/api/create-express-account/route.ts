@@ -3,7 +3,12 @@ import Stripe from 'stripe';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// Check for required environment variables
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +19,11 @@ export async function POST(request: Request) {
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Validate Stripe key is test key for development
+    if (process.env.NODE_ENV === 'development' && process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
+      console.warn('⚠️  Using live Stripe keys in development mode!');
     }
 
     // Check if technician already has a Stripe account
