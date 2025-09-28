@@ -1,7 +1,7 @@
 // Firebase configuration and services for ThankATech
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -196,12 +196,17 @@ export async function sendThankYou(technicianId, userId, message = '') {
       totalThankYous: increment(1)
     });
 
-    // Update user stats
+    // Update user stats (with existence check)
     if (userId) {
-      const userRef = doc(db, COLLECTIONS.USERS, userId);
-      await updateDoc(userRef, {
-        totalThankYousSent: increment(1)
-      });
+      try {
+        const userRef = doc(db, COLLECTIONS.USERS, userId);
+        await updateDoc(userRef, {
+          totalThankYousSent: increment(1)
+        });
+      } catch (error) {
+        console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
+        // This is OK - user might be a technician or the document might not exist
+      }
     }
 
     return { success: true, pointsAwarded: 10 };
@@ -240,12 +245,17 @@ export async function sendTip(technicianId, userId, amount, message = '') {
       totalTips: increment(amount)
     });
 
-    // Update user stats
+    // Update user stats (with existence check)
     if (userId) {
-      const userRef = doc(db, COLLECTIONS.USERS, userId);
-      await updateDoc(userRef, {
-        totalTipsSent: increment(amount)
-      });
+      try {
+        const userRef = doc(db, COLLECTIONS.USERS, userId);
+        await updateDoc(userRef, {
+          totalTipsSent: increment(amount)
+        });
+      } catch (error) {
+        console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
+        // This is OK - user might be a technician or the document might not exist
+      }
     }
 
     return { success: true, pointsAwarded: points };
@@ -336,6 +346,39 @@ export async function claimBusiness(technicianId, claimData) {
   } catch (error) {
     console.error('Error claiming business:', error);
     throw error;
+  }
+}
+
+/**
+ * Get user from either users or technicians collection by ID
+ */
+export async function getUserById(userId) {
+  if (!db) {
+    console.warn('Firebase not configured.');
+    return null;
+  }
+
+  try {
+    // First check users collection
+    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      return { id: userSnap.id, ...userSnap.data(), collection: 'users' };
+    }
+
+    // Then check technicians collection
+    const techRef = doc(db, COLLECTIONS.TECHNICIANS, userId);
+    const techSnap = await getDoc(techRef);
+    
+    if (techSnap.exists()) {
+      return { id: techSnap.id, ...techSnap.data(), collection: 'technicians' };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting user by ID:', error);
+    return null;
   }
 }
 
