@@ -666,19 +666,33 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     // Delete from appropriate collection based on user type
     if (userType === 'technician') {
       // Delete from technicians collection
+      // This automatically removes them from rolodex cards since 
+      // getRegisteredTechnicians() fetches from this collection
       await deleteDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
-      console.log('Technician profile deleted successfully');
+      console.log('Technician profile deleted successfully from technicians collection');
+      
+      // Also check and delete from users collection if exists (for dual registrations)
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
+        console.log('Technician profile also deleted from users collection');
+      } catch (userError) {
+        // User document may not exist, which is fine
+        console.log('No user document found for technician (expected)');
+      }
     } else {
       // Delete from users collection
       await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
-      console.log('Customer profile deleted successfully');
+      console.log('Customer profile deleted successfully from users collection');
     }
     
-    // Note: In a production app, you might also want to:
-    // - Delete user's photos from storage
-    // - Clean up related data (tips, thank yous, etc.)
-    // - Delete the Firebase Auth user account
-    // For now, we're just deleting the profile document
+    // TODO: Future enhancements for production:
+    // - Delete user's photos from Firebase Storage
+    // - Clean up related data (tips, thank yous, ratings, etc.)
+    // - Delete the Firebase Auth user account (requires admin SDK)
+    // - Send deletion confirmation email
+    // - Archive data for compliance/recovery purposes
+    
+    console.log(`Profile deletion completed for ${userType} ${userId}`);
     
   } catch (error) {
     console.error('Error deleting user profile:', error);
