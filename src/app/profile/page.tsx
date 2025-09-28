@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase.js';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -45,15 +45,102 @@ export default function EditProfile() {
       if (!user) return;
       
       try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        console.log('Loading profile for user:', user.uid);
+        
+        // First, try to find the user in the users collection
+        let userDoc = await getDoc(doc(db, 'users', user.uid));
+        let userData = null;
+        
         if (userDoc.exists()) {
-          const userData = userDoc.data() as TechnicianProfile;
+          userData = userDoc.data() as TechnicianProfile;
+          console.log('Profile data loaded from users collection:', userData);
+        } else {
+          // If not found in users, check technicians collection by email
+          console.log('Not found in users collection, checking technicians collection...');
+          const { query, where, getDocs, collection } = await import('firebase/firestore');
+          const techniciansQuery = query(
+            collection(db, 'technicians'), 
+            where('email', '==', user.email)
+          );
+          const techniciansSnapshot = await getDocs(techniciansQuery);
+          
+          if (!techniciansSnapshot.empty) {
+            const technicianDoc = techniciansSnapshot.docs[0];
+            const technicianData = technicianDoc.data();
+            console.log('Profile data loaded from technicians collection:', technicianData);
+            
+            // Convert technician data to user profile format
+            userData = {
+              uid: user.uid,
+              name: technicianData.name || user.displayName || '',
+              email: technicianData.email || user.email || '',
+              phone: technicianData.phone || '',
+              location: technicianData.location || '',
+              businessName: technicianData.businessName || '',
+              category: technicianData.category || '',
+              experience: technicianData.experience || '',
+              certifications: technicianData.certifications || '',
+              description: technicianData.about || '',
+              businessAddress: technicianData.businessAddress || '',
+              website: technicianData.website || '',
+              businessPhone: technicianData.businessPhone || '',
+              businessEmail: technicianData.businessEmail || '',
+              serviceArea: technicianData.serviceArea || '',
+              hourlyRate: technicianData.hourlyRate || '',
+              availability: technicianData.availability || '',
+              photoURL: technicianData.image || user.photoURL || '',
+              userType: 'technician'
+            } as TechnicianProfile;
+          }
+        }
+        
+        if (userData) {
           setProfile(userData);
           setFormData(userData);
+        } else {
+          console.log('No profile document found for user:', user.uid);
+          console.log('User info:', { 
+            uid: user.uid, 
+            email: user.email, 
+            displayName: user.displayName,
+            photoURL: user.photoURL 
+          });
+          
+          // Create a basic profile structure if none exists
+          const basicProfile: Partial<TechnicianProfile> = {
+            uid: user.uid,
+            name: user.displayName || '',
+            email: user.email || '',
+            phone: '',
+            location: '',
+            businessName: '',
+            category: '',
+            experience: '',
+            certifications: '',
+            description: '',
+            businessAddress: '',
+            website: '',
+            businessPhone: '',
+            businessEmail: '',
+            serviceArea: '',
+            hourlyRate: '',
+            availability: '',
+            photoURL: user.photoURL || '',
+            userType: 'technician'
+          };
+          setProfile(basicProfile as TechnicianProfile);
+          setFormData(basicProfile);
+          setFormError(`Profile not found for user ${user.email}. This might be because:
+          
+1. You registered recently and the profile wasn't created properly
+2. You're signed in with a different account than the one you registered with
+3. There was an issue during registration
+
+Please complete your profile information below and click "Save Changes" to create your profile.`);
         }
       } catch (error) {
         console.error('Error loading profile:', error);
-        setFormError('Failed to load profile data');
+        setFormError('Failed to load profile data: ' + (error instanceof Error ? error.message : 'Unknown error'));
       } finally {
         setIsLoading(false);
       }
@@ -73,18 +160,39 @@ export default function EditProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !profile) return;
+    if (!user) return;
 
     setIsSaving(true);
     setFormError(null);
 
     try {
-      await updateDoc(doc(db, 'users', user.uid), formData);
-      setSaveMessage('Profile updated successfully!');
-      setProfile({ ...profile, ...formData } as TechnicianProfile);
+      // Prepare the complete profile data
+      const profileData = {
+        ...formData,
+        uid: user.uid,
+        email: user.email,
+        photoURL: user.photoURL,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Try to update first, if that fails, create the document
+      try {
+        await updateDoc(doc(db, 'users', user.uid), profileData);
+        setSaveMessage('Profile updated successfully!');
+      } catch (updateError) {
+        // If update fails (document doesn't exist), create it
+        console.log('Document does not exist, creating new profile...');
+        await setDoc(doc(db, 'users', user.uid), {
+          ...profileData,
+          createdAt: new Date().toISOString()
+        });
+        setSaveMessage('Profile created successfully!');
+      }
+      
+      setProfile({ ...profile, ...profileData } as TechnicianProfile);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setFormError('Failed to update profile. Please try again.');
+      console.error('Error saving profile:', error);
+      setFormError('Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
