@@ -63,7 +63,6 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
 
     try {
       // Debug: Log customer data being sent
-      console.log('🔍 Customer data being sent:', {
         id: customer.id,
         name: customer.name,
         email: customer.email,
@@ -104,7 +103,6 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       if (error) {
         setError(error.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
-        console.log('✅ Payment succeeded, recording transaction...', {
           technicianId: technician.id,
           customerId: customer.id,
           amount: dollarsToCents(currentAmount),
@@ -125,7 +123,6 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
             customerNote: '', // Could add a note field later
           });
           
-          console.log('✅ Transaction recorded successfully in Firebase');
           
           // Payment successful and recorded!
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);

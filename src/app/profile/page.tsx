@@ -189,7 +189,6 @@ export default function ProfilePage() {
       if (!user) return;
       
       try {
-        console.log('Loading profile for user:', user.uid);
         
         // First, try to find the user in the users collection
         let userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -197,10 +196,8 @@ export default function ProfilePage() {
         
         if (userDoc.exists()) {
           userData = userDoc.data() as UserProfile;
-          console.log('Profile data loaded from users collection:', userData);
         } else {
           // If not found in users, check technicians collection by email
-          console.log('Not found in users collection, checking technicians collection...');
           const { query, where, getDocs, collection } = await import('firebase/firestore');
           const techniciansQuery = query(
             collection(db, 'technicians'), 
@@ -211,7 +208,6 @@ export default function ProfilePage() {
           if (!techniciansSnapshot.empty) {
             const technicianDoc = techniciansSnapshot.docs[0];
             const technicianData = technicianDoc.data();
-            console.log('Profile data loaded from technicians collection:', technicianData);
             
             // Convert technician data to user profile format
             userData = {
@@ -243,8 +239,6 @@ export default function ProfilePage() {
           setProfile(userData);
           setFormData(userData);
         } else {
-          console.log('No profile document found for user:', user.uid);
-          console.log('User info:', { 
             uid: user.uid, 
             email: user.email, 
             displayName: user.displayName,
@@ -329,7 +323,6 @@ Please complete your profile information below and click "Save Changes" to creat
         setSaveMessage('Profile updated successfully!');
       } catch (updateError) {
         // If update fails (document doesn't exist), create it
-        console.log('Document does not exist, creating new profile...');
         await setDoc(doc(db, collection, user.uid), {
           ...profileData,
           createdAt: new Date().toISOString()

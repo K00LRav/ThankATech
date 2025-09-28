@@ -98,7 +98,6 @@ export async function registerTechnician(technicianData) {
     // Check if unique ID is already taken
     const existingUser = await findUserByUniqueId(uniqueId);
     if (existingUser) {
-      console.log('❌ User already exists with unique ID:', uniqueId);
       throw new Error(`An account is already registered with this name and email combination. Please sign in instead or use different details.`);
     }
     
@@ -106,13 +105,11 @@ export async function registerTechnician(technicianData) {
     const existingTechnician = await findTechnicianByEmail(technicianData.email);
     if (existingTechnician && !existingTechnician.uniqueId) {
       // Migrate existing technician to use unique ID
-      console.log('🔄 Migrating existing technician to unique ID system');
       await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, existingTechnician.id), {
         uniqueId: uniqueId
       });
       return { ...existingTechnician, uniqueId };
     } else if (existingTechnician) {
-      console.log('❌ Technician already exists with this email:', technicianData.email);
       throw new Error(`A technician is already registered with email ${technicianData.email}. Please sign in instead or use a different email.`);
     }
     // Create a complete technician profile
@@ -184,7 +181,6 @@ export async function registerUser(userData) {
     // Check if unique ID is already taken
     const existingUser = await findUserByUniqueId(uniqueId);
     if (existingUser) {
-      console.log('❌ User already exists with unique ID:', uniqueId);
       throw new Error(`An account is already registered with this name and email combination. Please sign in instead.`);
     }
     
@@ -547,7 +543,6 @@ export const authHelpers = {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      console.log('🔍 Google sign-in for:', user.email);
       
       // Generate unique ID for this user
       const displayName = user.displayName || '';
@@ -559,7 +554,6 @@ export const authHelpers = {
       const existingUser = await findUserByUniqueId(uniqueId);
       
       if (existingUser) {
-        console.log('✅ Found existing user with unique ID, linking Google account');
         
         // Link Google account to existing user if not already linked
         if (existingUser.uid !== user.uid) {
@@ -580,7 +574,6 @@ export const authHelpers = {
         // Check legacy users by email (for migration)
         const legacyTechnician = await findTechnicianByEmail(user.email);
         if (legacyTechnician && !legacyTechnician.uniqueId) {
-          console.log('🔄 Migrating legacy technician to unique ID system');
           await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, legacyTechnician.id), {
             uniqueId: uniqueId,
             uid: user.uid,
@@ -597,7 +590,6 @@ export const authHelpers = {
         
         const legacyUser = await getUserByEmail(user.email);
         if (legacyUser && !legacyUser.uniqueId) {
-          console.log('🔄 Migrating legacy user to unique ID system');
           await updateDoc(doc(db, COLLECTIONS.USERS, legacyUser.id), {
             uniqueId: uniqueId,
             uid: user.uid,
@@ -702,7 +694,6 @@ export async function migrateTechnicianProfile(userId) {
     const userDoc = await getDoc(doc(db, 'users', userId));
     
     if (!userDoc.exists()) {
-      console.log('User not found in users collection');
       return null;
     }
     
@@ -710,14 +701,12 @@ export async function migrateTechnicianProfile(userId) {
     
     // Check if user is a technician
     if (userData.userType !== 'technician') {
-      console.log('User is not a technician');
       return null;
     }
     
     // Check if already exists in technicians collection
     const existingTechDoc = await getDoc(doc(db, 'technicians', userId));
     if (existingTechDoc.exists()) {
-      console.log('Technician profile already exists');
       return { id: existingTechDoc.id, ...existingTechDoc.data() };
     }
     
@@ -766,7 +755,6 @@ export async function migrateTechnicianProfile(userId) {
     // Add to technicians collection with the same ID
     await setDoc(doc(db, 'technicians', userId), technicianProfile);
     
-    console.log('Successfully migrated technician profile');
     return { id: userId, ...technicianProfile };
     
   } catch (error) {
@@ -778,7 +766,6 @@ export async function migrateTechnicianProfile(userId) {
 // Delete user profile and related data
 export async function deleteUserProfile(userId, userType = 'customer') {
   if (!isFirebaseConfigured) {
-    console.log('Firebase not configured - simulating profile deletion');
     return;
   }
 
@@ -791,20 +778,16 @@ export async function deleteUserProfile(userId, userType = 'customer') {
       // This automatically removes them from rolodex cards since 
       // getRegisteredTechnicians() fetches from this collection
       await deleteDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
-      console.log('Technician profile deleted successfully from technicians collection');
       
       // Also check and delete from users collection if exists (for dual registrations)
       try {
         await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
-        console.log('Technician profile also deleted from users collection');
       } catch (userError) {
         // User document may not exist, which is fine
-        console.log('No user document found for technician (expected)');
       }
     } else {
       // Delete from users collection
       await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
-      console.log('Customer profile deleted successfully from users collection');
     }
     
     // TODO: Future enhancements for production:
@@ -814,7 +797,6 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     // - Send deletion confirmation email
     // - Archive data for compliance/recovery purposes
     
-    console.log(`Profile deletion completed for ${userType} ${userId}`);
     
   } catch (error) {
     console.error('Error deleting user profile:', error);
@@ -828,7 +810,6 @@ export async function deleteUserProfile(userId, userType = 'customer') {
  * @returns {Promise<string>} Transaction ID
  */
 export async function recordTransaction(transactionData) {
-  console.log('🔥 recordTransaction called with data:', transactionData);
   
   if (!db) {
     console.warn('❌ Firebase not configured - transaction not recorded');
@@ -864,17 +845,14 @@ export async function recordTransaction(transactionData) {
       status: 'completed'
     };
     
-    console.log('🔥 Adding transaction to tips collection:', transaction);
     
     // Add to tips collection
     const docRef = await addDoc(collection(db, COLLECTIONS.TIPS), transaction);
-    console.log('✅ Tips collection document created:', docRef.id);
     
     // Update technician's total earnings (only if technician document exists)
     if (transactionData.technicianId) {
       try {
         const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
-        console.log('🔥 Updating technician earnings for:', transactionData.technicianId);
         
         await updateDoc(technicianRef, {
           totalEarnings: increment(transactionData.amount),
@@ -886,7 +864,6 @@ export async function recordTransaction(transactionData) {
       }
     }
     
-    console.log('✅ Transaction recorded successfully:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('❌ Error recording transaction:', error);
@@ -903,13 +880,11 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
-    console.log('🔍 Getting technician:', technicianId);
     
     // Try technicians collection first
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
       const techData = { id: techDoc.id, ...techDoc.data() };
-      console.log('✅ Found technician:', techData.name || techData.businessName);
       return techData;
     }
     
@@ -919,12 +894,10 @@ export async function getTechnician(technicianId) {
       const userData = userDoc.data();
       if (userData.userType === 'technician') {
         const techData = { id: userDoc.id, ...userData };
-        console.log('✅ Found technician in users collection:', techData.name || techData.businessName);
         return techData;
       }
     }
     
-    console.log('❌ Technician not found:', technicianId);
     return null;
   } catch (error) {
     console.error('❌ Error getting technician:', error);
@@ -941,16 +914,13 @@ export async function getUser(userId) {
   if (!db || !userId) return null;
   
   try {
-    console.log('🔍 Getting user:', userId);
     
     const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
     if (userDoc.exists()) {
       const userData = { id: userDoc.id, ...userDoc.data() };
-      console.log('✅ Found user:', userData.name || userData.displayName);
       return userData;
     }
     
-    console.log('❌ User not found:', userId);
     return null;
   } catch (error) {
     console.error('❌ Error getting user:', error);
@@ -972,7 +942,6 @@ export async function findUserByUniqueId(uniqueId) {
   if (!db || !uniqueId) return null;
   
   try {
-    console.log('🔍 Searching for user with unique ID:', uniqueId);
     
     // Search in technicians collection first
     const techQuery = query(
@@ -985,7 +954,6 @@ export async function findUserByUniqueId(uniqueId) {
     if (!techSnapshot.empty) {
       const techDoc = techSnapshot.docs[0];
       const techData = { id: techDoc.id, ...techDoc.data() };
-      console.log('✅ Found user in technicians collection:', techData.id);
       return techData;
     }
     
@@ -1000,11 +968,9 @@ export async function findUserByUniqueId(uniqueId) {
     if (!userSnapshot.empty) {
       const userDoc = userSnapshot.docs[0];
       const userData = { id: userDoc.id, ...userDoc.data() };
-      console.log('✅ Found user in users collection:', userData.id);
       return userData;
     }
     
-    console.log('❌ No user found for unique ID:', uniqueId);
     return null;
   } catch (error) {
     console.error('❌ Error finding user by unique ID:', error);
@@ -1031,7 +997,6 @@ export async function findTechnicianByEmail(email) {
   if (!db || !email) return null;
   
   try {
-    console.log('🔍 Searching for technician with email:', email);
     
     // Search in technicians collection first
     const techQuery = query(
@@ -1044,7 +1009,6 @@ export async function findTechnicianByEmail(email) {
     if (!techSnapshot.empty) {
       const techDoc = techSnapshot.docs[0];
       const techData = { id: techDoc.id, ...techDoc.data() };
-      console.log('✅ Found technician in technicians collection:', techData.id);
       return techData;
     }
     
@@ -1060,11 +1024,9 @@ export async function findTechnicianByEmail(email) {
     if (!userSnapshot.empty) {
       const userDoc = userSnapshot.docs[0];
       const userData = { id: userDoc.id, ...userDoc.data() };
-      console.log('✅ Found technician in users collection:', userData.id);
       return userData;
     }
     
-    console.log('❌ No technician found for email:', email);
     return null;
   } catch (error) {
     console.error('Error finding technician by email:', error);
@@ -1081,7 +1043,6 @@ export async function linkGoogleAccountToTechnician(technicianId, googleUser) {
   if (!db) return;
   
   try {
-    console.log('🔗 Linking Google account to technician:', technicianId);
     
     // Update technician with Google data
     const techRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
@@ -1093,7 +1054,6 @@ export async function linkGoogleAccountToTechnician(technicianId, googleUser) {
       lastUpdated: new Date().toISOString()
     });
     
-    console.log('✅ Successfully linked Google account to technician');
   } catch (error) {
     console.error('Error linking Google account:', error);
   }
@@ -1134,7 +1094,6 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
         allTips.push({ id: doc.id, ...doc.data() });
       });
       
-      console.log('💰 Found', allTips.length, 'tips by unique ID:', technicianUniqueId);
     }
     
     // Second priority: Get tips by direct technician ID
@@ -1153,7 +1112,6 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
         allTips.push({ id: tipId, ...doc.data() });
       });
       
-      console.log('💰 Found', allTips.length, 'total tips after technician ID search');
     }
     
     // Third priority: Legacy email-based matching for migration
@@ -1190,12 +1148,10 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
           // Match tips sent to "Ray" sample technician for k00lrav email
           if (tip.technicianName && tip.technicianName.toLowerCase().includes('ray')) {
             allTips.push({ id: tipId, ...tip });
-            console.log('💰 Matched legacy tip by identity:', tip);
           }
         });
       }
       
-      console.log('💰 Found', allTips.length, 'total tips after email search');
     }
     
     // Remove duplicates
@@ -1211,7 +1167,6 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
 }
 
 export async function getTechnicianEarnings(technicianId) {
-  console.log('💰 getTechnicianEarnings called for:', technicianId);
   
   if (!db) {
     console.warn('❌ Firebase not configured - using mock earnings');
@@ -1240,7 +1195,6 @@ export async function getTechnicianEarnings(technicianId) {
         actualTechnicianId = userDoc.id;
       } else {
         // If not found as document ID, try as Firebase Auth UID
-        console.log('💰 Not found as document ID, searching by authUid:', technicianId);
         
         // Search technicians collection by authUid
         const techQuery = query(
@@ -1271,12 +1225,10 @@ export async function getTechnicianEarnings(technicianId) {
           } else {
             // Last resort: try to find by Firebase Auth UID using auth.currentUser.email
             // This handles cases where authUid is not stored properly
-            console.log('💰 AuthUid search failed, trying current user email approach');
             try {
               const { auth } = await import('../lib/firebase');
               const currentUser = auth?.currentUser;
               if (currentUser?.email) {
-                console.log('💰 Searching by current user email:', currentUser.email);
                 
                 // Search technicians collection by email
                 const emailTechQuery = query(
@@ -1290,7 +1242,6 @@ export async function getTechnicianEarnings(technicianId) {
                   const doc = emailTechSnapshot.docs[0];
                   technicianData = doc.data();
                   actualTechnicianId = doc.id;
-                  console.log('💰 Found technician by email in technicians collection');
                 } else {
                   // Search users collection by email
                   const emailUserQuery = query(
@@ -1305,7 +1256,6 @@ export async function getTechnicianEarnings(technicianId) {
                     const doc = emailUserSnapshot.docs[0];
                     technicianData = doc.data();
                     actualTechnicianId = doc.id;
-                    console.log('💰 Found technician by email in users collection');
                   }
                 }
               }
@@ -1317,8 +1267,6 @@ export async function getTechnicianEarnings(technicianId) {
       }
     }
     
-    console.log('💰 Unified technician data:', technicianData);
-    console.log('💰 Using technician ID:', actualTechnicianId);
     
     if (!technicianData?.email) {
       console.warn('💰 No email found for technician:', technicianId);
@@ -1328,11 +1276,9 @@ export async function getTechnicianEarnings(technicianId) {
     // Get all tips for this technician using unified lookup
     const allTips = await getTipsForTechnician(actualTechnicianId, technicianData.email, technicianData.uniqueId);
     
-    console.log('💰 Found', allTips.length, 'total completed tips for technician');
     let totalGrossAmount = 0;
     let totalNetAmount = 0;
     allTips.forEach(tip => {
-      console.log('💰 Processing tip:', tip);
       const grossAmount = tip.amount || 0;
       totalGrossAmount += grossAmount;
       
@@ -1342,14 +1288,11 @@ export async function getTechnicianEarnings(technicianId) {
         // Platform fee is $0.99 (99 cents) per tip
         const platformFee = 99;
         technicianPayout = grossAmount - platformFee;
-        console.log('💰 Calculated missing payout:', { grossAmount, platformFee, technicianPayout });
       }
       
       totalNetAmount += technicianPayout;
     });
     
-    console.log('💰 Total gross amount (cents):', totalGrossAmount);
-    console.log('💰 Total net amount to technician (cents):', totalNetAmount);
     
     const result = {
       totalEarnings: totalNetAmount / 100, // Convert to dollars - what technician actually earned
@@ -1358,7 +1301,6 @@ export async function getTechnicianEarnings(technicianId) {
       tipCount: allTips.length
     };
     
-    console.log('💰 Final earnings result:', result);
     return result;
   } catch (error) {
     console.error('❌ Error fetching technician earnings:', error);
@@ -1405,7 +1347,6 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
     // Sort by date, newest first
     transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    console.log('💰 Loaded', transactions.length, 'transactions for technician');
     return transactions;
   } catch (error) {
     console.error('❌ Error loading technician transactions:', error);
@@ -1423,7 +1364,6 @@ export async function getCustomerTransactions(customerId, customerEmail) {
   if (!db) return [];
   
   try {
-    console.log('🔍 Loading customer transactions for:', { customerId, customerEmail });
     
     const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
     const tipsRef = collection(db, 'tips');
@@ -1474,7 +1414,6 @@ export async function getCustomerTransactions(customerId, customerEmail) {
       };
     });
     
-    console.log('💳 Loaded', transactions.length, 'transactions for customer');
     return transactions;
   } catch (error) {
     console.error('❌ Error loading customer transactions:', error);

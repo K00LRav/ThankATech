@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
     const { amount, technicianId, customerId, customerName, customerEmail } = await request.json();
 
     // Debug: Log received customer data
-    console.log('🔍 Payment intent API received:', {
       customerId,
       customerName,
       customerEmail,
@@ -67,7 +66,6 @@ export async function POST(request: NextRequest) {
         description: `Tip for technician ${technicianId}`,
       });
 
-      console.log(`Created Express payment intent for technician ${technicianId} (${techData.stripeAccountId}): $${amount/100}`);
       
       return NextResponse.json({
         clientSecret: paymentIntent.client_secret,
@@ -96,7 +94,6 @@ export async function POST(request: NextRequest) {
         description: `Tip for technician ${technicianId} (via platform)`,
       });
 
-      console.log(`Created platform payment intent for technician ${technicianId} (no Express account): $${amount/100}`);
       
       return NextResponse.json({
         clientSecret: paymentIntent.client_secret,

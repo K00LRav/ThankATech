@@ -29,10 +29,8 @@ export async function POST(request: NextRequest) {
       try {
         event = stripe.webhooks.constructEvent(body, signature, secret);
         webhookType = type;
-        console.log(`✅ Webhook verified with ${type} secret`);
         break;
       } catch (err) {
-        console.log(`❌ Failed to verify with ${type} secret:`, (err as Error).message);
         continue;
       }
     }
@@ -42,7 +40,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    console.log(`🔔 Webhook received: ${event.type} (verified with ${webhookType})`);
 
     // Handle different event types
     switch (event.type) {
@@ -69,7 +66,6 @@ export async function POST(request: NextRequest) {
         break;
       
       default:
-        console.log(`🤷 Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true, type: event.type, webhook: webhookType });
@@ -84,11 +80,9 @@ export async function POST(request: NextRequest) {
 
 // Handler functions for different event types
 async function handlePaymentSuccess(paymentIntent: any) {
-  console.log('💰 Payment succeeded:', paymentIntent.id);
   const { technicianId, customerId, customerName, customerEmail, platformFee, technicianPayout, type } = paymentIntent.metadata;
   
   // Debug: Log received metadata
-  console.log('🔍 Webhook metadata received:', {
     customerId,
     customerName,
     customerEmail,
@@ -99,8 +93,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
   try {
     // Only process tip payments
     if (type === 'tip') {
-      console.log(`✅ Processing tip: $${paymentIntent.amount / 100} to technician ${technicianId}`);
-      console.log('🔍 Metadata values:', { platformFee, technicianPayout, type: typeof platformFee, type2: typeof technicianPayout });
       
       // Import Firebase functions and calculate fees if missing
       const { recordTransaction, getTechnician, getUser } = await import('@/lib/firebase');
@@ -114,7 +106,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
       const parsedPlatformFee = parseInt(platformFee) || calculatePlatformFee(paymentIntent.amount);
       const parsedTechnicianPayout = parseInt(technicianPayout) || calculateTechnicianPayout(paymentIntent.amount);
       
-      console.log('💰 Calculated fees:', { 
         amount: paymentIntent.amount, 
         platformFee: parsedPlatformFee, 
         technicianPayout: parsedTechnicianPayout 
@@ -140,10 +131,7 @@ async function handlePaymentSuccess(paymentIntent: any) {
       
       await recordTransaction(transactionData);
       
-      console.log(`✅ Tip recorded: $${paymentIntent.amount / 100} to ${technician?.name || 'Unknown'}`);
-      console.log(`Platform fee: $${parsedPlatformFee / 100}, Technician payout: $${parsedTechnicianPayout / 100}`);
     } else {
-      console.log(`ℹ️ Skipping non-tip payment: ${type || 'unknown'}`);
     }
     
   } catch (error) {
@@ -152,47 +140,39 @@ async function handlePaymentSuccess(paymentIntent: any) {
 }
 
 async function handlePaymentFailed(paymentIntent: any) {
-  console.log('❌ Payment failed:', paymentIntent.id);
   const { technicianId, customerId } = paymentIntent.metadata;
   
   try {
     // Handle failed payment logic here
     // Maybe send notification to user about failed payment
-    console.log(`Payment failed for tip to technician ${technicianId} from customer ${customerId}`);
   } catch (error) {
     console.error('❌ Error processing failed payment:', error);
   }
 }
 
 async function handleDispute(charge: any) {
-  console.log('⚠️ Dispute created for charge:', charge.id);
   
   try {
     // Handle dispute logic here
     // Maybe notify admin or freeze payments
-    console.log(`Dispute amount: $${charge.amount / 100}, Reason: ${charge.dispute?.reason}`);
   } catch (error) {
     console.error('❌ Error processing dispute:', error);
   }
 }
 
 async function handleInvoicePayment(invoice: any) {
-  console.log('📄 Invoice payment succeeded:', invoice.id);
   
   try {
     // Handle subscription or invoice payments
-    console.log(`Invoice paid: $${invoice.amount_paid / 100}`);
   } catch (error) {
     console.error('❌ Error processing invoice payment:', error);
   }
 }
 
 async function handleSubscriptionChange(subscription: any, eventType: string) {
-  console.log(`📋 Subscription ${eventType}:`, subscription.id);
   
   try {
     // Handle subscription changes if you add subscription features later
-    console.log(`Subscription status: ${subscription.status}`);
   } catch (error) {
     console.error('❌ Error processing subscription change:', error);
   }

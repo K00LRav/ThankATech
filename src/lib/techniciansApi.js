@@ -56,10 +56,19 @@ function parseAddressToCoords(address) {
  */
 export async function fetchTechnicians(category = 'all', location = null, maxResults = 20) {
   try {
-    console.log('Fetching registered technicians from Firebase...');
     let technicians = await getRegisteredTechnicians();
-    console.log('🔍 DEBUG: Received technicians from getRegisteredTechnicians:', technicians.length);
-    console.log('🔍 DEBUG: First technician data:', technicians[0]);
+    
+    // Check if our enhanced function is working
+    if (technicians.length > 0 && !technicians[0].hasOwnProperty('totalTips')) {
+      console.warn('⚠️ ISSUE: Technician object missing totalTips field - enhanced function not called!');
+    } else if (technicians.length > 0) {
+        id: technicians[0].id,
+        email: technicians[0].email,
+        uniqueId: technicians[0].uniqueId,
+        totalEarnings: technicians[0].totalEarnings,
+        lastTipDate: technicians[0].lastTipDate
+      });
+    }
     
     // Process registered technicians with location data
     let processedTechs = technicians.map(tech => {
@@ -85,7 +94,6 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
     });
 
     // Always include mock data alongside registered technicians for demonstration
-    console.log(`Found ${technicians.length} registered technicians, adding sample data for demo`);
     let mockTechs = getMockTechnicians();
     
     // Add coordinates and calculate distances for sample data
@@ -126,17 +134,14 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
     // Sort by distance if location is available
     if (location) {
       allTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-      console.log('Sorted all technicians by distance from user location');
     }
 
-    console.log(`Returning ${allTechs.length} total technicians (${processedTechs.length} registered + ${mockTechs.length} sample)`);
     return allTechs.slice(0, maxResults)
 
   } catch (error) {
     console.error('Error fetching technicians:', error);
     
     // Fallback to mock data with location processing
-    console.log('Using fallback sample data due to error');
     let mockTechs = getMockTechnicians();
     
     // Add coordinates and calculate distances for sample data

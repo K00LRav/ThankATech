@@ -266,7 +266,6 @@ export default function Home() {
   const requestUserLocation = () => {
     return new Promise<{lat: number, lng: number} | null>((resolve) => {
       if (!navigator.geolocation) {
-        console.log('Geolocation not supported');
         setLocationPermission('denied');
         resolve(null);
         return;
@@ -280,11 +279,9 @@ export default function Home() {
           };
           setUserLocation(location);
           setLocationPermission('granted');
-          console.log('User location obtained:', location);
           resolve(location);
         },
         (error) => {
-          console.log('Location permission denied or error:', error);
           setLocationPermission('denied');
           resolve(null);
         },
@@ -377,7 +374,6 @@ export default function Home() {
     }
 
     // Debug: Log current user data
-    console.log('🔍 Current user data when tipping:', {
       id: currentUser?.id,
       uid: currentUser?.uid,
       name: currentUser?.name,

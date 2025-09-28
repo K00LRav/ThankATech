@@ -127,7 +127,6 @@ export default function TechnicianDashboard() {
           
           // If still not found, search in both collections by email as fallback
           if (!technicianFound && firebaseUser.email) {
-            console.log('Searching for technician by email:', firebaseUser.email);
             
             // Search technicians collection
             const techQuery = query(
@@ -171,7 +170,6 @@ export default function TechnicianDashboard() {
           
           // Debug logging and migration attempt
           if (!technicianFound) {
-            console.log('No technician profile found for user:', {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName
@@ -179,13 +177,11 @@ export default function TechnicianDashboard() {
             
             // Try to migrate from users collection
             try {
-              console.log('Attempting to migrate technician profile...');
               const migratedProfile = await migrateTechnicianProfile(firebaseUser.uid);
               if (migratedProfile && 'name' in migratedProfile) {
                 const techProfile = migratedProfile as TechnicianProfile;
                 setTechnicianProfile(techProfile);
                 technicianFound = true;
-                console.log('Successfully migrated and loaded technician profile');
                 
                 // Earnings are now handled by the useTechnicianEarnings hook
               }
@@ -271,7 +267,6 @@ export default function TechnicianDashboard() {
       
       if (data.status) {
         setStripeAccountStatus(data.status);
-        console.log('Stripe account status:', data.status, data.message);
       }
     } catch (error) {
       console.error('Failed to check Stripe account status:', error);
@@ -304,7 +299,6 @@ export default function TechnicianDashboard() {
     const loadTransactions = async () => {
       if (technicianProfile) {
         try {
-          console.log('🔍 Loading transactions for technician:', {
             id: technicianProfile.id,
             email: technicianProfile.email,
             uniqueId: (technicianProfile as any).uniqueId,
@@ -317,8 +311,6 @@ export default function TechnicianDashboard() {
             (technicianProfile as any).uniqueId
           );
           
-          console.log('📊 Loaded real transactions:', realTransactions);
-          console.log('📊 Transaction count:', realTransactions.length);
           
           setTransactions(realTransactions);
         } catch (error) {
