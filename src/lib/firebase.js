@@ -1267,6 +1267,50 @@ export async function getTechnicianEarnings(technicianId) {
             const doc = userSnapshot.docs[0];
             technicianData = doc.data();
             actualTechnicianId = doc.id;
+          } else {
+            // Last resort: try to find by Firebase Auth UID using auth.currentUser.email
+            // This handles cases where authUid is not stored properly
+            console.log('💰 AuthUid search failed, trying current user email approach');
+            try {
+              const { auth } = await import('../lib/firebase');
+              const currentUser = auth?.currentUser;
+              if (currentUser?.email) {
+                console.log('💰 Searching by current user email:', currentUser.email);
+                
+                // Search technicians collection by email
+                const emailTechQuery = query(
+                  collection(db, COLLECTIONS.TECHNICIANS),
+                  where('email', '==', currentUser.email),
+                  limit(1)
+                );
+                const emailTechSnapshot = await getDocs(emailTechQuery);
+                
+                if (!emailTechSnapshot.empty) {
+                  const doc = emailTechSnapshot.docs[0];
+                  technicianData = doc.data();
+                  actualTechnicianId = doc.id;
+                  console.log('💰 Found technician by email in technicians collection');
+                } else {
+                  // Search users collection by email
+                  const emailUserQuery = query(
+                    collection(db, COLLECTIONS.USERS),
+                    where('email', '==', currentUser.email),
+                    where('userType', '==', 'technician'),
+                    limit(1)
+                  );
+                  const emailUserSnapshot = await getDocs(emailUserQuery);
+                  
+                  if (!emailUserSnapshot.empty) {
+                    const doc = emailUserSnapshot.docs[0];
+                    technicianData = doc.data();
+                    actualTechnicianId = doc.id;
+                    console.log('💰 Found technician by email in users collection');
+                  }
+                }
+              }
+            } catch (emailError) {
+              console.warn('💰 Email-based lookup failed:', emailError);
+            }
           }
         }
       }
