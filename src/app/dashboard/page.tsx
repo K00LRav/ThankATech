@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import Link from 'next/link';
 import PayoutModal from '@/components/PayoutModal';
+import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
 
 interface TechnicianProfile {
   id: string;
@@ -46,16 +47,12 @@ interface Transaction {
 export default function TechnicianDashboard() {
   const [user, setUser] = useState<any>(null);
   const [technicianProfile, setTechnicianProfile] = useState<TechnicianProfile | null>(null);
-  const [earnings, setEarnings] = useState<EarningsData>({
-    totalEarnings: 0,
-    availableBalance: 0,
-    pendingBalance: 0,
-    totalTips: 0,
-    thisMonthEarnings: 0,
-  });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stripeAccountStatus, setStripeAccountStatus] = useState<'none' | 'pending' | 'active'>('none');
+  
+  // Use the real earnings hook
+  const { earnings: realEarnings, loading: earningsLoading } = useTechnicianEarnings(user?.uid || null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   // Load user and technician profile
@@ -84,13 +81,7 @@ export default function TechnicianDashboard() {
             const totalTipAmount = techData.totalTipAmount || 0;
             const totalTips = techData.totalTips || 0;
             
-            setEarnings({
-              totalEarnings: totalTipAmount / 100, // Convert from cents
-              availableBalance: (totalTipAmount * 0.85) / 100, // 85% available (15% for fees/pending)
-              pendingBalance: (totalTipAmount * 0.15) / 100, // 15% pending
-              totalTips: totalTips,
-              thisMonthEarnings: totalTipAmount / 100, // For demo, show all as this month
-            });
+            // Earnings are now handled by the useTechnicianEarnings hook
           }
           
           // If not found in technicians collection, check users collection
@@ -116,17 +107,7 @@ export default function TechnicianDashboard() {
                 setTechnicianProfile(techData);
                 technicianFound = true;
                 
-                // Calculate earnings from profile data
-                const totalTipAmount = userData.totalTipAmount || 0;
-                const totalTips = userData.totalTips || 0;
-                
-                setEarnings({
-                  totalEarnings: totalTipAmount / 100,
-                  availableBalance: (totalTipAmount * 0.85) / 100,
-                  pendingBalance: (totalTipAmount * 0.15) / 100,
-                  totalTips: totalTips,
-                  thisMonthEarnings: totalTipAmount / 100,
-                });
+                // Earnings are now handled by the useTechnicianEarnings hook
               }
             }
           }
@@ -212,16 +193,7 @@ export default function TechnicianDashboard() {
                 technicianFound = true;
                 console.log('Successfully migrated and loaded technician profile');
                 
-                // Calculate earnings from migrated profile
-                const totalTipAmount = techProfile.totalTipAmount || 0;
-                const totalTips = techProfile.totalTips || 0;
-                
-                setEarnings({
-                  totalEarnings: totalTipAmount / 100,
-                  availableBalance: (totalTipAmount * 0.85) / 100,
-                  pendingBalance: (totalTipAmount * 0.15) / 100,
-                  totalTips: totalTips,
-                  thisMonthEarnings: totalTipAmount / 100,
+                // Earnings are now handled by the useTechnicianEarnings hook
                 });
               }
             } catch (migrationError) {
@@ -445,7 +417,7 @@ export default function TechnicianDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stripe Account Status - Only show if user has earnings to withdraw */}
-        {stripeAccountStatus === 'none' && earnings.availableBalance >= 1.00 && (
+        {stripeAccountStatus === 'none' && realEarnings.availableBalance >= 1.00 && (
           <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-6 mb-8">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
@@ -481,9 +453,9 @@ export default function TechnicianDashboard() {
               <h3 className="text-lg font-semibold text-white">Total Earnings</h3>
             </div>
             <p className="text-3xl font-bold text-green-400">
-              {formatCurrency(earnings.totalEarnings * 100)}
+              {formatCurrency(realEarnings.totalEarnings * 100)}
             </p>
-            <p className="text-sm text-blue-200 mt-1">{earnings.totalTips} tips received</p>
+            <p className="text-sm text-blue-200 mt-1">{realEarnings.tipCount || 0} tips received</p>
           </div>
 
           <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
@@ -496,10 +468,10 @@ export default function TechnicianDashboard() {
               <h3 className="text-lg font-semibold text-white">Available Balance</h3>
             </div>
             <p className="text-3xl font-bold text-blue-400">
-              {formatCurrency(earnings.availableBalance * 100)}
+              {formatCurrency(realEarnings.availableBalance * 100)}
             </p>
             <p className="text-sm text-blue-200 mt-1">Ready to withdraw</p>
-            {earnings.availableBalance >= 1.00 && (
+            {realEarnings.availableBalance >= 1.00 && (
               <div className="mt-4">
                 <button
                   onClick={() => setShowPayoutModal(true)}
@@ -521,7 +493,7 @@ export default function TechnicianDashboard() {
               <h3 className="text-lg font-semibold text-white">Pending</h3>
             </div>
             <p className="text-3xl font-bold text-yellow-400">
-              {formatCurrency(earnings.pendingBalance * 100)}
+              {formatCurrency(realEarnings.pendingBalance * 100)}
             </p>
             <p className="text-sm text-blue-200 mt-1">Processing (2-3 days)</p>
           </div>
@@ -536,7 +508,7 @@ export default function TechnicianDashboard() {
               <h3 className="text-lg font-semibold text-white">This Month</h3>
             </div>
             <p className="text-3xl font-bold text-purple-400">
-              {formatCurrency(earnings.thisMonthEarnings * 100)}
+              {formatCurrency(realEarnings.totalEarnings * 100)}
             </p>
             <p className="text-sm text-blue-200 mt-1">September 2025</p>
           </div>
@@ -549,11 +521,11 @@ export default function TechnicianDashboard() {
             <div className="space-y-3">
               <button
                 onClick={() => setShowPayoutModal(true)}
-                disabled={earnings.availableBalance < 1.00}
+                disabled={realEarnings.availableBalance < 1.00}
                 className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
               >
-                {earnings.availableBalance > 0 
-                  ? `Withdraw ${formatCurrency(earnings.availableBalance * 100)}`
+                {realEarnings.availableBalance > 0
+                  ? `Withdraw ${formatCurrency(realEarnings.availableBalance * 100)}`
                   : 'No funds to withdraw'
                 }
               </button>
@@ -716,7 +688,7 @@ export default function TechnicianDashboard() {
         <PayoutModal
           isOpen={showPayoutModal}
           onClose={() => setShowPayoutModal(false)}
-          availableBalance={earnings.availableBalance}
+          availableBalance={realEarnings.availableBalance}
           technicianId={user?.uid || ''}
           onPayoutSuccess={(amount) => {
             // Update the available balance after successful payout
