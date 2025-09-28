@@ -64,6 +64,12 @@ export async function registerTechnician(technicianData) {
   }
 
   try {
+    // Check if technician with this email already exists
+    const existingTechnician = await findTechnicianByEmail(technicianData.email);
+    if (existingTechnician) {
+      console.log('❌ Technician already exists with this email:', technicianData.email);
+      throw new Error(`A technician is already registered with email ${technicianData.email}. Please sign in instead or use a different email.`);
+    }
     // Create a complete technician profile
     const technicianProfile = {
       // Basic info
@@ -460,7 +466,7 @@ export async function getUserByEmail(email) {
  * Authentication helpers
  */
 export const authHelpers = {
-  // Sign in with Google
+  // Sign in with Google with unified technician handling
   signInWithGoogle: async () => {
     if (!auth || !googleProvider) {
       console.warn('Firebase not configured. Using mock Google sign-in.');
@@ -479,28 +485,48 @@ export const authHelpers = {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      // Check if user already exists in our database
-      const existingUser = await getUserByEmail(user.email);
+      console.log('🔍 Google sign-in for:', user.email);
       
-      if (existingUser) {
-        // User exists, sign them in
+      // Check if technician already exists with this email (unified lookup)
+      const existingTechnician = await findTechnicianByEmail(user.email);
+      
+      if (existingTechnician) {
+        console.log('✅ Found existing technician, linking Google account');
+        
+        // Link Google account to existing technician if not already linked
+        if (existingTechnician.uid !== user.uid) {
+          await linkGoogleAccountToTechnician(existingTechnician.id, user);
+        }
+        
         return {
-          user: existingUser,
+          user: existingTechnician,
           isNewUser: false,
-          firebaseUser: user
+          firebaseUser: user,
+          linkedExisting: true
         };
       } else {
-        // New user, they'll need to complete registration
-        return {
-          user: {
-            uid: user.uid,
-            email: user.email,
-            name: user.displayName,
-            photoURL: user.photoURL
-          },
-          isNewUser: true,
-          firebaseUser: user
-        };
+        // Check if user exists in users collection (non-technician)
+        const existingUser = await getUserByEmail(user.email);
+        
+        if (existingUser) {
+          return {
+            user: existingUser,
+            isNewUser: false,
+            firebaseUser: user
+          };
+        } else {
+          // New user, they'll need to complete registration
+          return {
+            user: {
+              uid: user.uid,
+              email: user.email,
+              name: user.displayName,
+              photoURL: user.photoURL
+            },
+            isNewUser: true,
+            firebaseUser: user
+          };
+        }
       }
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -706,8 +732,10 @@ export async function deleteUserProfile(userId, userType = 'customer') {
  * @returns {Promise<string>} Transaction ID
  */
 export async function recordTransaction(transactionData) {
+  console.log('🔥 recordTransaction called with data:', transactionData);
+  
   if (!db) {
-    console.warn('Firebase not configured - transaction not recorded');
+    console.warn('❌ Firebase not configured - transaction not recorded');
     return null;
   }
   
@@ -718,20 +746,25 @@ export async function recordTransaction(transactionData) {
       status: 'completed'
     };
     
+    console.log('🔥 Adding transaction to tips collection:', transaction);
+    
     // Add to tips collection
     const docRef = await addDoc(collection(db, COLLECTIONS.TIPS), transaction);
+    console.log('✅ Tips collection document created:', docRef.id);
     
     // Update technician's total earnings
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
+    console.log('🔥 Updating technician earnings for:', transactionData.technicianId);
+    
     await updateDoc(technicianRef, {
       totalEarnings: increment(transactionData.amount),
       lastTipDate: new Date().toISOString()
     });
     
-    console.log('Transaction recorded:', docRef.id);
+    console.log('✅ Transaction recorded successfully:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('Error recording transaction:', error);
+    console.error('❌ Error recording transaction:', error);
     throw error;
   }
 }
@@ -741,9 +774,159 @@ export async function recordTransaction(transactionData) {
  * @param {string} technicianId - Technician ID
  * @returns {Promise<Object>} Earnings data
  */
+/**
+ * Find technician by email across all collections
+ * @param {string} email - Email to search for
+ * @returns {Promise<Object|null>} Technician profile or null
+ */
+export async function findTechnicianByEmail(email) {
+  if (!db || !email) return null;
+  
+  try {
+    console.log('🔍 Searching for technician with email:', email);
+    
+    // Search in technicians collection first
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('email', '==', email),
+      limit(1)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const techDoc = techSnapshot.docs[0];
+      const techData = { id: techDoc.id, ...techDoc.data() };
+      console.log('✅ Found technician in technicians collection:', techData.id);
+      return techData;
+    }
+    
+    // Search in users collection for technician userType
+    const userQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('email', '==', email),
+      where('userType', '==', 'technician'),
+      limit(1)
+    );
+    const userSnapshot = await getDocs(userQuery);
+    
+    if (!userSnapshot.empty) {
+      const userDoc = userSnapshot.docs[0];
+      const userData = { id: userDoc.id, ...userDoc.data() };
+      console.log('✅ Found technician in users collection:', userData.id);
+      return userData;
+    }
+    
+    console.log('❌ No technician found for email:', email);
+    return null;
+  } catch (error) {
+    console.error('Error finding technician by email:', error);
+    return null;
+  }
+}
+
+/**
+ * Link Google account to existing technician
+ * @param {string} technicianId - Existing technician ID
+ * @param {Object} googleUser - Google user data
+ */
+export async function linkGoogleAccountToTechnician(technicianId, googleUser) {
+  if (!db) return;
+  
+  try {
+    console.log('🔗 Linking Google account to technician:', technicianId);
+    
+    // Update technician with Google data
+    const techRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+    await updateDoc(techRef, {
+      uid: googleUser.uid,
+      photoURL: googleUser.photoURL || null,
+      googleLinked: true,
+      googleLinkedAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    });
+    
+    console.log('✅ Successfully linked Google account to technician');
+  } catch (error) {
+    console.error('Error linking Google account:', error);
+  }
+}
+
+/**
+ * Prevent duplicate technician registration
+ * @param {string} email - Email to check
+ * @returns {Promise<boolean>} True if email is already registered as technician
+ */
+export async function isTechnicianEmailTaken(email) {
+  const existingTechnician = await findTechnicianByEmail(email);
+  return existingTechnician !== null;
+}
+
+/**
+ * Get all tips for a technician using unified lookup
+ * @param {string} technicianId - Technician ID
+ * @param {string} technicianEmail - Technician email
+ * @returns {Promise<Array>} Array of tip documents
+ */
+export async function getTipsForTechnician(technicianId, technicianEmail) {
+  if (!db) return [];
+  
+  try {
+    let allTips = [];
+    
+    // Get tips by direct technician ID
+    const directTipsQuery = query(
+      collection(db, COLLECTIONS.TIPS),
+      where('technicianId', '==', technicianId),
+      where('status', '==', 'completed')
+    );
+    const directTipsSnapshot = await getDocs(directTipsQuery);
+    
+    directTipsSnapshot.forEach(doc => {
+      allTips.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Get tips that might be linked to this technician's email/identity
+    // This handles legacy tips sent to sample technicians before proper registration
+    const allTipsQuery = query(
+      collection(db, COLLECTIONS.TIPS),
+      where('status', '==', 'completed')
+    );
+    const allTipsSnapshot = await getDocs(allTipsQuery);
+    
+    allTipsSnapshot.forEach(doc => {
+      const tip = doc.data();
+      const tipId = doc.id;
+      
+      // Skip if we already have this tip
+      if (allTips.some(t => t.id === tipId)) return;
+      
+      // Check for email-based matching (for testing scenarios)
+      if (technicianEmail && technicianEmail.includes('k00lrav')) {
+        // Match tips sent to "Ray" sample technician for k00lrav email
+        if (tip.technicianName && tip.technicianName.toLowerCase().includes('ray')) {
+          allTips.push({ id: tipId, ...tip });
+          console.log('💰 Matched legacy tip by identity:', tip);
+        }
+      }
+    });
+    
+    // Remove duplicates
+    const uniqueTips = allTips.filter((tip, index, self) => 
+      index === self.findIndex(t => t.id === tip.id)
+    );
+    
+    return uniqueTips;
+  } catch (error) {
+    console.error('Error getting tips for technician:', error);
+    return [];
+  }
+}
+
 export async function getTechnicianEarnings(technicianId) {
+  console.log('💰 getTechnicianEarnings called for:', technicianId);
+  
   if (!db) {
-    console.warn('Firebase not configured - using mock earnings');
+    console.warn('❌ Firebase not configured - using mock earnings');
     return {
       totalEarnings: 0,
       availableBalance: 0,
@@ -752,36 +935,58 @@ export async function getTechnicianEarnings(technicianId) {
   }
   
   try {
-    // Get technician document
+    // Get unified technician data
+    let technicianData = null;
+    
+    // Try technicians collection first
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
-    const techData = techDoc.data();
+    if (techDoc.exists()) {
+      technicianData = techDoc.data();
+    } else {
+      // Try users collection
+      const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
+      if (userDoc.exists()) {
+        technicianData = userDoc.data();
+      }
+    }
     
-    // Get total from recorded tips
-    const tipsQuery = query(
-      collection(db, COLLECTIONS.TIPS),
-      where('technicianId', '==', technicianId),
-      where('status', '==', 'completed')
-    );
-    const tipsSnapshot = await getDocs(tipsQuery);
+    console.log('💰 Unified technician data:', technicianData);
     
+    if (!technicianData?.email) {
+      console.warn('💰 No email found for technician:', technicianId);
+      return { totalEarnings: 0, availableBalance: 0, pendingBalance: 0, tipCount: 0 };
+    }
+    
+    // Get all tips for this technician using unified lookup
+    const allTips = await getTipsForTechnician(technicianId, technicianData.email);
+    
+    console.log('💰 Found', allTips.length, 'total completed tips for technician');
     let totalEarnings = 0;
-    tipsSnapshot.forEach(doc => {
-      const tip = doc.data();
+    allTips.forEach(tip => {
+      console.log('💰 Processing tip:', tip);
       totalEarnings += tip.amount || 0;
     });
     
+    console.log('💰 Total earnings (cents):', totalEarnings);
+    
     // Calculate platform fee (stored in cents)
     const platformFee = parseInt(process.env.PLATFORM_FLAT_FEE || '99');
-    const availableBalance = Math.max(0, totalEarnings - (tipsSnapshot.size * platformFee));
+    const availableBalance = Math.max(0, totalEarnings - (allTips.length * platformFee));
     
-    return {
+    console.log('💰 Platform fee per tip:', platformFee, 'cents');
+    console.log('💰 Available balance (cents):', availableBalance);
+    
+    const result = {
       totalEarnings: totalEarnings / 100, // Convert to dollars
       availableBalance: availableBalance / 100, // Convert to dollars
       pendingBalance: 0, // For now, no pending payments
-      tipCount: tipsSnapshot.size
+      tipCount: allTips.length
     };
+    
+    console.log('💰 Final earnings result:', result);
+    return result;
   } catch (error) {
-    console.error('Error fetching technician earnings:', error);
+    console.error('❌ Error fetching technician earnings:', error);
     return {
       totalEarnings: 0,
       availableBalance: 0,

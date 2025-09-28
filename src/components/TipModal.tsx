@@ -90,6 +90,14 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       if (error) {
         setError(error.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
+        console.log('✅ Payment succeeded, recording transaction...', {
+          technicianId: technician.id,
+          customerId: customerId,
+          amount: dollarsToCents(currentAmount),
+          paymentIntentId: paymentIntent.id,
+          technicianName: technician.name,
+        });
+        
         // Record the successful transaction in Firebase
         try {
           await recordTransaction({
@@ -101,11 +109,13 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
             customerNote: '', // Could add a note field later
           });
           
+          console.log('✅ Transaction recorded successfully in Firebase');
+          
           // Payment successful and recorded!
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
           onClose();
         } catch (recordError) {
-          console.error('Failed to record transaction:', recordError);
+          console.error('❌ Failed to record transaction:', recordError);
           // Still show success since payment went through
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
           onClose();
