@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip } from '../lib/firebase';
 import Registration from '../components/Registration';
+import SignIn from '../components/SignIn';
 import Footer from '../components/Footer';
 
 interface Technician {
@@ -45,6 +46,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
@@ -555,7 +557,7 @@ export default function Home() {
             ) : (
               <div className="flex gap-3 items-center">
                 <button 
-                  onClick={() => setShowRegistration(true)}
+                  onClick={() => setShowSignIn(true)}
                   className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
                 >
                   Sign In
@@ -1074,6 +1076,18 @@ export default function Home() {
         <Registration 
           onRegistrationComplete={handleRegistrationComplete}
           onClose={handleRegistrationClose}
+        />
+      )}
+
+      {/* Sign In Modal */}
+      {showSignIn && (
+        <SignIn 
+          onSignInComplete={handleRegistrationComplete}
+          onClose={() => setShowSignIn(false)}
+          onSwitchToRegister={() => {
+            setShowSignIn(false);
+            setShowRegistration(true);
+          }}
         />
       )}
 
