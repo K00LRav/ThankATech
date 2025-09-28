@@ -932,7 +932,7 @@ export default function Home() {
                                 <span className="text-xs font-medium">{badge.text}</span>
                                 <div className="text-xs text-gray-500 mt-0.5">
                                   {badge.text.includes('Thank') && `${profile.totalThankYous || 0} thank yous received`}
-                                  {badge.text.includes('Tip') && `${profile.totalTips || 0} tips received`}
+                                  {badge.text.includes('Tip') && `${profile.totalTips || 0} tips received${profile.totalTipAmount && profile.totalTipAmount > 0 ? ` ($${(profile.totalTipAmount / 100).toFixed(2)})` : ''}`}
                                   {badge.text.includes('Excellence') && 'Top-rated technician'}
                                   {badge.text.includes('Outstanding') && 'Highly rated by customers'}
                                   {badge.text.includes('Master') && 'Decade+ of experience'}
@@ -955,6 +955,11 @@ export default function Home() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips received
+                        {profile.totalTipAmount && profile.totalTipAmount > 0 && (
+                          <span className="ml-1 text-green-600 font-medium">
+                            (${(profile.totalTipAmount / 100).toFixed(2)})
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

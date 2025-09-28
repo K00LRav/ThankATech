@@ -555,7 +555,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{error}</div>
           )}
 
-          <div className="flex space-x-3 pt-6">
+          <div className="flex space-x-3 pt-6 pb-6">
             <button
               type="button"
               onClick={onClose}

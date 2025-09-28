@@ -914,6 +914,8 @@ export async function recordTransaction(transactionData) {
         
         await updateDoc(technicianRef, {
           totalEarnings: increment(transactionData.amount),
+          totalTips: increment(1), // Increment tip count
+          totalTipAmount: increment(transactionData.amount), // Increment total tip amount
           lastTipDate: new Date().toISOString()
         });
       } catch (updateError) {
