@@ -691,7 +691,7 @@ export default function TechnicianDashboard() {
         </div>
 
         {/* Withdrawal History */}
-        <div className="bg-slate-800/50 backdrop-blur rounded-xl border border-white/10">
+        <div className="mt-8 bg-slate-800/50 backdrop-blur rounded-xl border border-white/10">
           <div className="p-6 border-b border-white/10">
             <h3 className="text-xl font-bold text-white">Withdrawal History</h3>
           </div>
