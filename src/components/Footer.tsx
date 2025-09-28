@@ -166,7 +166,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-gray-400 text-sm">
-              © 2025 ThankATech. All rights reserved. Built with ❤️ for amazing technicians. v1.2
+              © 2025 ThankATech. All rights reserved. Built with ❤️ for amazing technicians. v0.2.1
             </div>
             <div className="flex gap-6 text-sm">
               <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
