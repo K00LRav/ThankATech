@@ -132,7 +132,7 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
           {/* Switch to Register */}
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button
                 onClick={onSwitchToRegister}
                 className="text-blue-400 hover:text-blue-300 font-medium underline transition-colors"
