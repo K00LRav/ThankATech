@@ -88,7 +88,8 @@ export default function EditProfile() {
               serviceArea: technicianData.serviceArea || '',
               hourlyRate: technicianData.hourlyRate || '',
               availability: technicianData.availability || '',
-              photoURL: technicianData.image || user.photoURL || '',
+              // Prioritize current Google photo, then stored image
+              photoURL: user.photoURL || technicianData.image || '',
               userType: 'technician'
             } as TechnicianProfile;
           }

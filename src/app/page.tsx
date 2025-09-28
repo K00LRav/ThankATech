@@ -368,15 +368,24 @@ export default function Home() {
     setCurrentUser(user);
     setShowRegistration(false);
     
-    // Different welcome messages based on user type
-    if (user.userType === 'technician') {
-      setThankYouMessage('Welcome to ThankATech! Your technician profile is now live. Customers can now find and thank you!');
-    } else {
-      setThankYouMessage('Welcome to ThankATech! You can now thank technicians and show your appreciation.');
+    // Show welcome message only for new registrations (not existing sign-ins)
+    if (user.isNewUser) {
+      // Different welcome messages based on user type
+      if (user.userType === 'technician') {
+        setThankYouMessage('Welcome to ThankATech! Your technician profile is now live. Customers can now find and thank you!');
+      } else {
+        setThankYouMessage('Welcome to ThankATech! You can now thank technicians and show your appreciation.');
+      }
+      
+      setShowThankYou(true);
+      setTimeout(() => setShowThankYou(false), 4000); // Longer timeout for technician message
     }
-    
-    setShowThankYou(true);
-    setTimeout(() => setShowThankYou(false), 4000); // Longer timeout for technician message
+  };
+
+  const handleSignInComplete = (user: any) => {
+    setCurrentUser(user);
+    setShowSignIn(false);
+    // No welcome message for existing users signing in
   };
 
   const handleRegistrationClose = () => {
@@ -1060,7 +1069,7 @@ export default function Home() {
       {/* Sign In Modal */}
       {showSignIn && (
         <SignIn 
-          onSignInComplete={handleRegistrationComplete}
+          onSignInComplete={handleSignInComplete}
           onClose={() => setShowSignIn(false)}
           onSwitchToRegister={() => {
             setShowSignIn(false);

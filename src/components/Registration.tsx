@@ -42,8 +42,8 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
   const handleGoogleSignInSuccess = (result: any) => {
     if (!result.isNewUser) {
-      // User already exists, sign them in
-      onRegistrationComplete(result.user);
+      // User already exists, sign them in (no welcome message)
+      onRegistrationComplete({ ...result.user, isNewUser: false });
     } else {
       // New user, pre-fill form with Google data and continue registration
       setGoogleUser(result.firebaseUser);
@@ -107,7 +107,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         });
       }
       
-      onRegistrationComplete(result);
+      onRegistrationComplete({ ...result, isNewUser: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
