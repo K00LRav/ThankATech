@@ -117,6 +117,8 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
           await recordTransaction({
             technicianId: technician.id,
             customerId: customer.id,
+            customerName: customer.name,
+            customerEmail: customer.email,
             amount: dollarsToCents(currentAmount), // Store in cents
             paymentIntentId: paymentIntent.id,
             technicianName: technician.name,
