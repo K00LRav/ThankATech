@@ -194,7 +194,6 @@ export default function TechnicianDashboard() {
                 console.log('Successfully migrated and loaded technician profile');
                 
                 // Earnings are now handled by the useTechnicianEarnings hook
-                });
               }
             } catch (migrationError) {
               console.error('Error during migration:', migrationError);
@@ -691,11 +690,7 @@ export default function TechnicianDashboard() {
           availableBalance={realEarnings.availableBalance}
           technicianId={user?.uid || ''}
           onPayoutSuccess={(amount) => {
-            // Update the available balance after successful payout
-            setEarnings(prev => ({
-              ...prev,
-              availableBalance: prev.availableBalance - amount
-            }));
+            // The useTechnicianEarnings hook will automatically refresh earnings
             setShowPayoutModal(false);
           }}
         />
