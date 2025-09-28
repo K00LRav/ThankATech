@@ -6,6 +6,15 @@ import { db } from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get Stripe instance
+    const stripe = getServerStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+
     const { amount, technicianId, customerId, customerName, customerEmail } = await request.json();
 
     // Debug: Log received customer data
@@ -33,9 +42,6 @@ export async function POST(request: NextRequest) {
     // Calculate fees
     const platformFee = calculatePlatformFee(amount);
     const technicianPayout = calculateTechnicianPayout(amount);
-
-    // Get server-side Stripe instance
-    const stripe = getServerStripe();
 
     // Check if technician has Express account set up
     if (techData?.stripeAccountId && techData.stripeAccountStatus === 'active') {

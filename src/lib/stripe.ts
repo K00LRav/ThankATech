@@ -15,8 +15,13 @@ export const getServerStripe = () => {
     throw new Error('Server-side Stripe should not be used on the client');
   }
   
+  // Only initialize if environment variable is available
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return null;
+  }
+  
   const Stripe = require('stripe');
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: '2025-08-27.basil',
   });
 };

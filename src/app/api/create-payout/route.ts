@@ -6,6 +6,13 @@ import { headers } from 'next/headers';
 export async function POST(request: NextRequest) {
   try {
     const stripe = getServerStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+    
     const { amount, technicianId, bankAccount } = await request.json();
 
     // Validate request

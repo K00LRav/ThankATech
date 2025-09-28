@@ -1,18 +1,23 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
-// Check for required environment variables
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+// Initialize Stripe only if secret key is available
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request: Request) {
   try {
+    // Check if required services are available
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+
     const { technicianId, email, returnUrl, refreshUrl } = await request.json();
 
     if (!technicianId || !email) {
@@ -25,6 +30,17 @@ export async function POST(request: Request) {
     // Validate Stripe key is test key for development
     if (process.env.NODE_ENV === 'development' && process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
       console.warn('⚠️  Using live Stripe keys in development mode!');
+    }
+
+    // Dynamically import Firebase to avoid build-time issues
+    const { doc, updateDoc, getDoc } = await import('firebase/firestore');
+    const { db } = await import('@/lib/firebase');
+
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Firebase not configured' },
+        { status: 503 }
+      );
     }
 
     // Check if technician already has a Stripe account

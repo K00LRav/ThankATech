@@ -19,6 +19,13 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getServerStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+    
     let event: any = null;
     let webhookType = 'unknown';
 
