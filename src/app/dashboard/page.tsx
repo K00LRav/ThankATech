@@ -52,8 +52,8 @@ export default function TechnicianDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [stripeAccountStatus, setStripeAccountStatus] = useState<'none' | 'pending' | 'active'>('none');
   
-  // Use the real earnings hook
-  const { earnings: realEarnings, loading: earningsLoading } = useTechnicianEarnings(user?.uid || null);
+  // Use the real earnings hook with technician document ID
+  const { earnings: realEarnings, loading: earningsLoading } = useTechnicianEarnings(technicianProfile?.id || null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   // Load user and technician profile
