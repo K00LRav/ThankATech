@@ -518,13 +518,13 @@ export default function Home() {
           <div className="flex gap-4 items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
-                {/* Technician Dashboard Button - Temporarily showing for all users for debugging */}
+                {/* Dashboard Button - Show for technicians, Profile for customers */}
                 {currentUser && (
                   <button
                     onClick={() => setShowTechDashboard(true)}
                     className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
-                    Dashboard
+                    {currentUser.userType === 'technician' ? 'Dashboard' : 'Profile'}
                   </button>
                 )}
                 
@@ -1111,8 +1111,12 @@ export default function Home() {
             {/* Mobile-friendly Header with close button */}
             <div className="flex items-center justify-between p-4 border-b border-white/10 bg-slate-900/50">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h2>
-                <p className="text-sm text-gray-300 mt-1">Your profile & stats</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                  {currentUser?.userType === 'technician' ? 'Dashboard' : 'Profile'}
+                </h2>
+                <p className="text-sm text-gray-300 mt-1">
+                  {currentUser?.userType === 'technician' ? 'Your profile & stats' : 'Your profile & activity'}
+                </p>
               </div>
               <button
                 onClick={() => setShowTechDashboard(false)}
