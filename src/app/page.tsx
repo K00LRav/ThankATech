@@ -525,58 +525,37 @@ export default function Home() {
     setShowRegistration(false);
   };
 
+  // Keyboard navigation for better UX
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (isFlipping) return;
-      
-      if (e.deltaY > 0) {
-        flipToNext();
-      } else if (e.deltaY < 0) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
         flipToPrevious();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        flipToNext();
       }
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
-      setTouchEnd(null);
-      setTouchStart(e.targetTouches[0].clientY);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      setTouchEnd(e.targetTouches[0].clientY);
-    };
-
-    const handleTouchEnd = () => {
-      if (!touchStart || !touchEnd) return;
-      
-      const distance = touchStart - touchEnd;
-      const isUpSwipe = distance > minSwipeDistance;
-      const isDownSwipe = distance < -minSwipeDistance;
-
-      if (isUpSwipe) {
-        flipToNext(); // Swipe up = next profile
-      } else if (isDownSwipe) {
-        flipToPrevious(); // Swipe down = previous profile
+    // Only add keyboard listeners when not focused on input elements
+    const handleFocus = (e: FocusEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        document.removeEventListener('keydown', handleKeyDown);
+      } else {
+        document.addEventListener('keydown', handleKeyDown);
       }
     };
 
-    const cardElement = document.getElementById('rolodex-card');
-    if (cardElement) {
-      // Mouse wheel events
-      cardElement.addEventListener('wheel', handleWheel, { passive: false });
-      
-      // Touch events
-      cardElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-      cardElement.addEventListener('touchmove', handleTouchMove, { passive: true });
-      cardElement.addEventListener('touchend', handleTouchEnd, { passive: true });
-      
-      return () => {
-        cardElement.removeEventListener('wheel', handleWheel);
-        cardElement.removeEventListener('touchstart', handleTouchStart);
-        cardElement.removeEventListener('touchmove', handleTouchMove);
-        cardElement.removeEventListener('touchend', handleTouchEnd);
-      };
-    }
-  }, [isFlipping, profiles.length, touchStart, touchEnd, flipToNext, flipToPrevious]);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('focusin', handleFocus);
+    document.addEventListener('focusout', handleFocus);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', handleFocus);
+      document.removeEventListener('focusout', handleFocus);
+    };
+  }, [flipToNext, flipToPrevious]);
   
   // Show loading state
   if (loading) {
@@ -846,27 +825,93 @@ export default function Home() {
           </div>
         )}
 
-        {/* Modern Rolodex Card */}
-        <div id="rolodex-card" className={`card-container relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
-          {/* Glass morphism background layers - Wider and dynamic height */}
-          <div className={`absolute top-3 left-3 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/20 to-blue-700/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
-          <div className={`absolute top-1.5 left-1.5 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/15 to-blue-700/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
+        {/* Navigation Controls */}
+        <div className="flex items-center justify-center gap-6 mb-8 px-4">
+          {/* Previous Button */}
+          <button
+            onClick={flipToPrevious}
+            disabled={currentProfileIndex === 0}
+            className={`group flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-4 rounded-2xl font-medium text-sm sm:text-base transition-all duration-200 shadow-lg ${
+              currentProfileIndex === 0
+                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-xl hover:border-white/40'
+            }`}
+          >
+            <svg className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline">Previous</span>
+          </button>
+
+            {/* Modern Pagination Info */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            {/* Counter */}
+            <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-2xl px-4 py-2 sm:px-6 sm:py-3 shadow-lg" title="Use arrow keys to navigate">
+              <span className="text-white font-medium text-sm sm:text-base">
+                {currentProfileIndex + 1} of {profiles.length}
+              </span>
+            </div>
+            
+            {/* Enhanced Pagination Dots */}
+            <div className="flex items-center gap-3">
+              {profiles.slice(0, Math.min(7, profiles.length)).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentProfileIndex(index)}
+                  className={`rounded-full transition-all duration-300 hover:scale-110 ${
+                    index === currentProfileIndex
+                      ? 'w-3 h-3 sm:w-4 sm:h-4 bg-blue-400 shadow-lg shadow-blue-400/50 scale-125'
+                      : 'w-2 h-2 sm:w-3 sm:h-3 bg-white/40 hover:bg-white/60 shadow-md'
+                  }`}
+                />
+              ))}
+              {profiles.length > 7 && (
+                <div className="flex items-center ml-2">
+                  <span className="text-white/60 text-xs sm:text-sm font-medium">
+                    +{profiles.length - 7} more
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Next Button */}
+          <button
+            onClick={flipToNext}
+            disabled={currentProfileIndex >= profiles.length - 1}
+            className={`group flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-4 rounded-2xl font-medium text-sm sm:text-base transition-all duration-200 shadow-lg ${
+              currentProfileIndex >= profiles.length - 1
+                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-xl hover:border-white/40'
+            }`}
+          >
+            <span className="hidden sm:inline">Next</span>
+            <svg className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-transform ${currentProfileIndex >= profiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Modern Glass Rolodex Card */}
+        <div id="rolodex-card" className={`card-container relative group ${isFlipping ? 'animate-pulse' : ''} flex justify-center`}>
+          {/* Glass morphism background layers for depth */}
+          <div className="absolute top-4 left-4 w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-auto min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem] bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-3xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-6 group-hover:left-6 border border-white/10 shadow-xl"></div>
+          <div className="absolute top-2 left-2 w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-auto min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem] bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-3xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 group-hover:top-3 group-hover:left-3 border border-white/15 shadow-2xl"></div>
           
-          {/* Main Modern Card - Responsive width with proper overflow control */}
-          <div className="relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
-            {/* Manila Folder Tab - positioned above the main folder */}
-            <div className="absolute -top-6 right-8 sm:right-12 z-10">
-              <div className="bg-gradient-to-b from-amber-100 to-amber-200 border-2 border-amber-300/80 shadow-lg px-4 py-2 rounded-t-lg">
-                <span className="text-xs sm:text-sm font-bold text-amber-800 tracking-wide flex items-center gap-1">
-                  <span className="text-sm sm:text-base">{getCategoryIcon(profile.category, profile.title)}</span>
-                  <span className="hidden sm:inline">{formatCategory(profile.category)}</span>
-                  <span className="sm:hidden">{formatCategory(profile.category).split(' ')[0]}</span>
+          {/* Main Glass Card */}
+          <div className="relative w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden">
+            {/* Category Badge - Top Right */}
+            <div className="absolute top-4 right-4 z-10">
+              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
+                <span className="text-lg">{getCategoryIcon(profile.category, profile.title)}</span>
+                <span className="hidden sm:inline text-white text-sm font-medium">
+                  {formatCategory(profile.category)}
                 </span>
               </div>
             </div>
             
-            {/* Main Manila Folder Body */}
-            <div className={`relative ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-amber-50 to-amber-100 backdrop-blur-lg shadow-2xl border-2 border-amber-200/60 rounded-lg p-4 sm:p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-3xl group-hover:-translate-y-3 group-hover:shadow-amber-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''} ${expandedCard ? 'overflow-visible' : 'overflow-hidden'}`}>
+            {/* Card Content */}
+            <div className="relative p-6 sm:p-8 lg:p-10 h-full min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem]">
 
             <div className="flex flex-col h-full">
               {/* Header Section */}
@@ -885,17 +930,19 @@ export default function Home() {
                     />
                   </div>
                   {/* Dynamic Rating overlay */}
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">
-                    {dynamicRating.toFixed(1)}⭐
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center text-sm lg:text-base font-bold shadow-lg border-2 border-white">
+                    <span className="flex items-center justify-center">
+                      {dynamicRating.toFixed(1)}⭐
+                    </span>
                   </div>
                 </div>
 
                 {/* Name and Title */}
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{profile.name}</h2>
-                  <p className="text-sm sm:text-base lg:text-lg text-blue-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
+                  <p className="text-base sm:text-lg lg:text-xl text-blue-800 font-semibold mt-1">{profile.businessName || profile.title}</p>
                   {profile.serviceArea && (
-                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                    <p className="text-sm sm:text-base text-gray-100 mt-1 flex items-center">
                       <span className="mr-1">📍</span>
                       {profile.serviceArea}
                     </p>
@@ -904,11 +951,11 @@ export default function Home() {
                   {/* Distance and Location Info */}
                   {profile.distance !== undefined && (
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500 flex items-center">
+                      <span className="text-sm sm:text-base text-gray-100 flex items-center">
                         🚗 {profile.distance.toFixed(1)} miles away
                       </span>
                       {profile.isNearby && (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
+                        <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-200">
                           📍 Near You
                         </span>
                       )}
@@ -917,14 +964,14 @@ export default function Home() {
                   
                   {/* Achievement Badges */}
                   {achievementBadges.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-2">
                       {achievementBadges.map((badge, index) => (
                         <span 
                           key={index}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${badge.color} shadow-sm`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 lg:px-3 lg:py-1.5 rounded-full text-xs lg:text-sm font-medium border ${badge.color} shadow-sm`}
                           title={`Achievement: ${badge.text}`}
                         >
-                          <span className="text-xs">{badge.icon}</span>
+                          <span className="text-xs lg:text-sm">{badge.icon}</span>
                           <span className="hidden sm:inline">{badge.text}</span>
                         </span>
                       ))}
@@ -938,7 +985,7 @@ export default function Home() {
                 {/* Left Column - About & Basic Info */}
                 <div className="space-y-3">
                   <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.about}</p>
+                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed max-h-80 lg:max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.about}</p>
                   </div>
 
                   {/* Basic Contact Info Grid - Only show when expanded */}
@@ -948,7 +995,7 @@ export default function Home() {
                     <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
                       <div className="flex items-center space-x-2">
                         <span className="text-blue-500">📞</span>
-                        <span className="text-xs text-blue-700 font-medium">{profile.businessPhone}</span>
+                        <span className="text-xs lg:text-sm text-blue-700 font-medium">{profile.businessPhone}</span>
                       </div>
                     </div>
                   )}
@@ -956,7 +1003,7 @@ export default function Home() {
                     <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100 col-span-2">
                       <div className="flex items-start space-x-2">
                         <span className="text-blue-500 mt-0.5">✉️</span>
-                        <span className="text-xs sm:text-sm text-blue-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
+                        <span className="text-xs lg:text-sm text-blue-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
                       </div>
                     </div>
                   )}
@@ -968,7 +1015,7 @@ export default function Home() {
                           href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-green-700 font-medium hover:text-green-800 hover:underline transition-colors"
+                          className="text-xs lg:text-sm text-green-700 font-medium hover:text-green-800 hover:underline transition-colors"
                         >
                           {formatWebsiteTitle(profile.website)}
                         </a>
@@ -1064,15 +1111,15 @@ export default function Home() {
 
                     {/* Achievement Badges Section */}
                     {achievementBadges.length > 0 && (
-                      <div className="bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm rounded-xl p-3 border border-blue-200">
-                        <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Achievements</h4>
+                      <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm rounded-xl p-3 border border-gray-600">
+                        <h4 className="text-sm lg:text-base font-semibold text-gray-100 mb-2">🏆 Achievements</h4>
                         <div className="grid grid-cols-1 gap-2">
                           {achievementBadges.map((badge, index) => (
-                            <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${badge.color}`}>
-                              <span className="text-lg">{badge.icon}</span>
+                            <div key={index} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/50">
+                              <span className="text-xl lg:text-2xl">{badge.icon}</span>
                               <div className="flex-1">
-                                <span className="text-xs font-medium">{badge.text}</span>
-                                <div className="text-xs text-gray-500 mt-0.5">
+                                <span className="text-sm lg:text-base font-medium text-gray-100">{badge.text}</span>
+                                <div className="text-xs lg:text-sm text-gray-300 mt-0.5">
                                   {badge.text.includes('Thank') && `${profile.totalThankYous || 0} thank yous received`}
                                   {badge.text.includes('Tip') && `${profile.totalTips || 0} tips received${profile.totalTipAmount && profile.totalTipAmount > 0 ? ` ($${(profile.totalTipAmount / 100).toFixed(2)})` : ''}`}
                                   {badge.text.includes('Excellence') && 'Top-rated technician'}
@@ -1089,13 +1136,13 @@ export default function Home() {
                     )}
 
                     {/* Rating Explanation */}
-                    <div className="bg-gradient-to-r from-yellow-50/80 to-orange-50/80 backdrop-blur-sm rounded-xl p-3 border border-yellow-200">
-                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ Community Rating</h4>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Based on customer feedback</span>
-                        <span className="font-bold text-yellow-700">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
+                    <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm rounded-xl p-3 lg:p-4 border border-gray-600">
+                      <h4 className="text-sm lg:text-base font-semibold text-gray-100 mb-2">⭐ Community Rating</h4>
+                      <div className="flex items-center justify-between text-xs lg:text-sm">
+                        <span className="text-gray-200">Based on customer feedback</span>
+                        <span className="font-bold text-yellow-400 text-sm lg:text-base">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs lg:text-sm text-gray-200 mt-2">
                         {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips received
                         {profile.totalTipAmount && profile.totalTipAmount > 0 && (
                           <span className="ml-1 text-green-600 font-medium">
@@ -1113,7 +1160,7 @@ export default function Home() {
               <div className="mt-3 text-center">
                 <button
                   onClick={() => setExpandedCard(!expandedCard)}
-                  className="text-xs text-gray-500 hover:text-indigo-600 transition-colors duration-200 flex items-center space-x-1 mx-auto"
+                  className="text-xs text-gray-100 hover:text-blue-300 transition-colors duration-200 flex items-center space-x-1 mx-auto"
                 >
                   <span>{expandedCard ? 'Less Details' : 'More Details'}</span>
                   <span className={`transform transition-transform duration-200 ${expandedCard ? 'rotate-180' : ''}`}>
@@ -1125,30 +1172,30 @@ export default function Home() {
               {/* Bottom Section - Contained within card */}
               <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200/50">
                 {/* Thank You Points Display - Compact mobile layout */}
-                <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap mb-2 sm:mb-3">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-2 py-1 sm:px-3 sm:py-1 shadow-lg">
+                <div className="flex items-center justify-center gap-2 flex-wrap mb-3">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-lg">
                     <div className="flex items-center space-x-1">
-                      <span className="text-xs">👍</span>
-                      <span className="text-xs font-bold">{profile.totalThankYous || 0}</span>
-                      <span className="text-xs opacity-90 hidden sm:inline">thanks</span>
+                      <span className="text-xs lg:text-sm">👍</span>
+                      <span className="text-xs lg:text-sm font-bold">{profile.totalThankYous || 0}</span>
+                      <span className="text-xs lg:text-sm opacity-90 hidden sm:inline">thanks</span>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-full px-2 py-1 sm:px-3 sm:py-1 shadow-lg">
+                  <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-lg">
                     <div className="flex items-center space-x-1">
-                      <span className="text-xs">💰</span>
-                      <span className="text-xs font-bold">{profile.totalTips || 0}</span>
-                      <span className="text-xs opacity-90 hidden sm:inline">tips</span>
+                      <span className="text-xs lg:text-sm">💰</span>
+                      <span className="text-xs lg:text-sm font-bold">{profile.totalTips || 0}</span>
+                      <span className="text-xs lg:text-sm opacity-90 hidden sm:inline">tips</span>
                     </div>
                   </div>
                   {profile.certifications && (
-                    <div className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 shadow-sm">
-                      <span className="text-xs font-medium">✓ Certified</span>
+                    <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-sm">
+                      <span className="text-xs lg:text-sm font-medium">✓ Certified</span>
                     </div>
                   )}
                 </div>
 
-                {/* Quick Actions - Contained within card */}
-                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                {/* Quick Actions - Balanced sizing */}
+                <div className="flex items-center justify-center space-x-2 lg:space-x-3">
                   {profile.businessEmail && (
                     <button 
                       onClick={() => {
@@ -1156,10 +1203,10 @@ export default function Home() {
                         const body = `Hello ${profile.name},\n\nI found your profile on ThankATech and I'm interested in your ${profile.category} services.\n\nPlease let me know your availability.\n\nThank you!`;
                         window.location.href = `mailto:${profile.businessEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                       }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-indigo-600 rounded-full p-1.5 sm:p-2 transition-all duration-200 border border-gray-200 hover:border-indigo-300 shadow-sm group min-h-[32px] min-w-[32px] flex items-center justify-center"
+                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-indigo-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-indigo-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
                       title="Send Email"
                     >
-                      <span className="text-sm group-hover:scale-110 transition-transform duration-200">💬</span>
+                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">💬</span>
                     </button>
                   )}
                   {profile.businessPhone && (
@@ -1167,10 +1214,10 @@ export default function Home() {
                       onClick={() => {
                         window.location.href = `tel:${profile.businessPhone}`;
                       }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-green-600 rounded-full p-1.5 sm:p-2 transition-all duration-200 border border-gray-200 hover:border-green-300 shadow-sm group min-h-[32px] min-w-[32px] flex items-center justify-center"
+                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-green-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-green-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
                       title="Call Now"
                     >
-                      <span className="text-sm group-hover:scale-110 transition-transform duration-200">📞</span>
+                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">📞</span>
                     </button>
                   )}
                   {profile.website && (
@@ -1181,10 +1228,10 @@ export default function Home() {
                           window.open(url, '_blank');
                         }
                       }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-blue-600 rounded-full p-1.5 sm:p-2 transition-all duration-200 border border-gray-200 hover:border-blue-300 shadow-sm group min-h-[32px] min-w-[32px] flex items-center justify-center"
+                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-blue-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-blue-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
                       title="Visit Website"
                     >
-                      <span className="text-sm group-hover:scale-110 transition-transform duration-200">🌐</span>
+                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">🌐</span>
                     </button>
                   )}
                   {profile.businessAddress && (
@@ -1195,10 +1242,10 @@ export default function Home() {
                           window.open(mapsUrl, '_blank');
                         }
                       }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-red-600 rounded-full p-1.5 sm:p-2 transition-all duration-200 border border-gray-200 hover:border-red-300 shadow-sm group min-h-[32px] min-w-[32px] flex items-center justify-center"
+                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-red-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-red-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
                       title="Get Directions"
                     >
-                      <span className="text-sm group-hover:scale-110 transition-transform duration-200">📍</span>
+                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">📍</span>
                     </button>
                   )}
                 </div>
@@ -1210,34 +1257,30 @@ export default function Home() {
 
       {/* Separate section for controls and buttons - prevents overlapping */}
       <div className="action-buttons-container flex flex-col items-center space-y-6 mt-4 sm:mt-12 mb-8">
-        {/* Scroll Hint */}
-        <div className="text-center text-gray-400 text-sm flex items-center justify-center space-x-2 flex-wrap">
-          <span>🖱️</span>
-          <span className="hidden sm:inline">Scroll to flip through technicians</span>
-          <span className="sm:hidden">Swipe up/down to flip through technicians</span>
-          <span className="text-xs bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">({currentProfileIndex + 1}/{profiles.length})</span>
-          {userLocation && (
+        {/* Location Info */}
+        {userLocation && (
+          <div className="text-center">
             <span className="text-xs bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-green-400/30 text-green-300">
               📍 Sorted by distance
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Action Buttons - Mobile responsive with clear separation */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:space-x-6 sm:gap-0 w-full max-w-md mx-auto">
+        {/* Action Buttons - Balanced desktop sizing */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:space-x-6 sm:gap-0 w-full max-w-md lg:max-w-lg mx-auto">
           <button 
             onClick={handleThankYou}
-            className="group flex items-center justify-center space-x-2 sm:space-x-3 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1 min-h-[44px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">👍</span>
-            <span className="font-semibold text-white text-sm sm:text-base">Thank You</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">👍</span>
+            <span className="font-semibold text-white text-sm lg:text-base">Thank You</span>
           </button>
           <button 
             onClick={handleTip}
-            className="group flex items-center justify-center space-x-2 sm:space-x-3 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-yellow-500 to-orange-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-yellow-400 hover:to-orange-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1 min-h-[44px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-amber-500 to-yellow-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-amber-400 hover:to-yellow-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-amber-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💰</span>
-            <span className="font-semibold text-white text-sm sm:text-base">Send Tip</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">💰</span>
+            <span className="font-semibold text-white text-sm lg:text-base">Send Tip</span>
           </button>
         </div>
             </div>
