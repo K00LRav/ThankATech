@@ -58,6 +58,8 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
   try {
     console.log('Fetching registered technicians from Firebase...');
     let technicians = await getRegisteredTechnicians();
+    console.log('🔍 DEBUG: Received technicians from getRegisteredTechnicians:', technicians.length);
+    console.log('🔍 DEBUG: First technician data:', technicians[0]);
     
     // Process registered technicians with location data
     let processedTechs = technicians.map(tech => {
