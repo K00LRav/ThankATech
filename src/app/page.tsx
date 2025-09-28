@@ -98,7 +98,7 @@ export default function Home() {
     else if (totalThankYous >= 10) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // Tip milestones
-    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond Earner', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
     else if (totalTips >= 5) badges.push({ icon: '💰', text: 'Tip Earner', color: 'bg-green-100 text-green-800 border-green-300' });
@@ -108,7 +108,7 @@ export default function Home() {
     else if (dynamicRating >= 4.5) badges.push({ icon: '✨', text: 'Outstanding', color: 'bg-blue-100 text-blue-800 border-blue-300' });
 
     // Experience badges (based on profile data)
-    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if (profile.experience?.includes('5+')) badges.push({ icon: '🔧', text: 'Expert', color: 'bg-blue-100 text-blue-800 border-blue-300' });
 
     // Certification badge
@@ -461,7 +461,7 @@ export default function Home() {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
           <p className="text-blue-300 font-semibold">Loading amazing technicians near you...</p>
@@ -473,7 +473,7 @@ export default function Home() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 font-semibold mb-4">{error}</p>
           <button 
@@ -490,7 +490,7 @@ export default function Home() {
   // Show empty state
   if (profiles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-300 font-semibold">No technicians found in your area.</p>
         </div>
@@ -499,12 +499,12 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       <div className="relative z-10">
         {/* Header */}
@@ -816,10 +816,10 @@ export default function Home() {
                     </div>
                   )}
                   {profile.hourlyRate && (
-                    <div className="bg-purple-50/80 backdrop-blur-sm rounded-lg p-3 border border-purple-100">
+                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
                       <div className="flex items-center space-x-2">
-                        <span className="text-purple-500">💰</span>
-                        <span className="text-xs text-purple-700 font-medium">{profile.hourlyRate}/hr</span>
+                        <span className="text-blue-500">💰</span>
+                        <span className="text-xs text-blue-700 font-medium">{profile.hourlyRate}/hr</span>
                       </div>
                     </div>
                   )}
@@ -1102,7 +1102,7 @@ export default function Home() {
       {showTechDashboard && currentUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
           {/* Mobile: Slide up from bottom, Desktop: Center modal */}
-          <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 w-full h-[85vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:border border-white/10 shadow-2xl overflow-hidden animate-slideUp sm:animate-modalZoom">
+          <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 w-full h-[85vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:border border-white/10 shadow-2xl overflow-hidden animate-slideUp sm:animate-modalZoom">
             
             {/* Mobile-friendly Header with close button */}
             <div className="flex items-center justify-between p-4 border-b border-white/10 bg-slate-900/50">
@@ -1250,4 +1250,7 @@ export default function Home() {
     </div>
   );
 }
+
+
+
 

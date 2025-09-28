@@ -50,7 +50,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <footer className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* FAQ Section */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-8">
@@ -178,4 +178,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     </footer>
   );
 }
+
+
+
 

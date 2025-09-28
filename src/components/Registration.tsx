@@ -116,7 +116,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 z-50">
       {/* Animated background elements matching main page */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
@@ -523,4 +523,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     </div>
   );
 }
+
+
+
 

@@ -4,11 +4,11 @@ import Link from 'next/link';
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
-          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
           <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
@@ -36,7 +36,7 @@ export default function Terms() {
       <main className="relative z-10 max-w-4xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-400 via-blue-400 to-pink-400 bg-clip-text text-transparent mb-4">
             Terms of Service
           </h1>
           <p className="text-gray-300 text-lg">
@@ -57,7 +57,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-purple-400 mb-4">Description of Service</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Description of Service</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
               ThankATech is a platform that connects customers with skilled technicians and enables appreciation 
               through thank yous and tips. Our Service includes:
@@ -136,7 +136,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-purple-400 mb-4">Payments and Fees</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Payments and Fees</h2>
             <div className="space-y-4">
               <p className="text-gray-300 leading-relaxed">
                 ThankATech facilitates connections between users but does not process service payments. 
@@ -199,7 +199,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-purple-400 mb-4">Indemnification</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Indemnification</h2>
             <p className="text-gray-300 leading-relaxed">
               You agree to indemnify and hold harmless ThankATech from any claims, damages, losses, or 
               expenses arising from your use of the Service, violation of these Terms, or infringement 
@@ -250,7 +250,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-purple-400 mb-4">Contact Information</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Contact Information</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
               If you have any questions about these Terms of Service, please contact us:
             </p>
@@ -268,4 +268,7 @@ export default function Terms() {
     </div>
   );
 }
+
+
+
 

@@ -4,11 +4,11 @@ import Link from 'next/link';
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
-          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
           <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
@@ -36,7 +36,7 @@ export default function About() {
       <main className="relative z-10 max-w-6xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
+          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-indigo-400 via-blue-400 to-pink-400 bg-clip-text text-transparent mb-6">
             How ThankATech Works
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
@@ -77,7 +77,7 @@ export default function About() {
         {/* For Technicians Section */}
         <section className="mb-16">
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-            <h2 className="text-3xl font-bold text-purple-400 mb-8 text-center">For Technicians</h2>
+            <h2 className="text-3xl font-bold text-blue-400 mb-8 text-center">For Technicians</h2>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -131,7 +131,7 @@ export default function About() {
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-4 text-purple-400">Achievement Badges</h3>
+                <h3 className="text-xl font-semibold mb-4 text-blue-400">Achievement Badges</h3>
                 <ul className="space-y-3 text-gray-300">
                   <li className="flex items-center gap-3">
                     <span className="text-lg">🌟</span>
@@ -161,7 +161,7 @@ export default function About() {
 
         {/* Get Started CTA */}
         <section className="text-center">
-          <div className="bg-gradient-to-r from-indigo-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl border border-white/10 p-12">
+          <div className="bg-gradient-to-r from-indigo-500/20 to-blue-800/20 backdrop-blur-sm rounded-2xl border border-white/10 p-12">
             <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join thousands of customers and technicians who are building stronger communities through appreciation.
@@ -169,7 +169,7 @@ export default function About() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 href="/"
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full text-white font-semibold hover:from-indigo-600 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Find Technicians
               </Link>
@@ -186,4 +186,7 @@ export default function About() {
     </div>
   );
 }
+
+
+
 

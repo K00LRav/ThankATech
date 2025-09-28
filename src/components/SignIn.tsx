@@ -123,7 +123,7 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
@@ -146,4 +146,7 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
     </div>
   );
 }
+
+
+
 
