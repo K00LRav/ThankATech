@@ -303,6 +303,10 @@ export async function getRegisteredTechnicians() {
       }
     });
 
+    // Debug: Log tip collection summary
+    console.log(`🔍 TIP MATCHING DEBUG: Found ${tipsSnapshot.size} total tips in database`);
+    console.log(`📊 Tips by ID: ${tipsByTechId.size}, by Email: ${tipsByEmail.size}, by UniqueID: ${tipsByUniqueId.size}`);
+
     // Enhance technicians with calculated tip data using multiple matching strategies
     technicians.forEach(tech => {
       const allTips = new Set(); // Use Set to avoid duplicates
@@ -337,8 +341,8 @@ export async function getRegisteredTechnicians() {
       tech.totalTips = totalCount || tech.totalTips || 0;
       tech.totalTipAmount = totalAmount || tech.totalTipAmount || 0;
       
-      // Debug logging for high-value tip recipients  
-      if (totalAmount >= 50000) { // $500 or more
+      // Debug logging for tip recipients  
+      if (totalAmount >= 1000) { // $10 or more
         console.log(`🔍 HIGH-VALUE TECHNICIAN FOUND: ${tech.name || tech.businessName} (${tech.email})`);
         console.log(`📊 CALCULATED TOTALS: ${totalCount} tips, $${(totalAmount / 100).toFixed(2)}`);
         console.log(`🆔 TECHNICIAN IDs: doc=${tech.id}, email=${tech.email}, unique=${tech.uniqueId}`);
