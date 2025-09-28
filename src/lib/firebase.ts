@@ -120,10 +120,26 @@ export async function registerTechnician(technicianData) {
       console.log('❌ Technician already exists with this email:', technicianData.email);
       throw new Error(`A technician is already registered with email ${technicianData.email}. Please sign in instead or use a different email.`);
     }
+
+    // Create Firebase Auth account if password is provided (manual registration)
+    let authUser = null;
+    if (technicianData.password && auth) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, technicianData.email, technicianData.password);
+        authUser = userCredential.user;
+        console.log('✅ Firebase Auth account created for technician:', authUser.uid);
+      } catch (authError) {
+        console.error('Error creating Firebase Auth account:', authError);
+        throw new Error(`Failed to create login account: ${authError.message}`);
+      }
+    }
     // Create a complete technician profile
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
+      
+      // Firebase Auth UID (if created)
+      authUid: authUser?.uid || null,
       
       // Basic info
       name: technicianData.name,
@@ -192,10 +208,25 @@ export async function registerUser(userData) {
       console.log('❌ User already exists with unique ID:', uniqueId);
       throw new Error(`An account is already registered with this name and email combination. Please sign in instead.`);
     }
+
+    // Create Firebase Auth account if password is provided (manual registration)
+    let authUser = null;
+    if (userData.password && auth) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+        authUser = userCredential.user;
+        console.log('✅ Firebase Auth account created for user:', authUser.uid);
+      } catch (authError) {
+        console.error('Error creating Firebase Auth account:', authError);
+        throw new Error(`Failed to create login account: ${authError.message}`);
+      }
+    }
     
     const docRef = await addDoc(collection(db, COLLECTIONS.USERS), {
       ...userData,
       uniqueId: uniqueId,
+      // Firebase Auth UID (if created)
+      authUid: authUser?.uid || null,
       createdAt: new Date(),
       totalThankYousSent: 0,
       totalTipsSent: 0,

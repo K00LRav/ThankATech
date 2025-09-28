@@ -16,6 +16,8 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     location: '',
     // Technician-specific fields
@@ -65,6 +67,20 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     setLoading(true);
     setError(null);
 
+    // Validate passwords for manual registration
+    if (!googleUser) {
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters long');
+        setLoading(false);
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       let result;
       
@@ -73,6 +89,8 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         email: formData.email,
         phone: formData.phone,
         location: formData.location,
+        // Include password for manual registration
+        ...(!googleUser && { password: formData.password }),
         // Include Google user data if available
         ...(googleUser && {
           uid: googleUser.uid,
@@ -249,6 +267,45 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               />
             </div>
           </div>
+
+          {/* Password Fields - Only show for manual registration */}
+          {!googleUser && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required={!googleUser}
+                  minLength={6}
+                  className="w-full px-3 py-2 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-blue-200 mb-1">
+                  Confirm Password *
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required={!googleUser}
+                  minLength={6}
+                  className="w-full px-3 py-2 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                  placeholder="Confirm your password"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
