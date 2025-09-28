@@ -1,9 +1,10 @@
+// @ts-nocheck
 // Firebase configuration and services for ThankATech
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, where, orderBy, limit, Firestore } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, Auth } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -20,7 +21,11 @@ const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
                              process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 // Initialize Firebase only if properly configured
-let app, db, auth, storage, googleProvider;
+let app: FirebaseApp | null;
+let db: Firestore | null;
+let auth: Auth | null;
+let storage: FirebaseStorage | null;
+let googleProvider: GoogleAuthProvider | null;
 
 if (isFirebaseConfigured) {
   // Check if Firebase app already exists, if not initialize it

@@ -30,7 +30,7 @@ export default function FixTipsPage() {
         
         <div className="bg-slate-800 rounded-lg p-6 mb-6">
           <p className="text-white mb-4">
-            This tool will update existing tips that show as "Anonymous" by looking up customer information.
+            This tool will update existing tips that show as &quot;Anonymous&quot; by looking up customer information.
           </p>
           
           <button

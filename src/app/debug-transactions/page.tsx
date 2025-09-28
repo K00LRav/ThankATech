@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Link from 'next/link';
 
 export default function DebugTransactions() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -118,12 +119,12 @@ export default function DebugTransactions() {
         </div>
         
         <div className="text-center">
-          <a 
+          <Link 
             href="/" 
             className="inline-block bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

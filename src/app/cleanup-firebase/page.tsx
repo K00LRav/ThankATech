@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 export default function CleanupFirebasePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -157,7 +158,7 @@ export default function CleanupFirebasePage() {
           
           <div className="mb-6">
             <label className="block text-white font-semibold mb-2">
-              Type "DELETE ALL USERS" to confirm:
+              Type &quot;DELETE ALL USERS&quot; to confirm:
             </label>
             <input
               type="text"
@@ -217,12 +218,12 @@ export default function CleanupFirebasePage() {
               )}
               
               <div className="mt-6 text-center space-x-4">
-                <a 
+                <Link 
                   href="/" 
                   className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
                 >
                   → Go to Home Page
-                </a>
+                </Link>
                 <a 
                   href="/debug-profile" 
                   className="inline-block bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"

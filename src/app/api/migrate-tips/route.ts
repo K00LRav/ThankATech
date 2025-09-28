@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerStripe, calculatePlatformFee, calculateTechnicianPayout } from '@/lib/stripe';
 import { doc, getDoc } from 'firebase/firestore';

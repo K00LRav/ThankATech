@@ -125,7 +125,7 @@ export default function FixDataPage() {
             <ul className="text-blue-200 space-y-1 mb-6">
               <li>• Check for existing tips in the database</li>
               <li>• Create a test tip if none exist</li>
-              <li>• Link tips to the current user's unique ID</li>
+              <li>• Link tips to the current user&apos;s unique ID</li>
               <li>• Update technician profile with unique ID</li>
             </ul>
           </div>

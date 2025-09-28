@@ -296,7 +296,7 @@ export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician,
           <div className="text-center">
             <h3 className="text-2xl font-bold text-white mb-4">Payment System Coming Soon!</h3>
             <p className="text-blue-200 mb-6">
-              We're working on integrating secure payments. For now, you can send a thank you message!
+              We&apos;re working on integrating secure payments. For now, you can send a thank you message!
             </p>
             <button
               onClick={onClose}
