@@ -46,10 +46,21 @@ interface Transaction {
   technicianPayout?: number; // Net amount technician receives after fees
 }
 
+interface Withdrawal {
+  id: string;
+  amount: number;
+  date: string;
+  status: 'completed' | 'pending' | 'processing';
+  method: 'standard' | 'express';
+  fee: number;
+  netAmount: number;
+}
+
 export default function TechnicianDashboard() {
   const [user, setUser] = useState<any>(null);
   const [technicianProfile, setTechnicianProfile] = useState<TechnicianProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stripeAccountStatus, setStripeAccountStatus] = useState<'none' | 'pending' | 'active'>('none');
   
@@ -217,6 +228,31 @@ export default function TechnicianDashboard() {
 
 
 
+  const loadWithdrawals = async () => {
+    if (!user?.uid || !technicianProfile?.id) return;
+
+    try {
+      // TODO: Replace with actual Firebase query for withdrawals
+      // For now, showing empty state as no withdrawal tracking exists yet
+      const mockWithdrawals: Withdrawal[] = [
+        // Uncomment to test with mock data:
+        // {
+        //   id: 'w1',
+        //   amount: 25000, // $250.00 in cents
+        //   date: 'Sep 25, 2025',
+        //   status: 'completed',
+        //   method: 'standard',
+        //   fee: 0,
+        //   netAmount: 25000
+        // }
+      ];
+      setWithdrawals(mockWithdrawals);
+    } catch (error) {
+      console.error('❌ Error loading withdrawals:', error);
+      setWithdrawals([]);
+    }
+  };
+
   const checkStripeAccountStatus = async () => {
     if (!user?.uid) return;
 
@@ -293,6 +329,7 @@ export default function TechnicianDashboard() {
     };
 
     loadTransactions();
+    loadWithdrawals();
   }, [technicianProfile]);
 
   // Check account status periodically
@@ -608,7 +645,18 @@ export default function TechnicianDashboard() {
             <h3 className="text-xl font-bold text-white">Recent Tips</h3>
           </div>
           <div className="divide-y divide-white/10">
-            {transactions.map((transaction) => (
+            {transactions.length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+                <p className="text-slate-400 text-lg font-medium mb-2">No tips received yet</p>
+                <p className="text-slate-500 text-sm">Your tip history will appear here once customers start appreciating your work!</p>
+              </div>
+            ) : (
+              transactions.map((transaction) => (
               <div key={transaction.id} className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
@@ -637,7 +685,64 @@ export default function TechnicianDashboard() {
                   </span>
                 </div>
               </div>
-            ))}
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Withdrawal History */}
+        <div className="bg-slate-800/50 backdrop-blur rounded-xl border border-white/10">
+          <div className="p-6 border-b border-white/10">
+            <h3 className="text-xl font-bold text-white">Withdrawal History</h3>
+          </div>
+          <div className="divide-y divide-white/10">
+            {withdrawals.length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <p className="text-slate-400 text-lg font-medium mb-2">No withdrawals yet</p>
+                <p className="text-slate-500 text-sm">Your withdrawal history will appear here after you make your first payout.</p>
+              </div>
+            ) : (
+              withdrawals.map((withdrawal) => (
+                <div key={withdrawal.id} className="p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Bank Transfer</p>
+                      <p className="text-sm text-blue-200">{withdrawal.date}</p>
+                      <p className="text-xs text-slate-400 capitalize">{withdrawal.method} transfer</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-purple-400">
+                      -{formatCurrency(withdrawal.amount)}
+                    </p>
+                    {withdrawal.fee > 0 && (
+                      <p className="text-sm text-slate-400">
+                        {formatCurrency(withdrawal.fee)} fee
+                      </p>
+                    )}
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                      withdrawal.status === 'completed' 
+                        ? 'bg-green-500/20 text-green-400' 
+                        : withdrawal.status === 'processing'
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {withdrawal.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -651,6 +756,7 @@ export default function TechnicianDashboard() {
           technicianId={user?.uid || ''}
           onPayoutSuccess={(amount) => {
             // The useTechnicianEarnings hook will automatically refresh earnings
+            loadWithdrawals(); // Refresh withdrawal history
             setShowPayoutModal(false);
           }}
         />
