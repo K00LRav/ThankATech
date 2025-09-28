@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getTechnicianEarnings } from '../lib/firebase';
 
 interface TechnicianEarnings {
   availableBalance: number;
@@ -23,8 +22,12 @@ export const useTechnicianEarnings = (technicianId: string | null) => {
     const fetchEarnings = async () => {
       setLoading(true);
       try {
-        // Fetch real earnings from Firebase
+        // Dynamically import to avoid potential circular dependencies
+        console.log('Fetching earnings for technician:', technicianId);
+        
+        const { getTechnicianEarnings } = await import('../lib/firebase');
         const realEarnings: any = await getTechnicianEarnings(technicianId);
+        
         setEarnings({
           availableBalance: realEarnings.availableBalance || 0,
           totalEarnings: realEarnings.totalEarnings || 0,
