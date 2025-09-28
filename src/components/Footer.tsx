@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function Footer() {
+interface FooterProps {
+  onOpenRegistration?: () => void;
+}
+
+export default function Footer({ onOpenRegistration }: FooterProps) {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
   const faqData = [
@@ -101,13 +105,27 @@ export default function Footer() {
                 Building stronger communities one thank you at a time.
               </p>
               <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                <a 
+                  href="mailto:support@thankatech.com" 
+                  className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  title="Email us"
+                >
                   <span className="text-lg">📧</span>
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                <button 
+                  disabled
+                  className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center opacity-50 cursor-not-allowed"
+                  title="Phone number coming soon"
+                >
                   <span className="text-lg">📱</span>
-                </a>
-                <a href="#" className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
+                </button>
+                <a 
+                  href="https://thankatech.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  title="Visit our website"
+                >
                   <span className="text-lg">🌐</span>
                 </a>
               </div>
@@ -118,7 +136,14 @@ export default function Footer() {
               <h4 className="text-lg font-semibold mb-4 text-indigo-400">Quick Links</h4>
               <ul className="space-y-3">
                 <li><Link href="/" className="text-gray-300 hover:text-white transition-colors">Find Technicians</Link></li>
-                <li><Link href="/#register" className="text-gray-300 hover:text-white transition-colors">Register as Technician</Link></li>
+                <li>
+                  <button 
+                    onClick={onOpenRegistration}
+                    className="text-gray-300 hover:text-white transition-colors text-left"
+                  >
+                    Register as Technician
+                  </button>
+                </li>
                 <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">How It Works</Link></li>
               </ul>
             </div>

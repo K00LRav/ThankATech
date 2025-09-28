@@ -51,4 +51,37 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  
+  /* Fix overlapping by ensuring proper spacing */
+  .space-x-2 > * + * {
+    margin-left: 0.5rem;
+  }
+  
+  /* Prevent horizontal overflow */
+  .overflow-x-hidden {
+    overflow-x: hidden;
+  }
+  
+  /* Better mobile card spacing */
+  .mobile-card-spacing {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  /* Prevent card content from overflowing on mobile */
+  .card-container {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .action-buttons-container {
+    position: relative;
+    z-index: 2;
+    margin-top: 2rem;
+  }
+  
+  /* Ensure proper stacking and spacing */
+  .mobile-safe-spacing {
+    padding-bottom: 2rem;
+  }
 }
