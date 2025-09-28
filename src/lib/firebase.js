@@ -1383,16 +1383,23 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
     const tips = await getTipsForTechnician(technicianId, technicianEmail, technicianUniqueId);
     
     // Convert tips to transaction format expected by dashboard
-    const transactions = tips.map(tip => ({
-      id: tip.id,
-      amount: (tip.amount || 0) / 100, // Convert cents to dollars
-      customerName: tip.customerName || tip.fromName || 'Anonymous',
-      date: tip.createdAt ? new Date(tip.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      status: tip.status || 'completed',
-      platformFee: parseInt(process.env.PLATFORM_FLAT_FEE || '99') / 100, // Convert platform fee to dollars
-      paymentIntent: tip.paymentIntent,
-      technicianName: tip.technicianName
-    }));
+    const transactions = tips.map(tip => {
+      const amountInCents = tip.amount || 0;
+      const platformFeeInCents = parseInt(process.env.PLATFORM_FLAT_FEE || '99');
+      const technicianPayoutInCents = tip.technicianPayout || (amountInCents - platformFeeInCents);
+      
+      return {
+        id: tip.id,
+        amount: amountInCents, // Keep in cents for formatCurrency
+        customerName: tip.customerName || tip.customerEmail || tip.fromName || 'Anonymous Tipper',
+        date: tip.createdAt ? new Date(tip.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        status: tip.status || 'completed',
+        platformFee: platformFeeInCents, // Keep in cents for formatCurrency
+        technicianPayout: technicianPayoutInCents, // Add the missing field
+        paymentIntent: tip.paymentIntent,
+        technicianName: tip.technicianName
+      };
+    });
     
     // Sort by date, newest first
     transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
