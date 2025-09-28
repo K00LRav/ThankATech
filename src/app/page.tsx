@@ -538,24 +538,6 @@ export default function Home() {
                   )}
                   <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
                   
-                  {/* Debug info */}
-                  <span className="text-xs text-yellow-300">
-                    (Type: {currentUser?.userType || 'undefined'})
-                  </span>
-                  
-                  {/* Fix User Type Button - Temporary */}
-                  <button
-                    onClick={() => {
-                      setCurrentUser({...currentUser, userType: 'technician'});
-                      setThankYouMessage('User type updated to technician!');
-                      setShowThankYou(true);
-                      setTimeout(() => setShowThankYou(false), 3000);
-                    }}
-                    className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 rounded text-xs hover:bg-yellow-500/30 transition-all duration-200"
-                  >
-                    Fix Type
-                  </button>
-                  
                   {/* Logout Button */}
                   <button
                     onClick={() => {
