@@ -1332,8 +1332,19 @@ export async function getTechnicianEarnings(technicianId) {
     let totalNetAmount = 0;
     allTips.forEach(tip => {
       console.log('💰 Processing tip:', tip);
-      totalGrossAmount += tip.amount || 0; // Total amount customers paid
-      totalNetAmount += tip.technicianPayout || 0; // Amount technician receives (after fees)
+      const grossAmount = tip.amount || 0;
+      totalGrossAmount += grossAmount;
+      
+      // Calculate technician payout if missing or zero
+      let technicianPayout = tip.technicianPayout;
+      if (!technicianPayout || technicianPayout === 0) {
+        // Platform fee is $0.99 (99 cents) per tip
+        const platformFee = 99;
+        technicianPayout = grossAmount - platformFee;
+        console.log('💰 Calculated missing payout:', { grossAmount, platformFee, technicianPayout });
+      }
+      
+      totalNetAmount += technicianPayout;
     });
     
     console.log('💰 Total gross amount (cents):', totalGrossAmount);
