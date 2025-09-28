@@ -523,3 +523,4 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     </div>
   );
 }
+

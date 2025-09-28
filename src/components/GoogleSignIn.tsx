@@ -70,3 +70,4 @@ export default function GoogleSignIn({ onSignInSuccess, onError, className = '' 
     </button>
   );
 }
+

@@ -33,7 +33,7 @@ export default function Contact() {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
           <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
@@ -41,10 +41,10 @@ export default function Contact() {
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
             <span className="text-xl font-bold">🔧</span>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             ThankATech
           </span>
         </Link>
@@ -71,7 +71,7 @@ export default function Contact() {
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-            <h2 className="text-3xl font-bold text-indigo-400 mb-6">Send us a Message</h2>
+            <h2 className="text-3xl font-bold text-blue-400 mb-6">Send us a Message</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
@@ -158,7 +158,7 @@ export default function Contact() {
 
               <button
                 type="submit"
-                className="w-full px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Send Message
               </button>
@@ -172,12 +172,12 @@ export default function Contact() {
               <h3 className="text-2xl font-bold text-purple-400 mb-6">Quick Contact</h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
                     <span className="text-xl">📧</span>
                   </div>
                   <div>
                     <p className="text-gray-300 text-sm">Email Support</p>
-                    <a href="mailto:support@thankatech.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+                    <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">
                       support@thankatech.com
                     </a>
                   </div>
@@ -237,7 +237,7 @@ export default function Contact() {
                 and use secure payment methods.
               </p>
               <div className="flex flex-col gap-2">
-                <a href="#" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm">
+                <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors text-sm">
                   → View Safety Guidelines
                 </a>
                 <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors text-sm">
@@ -254,3 +254,4 @@ export default function Contact() {
     </div>
   );
 }
+

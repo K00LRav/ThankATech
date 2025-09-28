@@ -9,7 +9,7 @@ export default function Privacy() {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
           <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
@@ -17,10 +17,10 @@ export default function Privacy() {
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
             <span className="text-xl font-bold">🔧</span>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             ThankATech
           </span>
         </Link>
@@ -48,7 +48,7 @@ export default function Privacy() {
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 space-y-8">
           
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Introduction</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Introduction</h2>
             <p className="text-gray-300 leading-relaxed">
               ThankATech (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains 
               how we collect, use, disclose, and safeguard your information when you use our platform that connects 
@@ -126,7 +126,7 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Your Rights and Choices</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Your Rights and Choices</h2>
             <div className="space-y-4">
               <p className="text-gray-300 leading-relaxed">You have the following rights regarding your personal information:</p>
               <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4">
@@ -188,7 +188,7 @@ export default function Privacy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Data Retention</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Data Retention</h2>
             <p className="text-gray-300 leading-relaxed">
               We retain your personal information only for as long as necessary to fulfill the purposes outlined 
               in this privacy policy, unless a longer retention period is required or permitted by law.
@@ -211,9 +211,9 @@ export default function Privacy() {
             </p>
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
               <ul className="text-gray-300 space-y-2">
-                <li><strong>Email:</strong> <a href="mailto:privacy@thankatech.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">privacy@thankatech.com</a></li>
-                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">support@thankatech.com</a></li>
-                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-indigo-400 hover:text-indigo-300 transition-colors">Visit our contact page</Link></li>
+                <li><strong>Email:</strong> <a href="mailto:privacy@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">privacy@thankatech.com</a></li>
+                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
+                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-blue-400 hover:text-blue-300 transition-colors">Visit our contact page</Link></li>
               </ul>
             </div>
           </section>
@@ -223,3 +223,4 @@ export default function Privacy() {
     </div>
   );
 }
+

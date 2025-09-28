@@ -9,7 +9,7 @@ export default function Terms() {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-10 opacity-50">
           <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
@@ -17,10 +17,10 @@ export default function Terms() {
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
             <span className="text-xl font-bold">🔧</span>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             ThankATech
           </span>
         </Link>
@@ -48,7 +48,7 @@ export default function Terms() {
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8 space-y-8">
           
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Agreement to Terms</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Agreement to Terms</h2>
             <p className="text-gray-300 leading-relaxed">
               By accessing or using ThankATech (&quot;Service&quot;), you agree to be bound by these Terms of Service 
               (&quot;Terms&quot;). If you disagree with any part of these terms, then you may not access the Service. 
@@ -121,7 +121,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Customer Responsibilities</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Customer Responsibilities</h2>
             <div className="space-y-4">
               <p className="text-gray-300 leading-relaxed">If you use our Service as a customer, you agree to:</p>
               <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
@@ -171,7 +171,7 @@ export default function Terms() {
             <p className="text-gray-300 leading-relaxed">
               Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect 
               your information. By using our Service, you agree to the collection and use of information in 
-              accordance with our <Link href="/privacy" className="text-indigo-400 hover:text-indigo-300 transition-colors">Privacy Policy</Link>.
+              accordance with our <Link href="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors">Privacy Policy</Link>.
             </p>
           </section>
 
@@ -190,7 +190,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Limitation of Liability</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Limitation of Liability</h2>
             <p className="text-gray-300 leading-relaxed">
               In no event shall ThankATech be liable for any indirect, incidental, special, consequential, 
               or punitive damages, including loss of profits, data, or goodwill, arising from your use of 
@@ -241,7 +241,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-indigo-400 mb-4">Severability</h2>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Severability</h2>
             <p className="text-gray-300 leading-relaxed">
               If any provision of these Terms is found to be unenforceable or invalid, that provision will 
               be limited or eliminated to the minimum extent necessary so that these Terms will otherwise 
@@ -256,9 +256,9 @@ export default function Terms() {
             </p>
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
               <ul className="text-gray-300 space-y-2">
-                <li><strong>Email:</strong> <a href="mailto:legal@thankatech.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">legal@thankatech.com</a></li>
-                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-indigo-400 hover:text-indigo-300 transition-colors">support@thankatech.com</a></li>
-                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-indigo-400 hover:text-indigo-300 transition-colors">Visit our contact page</Link></li>
+                <li><strong>Email:</strong> <a href="mailto:legal@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">legal@thankatech.com</a></li>
+                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
+                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-blue-400 hover:text-blue-300 transition-colors">Visit our contact page</Link></li>
               </ul>
             </div>
           </section>
@@ -268,3 +268,4 @@ export default function Terms() {
     </div>
   );
 }
+

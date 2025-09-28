@@ -146,3 +146,4 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
     </div>
   );
 }
+
