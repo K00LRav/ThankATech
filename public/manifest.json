@@ -1,0 +1,21 @@
+{
+  "name": "ThankATech - Appreciate Your Local Technicians",
+  "short_name": "ThankATech",
+  "description": "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1E40AF",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

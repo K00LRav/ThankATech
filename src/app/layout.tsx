@@ -17,10 +17,14 @@ export const metadata: Metadata = {
   title: "ThankATech - Appreciate Your Local Technicians",
   description: "Connect with skilled technicians in your area. Thank them, tip them, and support the people who keep our world running.",
   keywords: "technicians, local services, thank you, tips, appreciation, skilled workers",
+  manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-16x16.svg', sizes: '16x16', type: 'image/svg+xml' }
+    ],
     shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    apple: '/apple-touch-icon.svg',
   },
   openGraph: {
     title: "ThankATech - Appreciate Your Local Technicians",
@@ -41,6 +45,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="theme-color" content="#2563EB" />
+        <meta name="msapplication-TileColor" content="#2563EB" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
