@@ -23,18 +23,10 @@ export const useTechnicianEarnings = (technicianId: string | null) => {
       setLoading(true);
       try {
         // Dynamically import to avoid potential circular dependencies
-        
         const { getTechnicianEarnings } = await import('../lib/firebase');
         const realEarnings: any = await getTechnicianEarnings(technicianId);
         
-        
         setEarnings({
-          availableBalance: realEarnings.availableBalance || 0,
-          totalEarnings: realEarnings.totalEarnings || 0,
-          pendingBalance: realEarnings.pendingBalance || 0,
-          tipCount: realEarnings.tipCount || 0,
-        });
-        
           availableBalance: realEarnings.availableBalance || 0,
           totalEarnings: realEarnings.totalEarnings || 0,
           pendingBalance: realEarnings.pendingBalance || 0,

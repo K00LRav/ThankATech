@@ -61,13 +61,6 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
     // Check if our enhanced function is working
     if (technicians.length > 0 && !technicians[0].hasOwnProperty('totalTips')) {
       console.warn('⚠️ ISSUE: Technician object missing totalTips field - enhanced function not called!');
-    } else if (technicians.length > 0) {
-        id: technicians[0].id,
-        email: technicians[0].email,
-        uniqueId: technicians[0].uniqueId,
-        totalEarnings: technicians[0].totalEarnings,
-        lastTipDate: technicians[0].lastTipDate
-      });
     }
     
     // Process registered technicians with location data

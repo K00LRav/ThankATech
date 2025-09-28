@@ -62,12 +62,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
     setError('');
 
     try {
-      // Debug: Log customer data being sent
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        rawCustomerObject: customer
-      });
+
 
       // Create payment intent
       const response = await fetch('/api/create-payment-intent', {
@@ -103,12 +98,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       if (error) {
         setError(error.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
-          technicianId: technician.id,
-          customerId: customer.id,
-          amount: dollarsToCents(currentAmount),
-          paymentIntentId: paymentIntent.id,
-          technicianName: technician.name,
-        });
+
         
         // Record the successful transaction in Firebase
         try {
@@ -122,7 +112,6 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
             technicianName: technician.name,
             customerNote: '', // Could add a note field later
           });
-          
           
           // Payment successful and recorded!
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
