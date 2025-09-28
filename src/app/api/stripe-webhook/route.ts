@@ -85,7 +85,16 @@ export async function POST(request: NextRequest) {
 // Handler functions for different event types
 async function handlePaymentSuccess(paymentIntent: any) {
   console.log('💰 Payment succeeded:', paymentIntent.id);
-  const { technicianId, customerId, platformFee, technicianPayout, type } = paymentIntent.metadata;
+  const { technicianId, customerId, customerName, customerEmail, platformFee, technicianPayout, type } = paymentIntent.metadata;
+  
+  // Debug: Log received metadata
+  console.log('🔍 Webhook metadata received:', {
+    customerId,
+    customerName,
+    customerEmail,
+    hasCustomerName: !!customerName,
+    hasCustomerEmail: !!customerEmail
+  });
   
   try {
     // Only process tip payments
@@ -118,8 +127,8 @@ async function handlePaymentSuccess(paymentIntent: any) {
         technicianEmail: technician?.email,
         technicianName: technician?.name || technician?.businessName,
         customerId: customerId || null,
-        customerEmail: customer?.email,
-        customerName: customer?.name || customer?.displayName || 'Anonymous',
+        customerEmail: customerEmail || customer?.email,
+        customerName: customerName || customer?.name || customer?.displayName || 'Anonymous',
         paymentIntentId: paymentIntent.id,
         platformFee: parsedPlatformFee,
         technicianPayout: parsedTechnicianPayout,

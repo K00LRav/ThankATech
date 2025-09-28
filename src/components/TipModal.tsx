@@ -62,6 +62,14 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
     setError('');
 
     try {
+      // Debug: Log customer data being sent
+      console.log('🔍 Customer data being sent:', {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        rawCustomerObject: customer
+      });
+
       // Create payment intent
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',

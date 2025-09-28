@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { auth, db, registerUser, deleteUserProfile, authHelpers } from '@/lib/firebase';
+import { auth, db, registerUser, deleteUserProfile, authHelpers, getCustomerTransactions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
@@ -36,6 +36,140 @@ interface UserProfile {
   hourlyRate?: string;
   availability?: string;
 }
+
+// Utility function to format currency
+const formatCurrency = (amountInCents: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amountInCents / 100);
+};
+
+// Customer Tip History Component
+const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (!profile?.uid && !profile?.email) return;
+      
+      try {
+        const tips = await getCustomerTransactions(profile.uid, profile.email);
+        setTransactions(tips);
+      } catch (err) {
+        console.error('Error loading customer transactions:', err);
+        setError('Failed to load tip history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTransactions();
+  }, [profile?.uid, profile?.email]);
+
+  if (loading) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-blue-200">Loading tip history...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">Error Loading Tips</h3>
+          <p className="text-red-300 mb-4">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">No tips yet</h3>
+          <p className="text-blue-200 mb-4">When you tip technicians, your history will appear here.</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Find Technicians
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const totalTipped = transactions.reduce((sum, tip) => sum + tip.amount, 0);
+
+  return (
+    <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-white">Recent Tips</h2>
+        <div className="text-right">
+          <p className="text-sm text-blue-200">Total Tipped</p>
+          <p className="text-lg font-bold text-white">{formatCurrency(totalTipped)}</p>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        {transactions.slice(0, 5).map((tip) => (
+          <div key={tip.id} className="bg-slate-700/50 rounded-lg p-4 border border-blue-500/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-white font-medium">{tip.technicianName}</p>
+                  <p className="text-blue-200 text-sm">{tip.date}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-white font-bold">{formatCurrency(tip.amount)}</p>
+                <p className="text-green-400 text-sm capitalize">{tip.status}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {transactions.length > 5 && (
+          <div className="text-center pt-4">
+            <p className="text-blue-200 text-sm">
+              Showing 5 of {transactions.length} tips
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function ProfilePage() {
   const [user, loading, error] = useAuthState(auth);
@@ -583,29 +717,7 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Tip History for Customers */}
-          {profile.userType === 'customer' && (
-            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-              <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-white mb-2">No tips yet</h3>
-                <p className="text-blue-200 mb-4">When you tip technicians, your history will appear here.</p>
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  Find Technicians
-                </Link>
-              </div>
-            </div>
-          )}
+          {profile.userType === 'customer' && <CustomerTipHistory profile={profile} />}
 
           {/* Favorite Technicians for Customers */}
           {profile.userType === 'customer' && (

@@ -7,6 +7,15 @@ export async function POST(request: NextRequest) {
   try {
     const { amount, technicianId, customerId, customerName, customerEmail } = await request.json();
 
+    // Debug: Log received customer data
+    console.log('🔍 Payment intent API received:', {
+      customerId,
+      customerName,
+      customerEmail,
+      hasName: !!customerName,
+      hasEmail: !!customerEmail
+    });
+
     // Validate input
     if (!amount || !technicianId || !customerId) {
       return NextResponse.json(

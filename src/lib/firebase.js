@@ -1412,4 +1412,73 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
   }
 }
 
+/**
+ * Get customer transactions (tips they've sent)
+ * @param {string} customerId - Customer ID
+ * @param {string} customerEmail - Customer email
+ * @returns {Promise<Array>} Array of tips sent by customer
+ */
+export async function getCustomerTransactions(customerId, customerEmail) {
+  if (!db) return [];
+  
+  try {
+    console.log('🔍 Loading customer transactions for:', { customerId, customerEmail });
+    
+    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+    const tipsRef = collection(db, 'tips');
+    
+    // Query tips where this customer is the sender
+    let q;
+    if (customerId) {
+      q = query(
+        tipsRef,
+        where('customerId', '==', customerId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (customerEmail) {
+      q = query(
+        tipsRef,
+        where('customerEmail', '==', customerEmail),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      console.warn('No customer ID or email provided');
+      return [];
+    }
+    
+    const querySnapshot = await getDocs(q);
+    const tips = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      tips.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    // Convert tips to transaction format expected by profile
+    const transactions = tips.map(tip => {
+      const amountInCents = tip.amount || 0;
+      
+      return {
+        id: tip.id,
+        amount: amountInCents, // Keep in cents for formatCurrency
+        technicianName: tip.technicianName || 'Unknown Technician',
+        technicianEmail: tip.technicianEmail,
+        date: tip.createdAt ? new Date(tip.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        status: tip.status || 'completed',
+        paymentIntentId: tip.paymentIntentId,
+        description: `Tip to ${tip.technicianName || 'technician'}`
+      };
+    });
+    
+    console.log('💳 Loaded', transactions.length, 'transactions for customer');
+    return transactions;
+  } catch (error) {
+    console.error('❌ Error loading customer transactions:', error);
+    return [];
+  }
+}
+
 export default app;

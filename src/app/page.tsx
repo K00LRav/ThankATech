@@ -375,6 +375,16 @@ export default function Home() {
       return;
     }
 
+    // Debug: Log current user data
+    console.log('🔍 Current user data when tipping:', {
+      id: currentUser?.id,
+      uid: currentUser?.uid,
+      name: currentUser?.name,
+      displayName: currentUser?.displayName,
+      email: currentUser?.email,
+      fullUserObject: currentUser
+    });
+
     // Open the new Stripe-powered tip modal
     setShowTipModal(true);
   };
