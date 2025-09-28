@@ -42,7 +42,7 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-blue-500/20 backdrop-blur-sm">
         {/* Header */}
         <div className="px-8 py-6 border-b border-blue-500/20">
