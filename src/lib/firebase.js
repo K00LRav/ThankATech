@@ -87,8 +87,8 @@ export async function registerTechnician(technicianData) {
       hourlyRate: technicianData.hourlyRate,
       availability: technicianData.availability,
       
-      // Default image - technicians can upload later
-      image: '/api/placeholder/150/150',
+      // Use Google profile image if available, otherwise default
+      image: technicianData.photoURL || '/api/placeholder/150/150',
       
       // System fields
       points: 0,
@@ -123,7 +123,9 @@ export async function registerUser(userData) {
       ...userData,
       createdAt: new Date(),
       totalThankYousSent: 0,
-      totalTipsSent: 0
+      totalTipsSent: 0,
+      // Store profile image if available from Google
+      profileImage: userData.photoURL || null
     });
     
     return { id: docRef.id, ...userData };

@@ -518,8 +518,8 @@ export default function Home() {
           <div className="flex gap-4 items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
-                {/* Technician Dashboard Button */}
-                {currentUser?.userType === 'technician' && (
+                {/* Technician Dashboard Button - Temporarily showing for all users for debugging */}
+                {currentUser && (
                   <button
                     onClick={() => setShowTechDashboard(true)}
                     className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -537,15 +537,54 @@ export default function Home() {
                     />
                   )}
                   <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
+                  
+                  {/* Debug info */}
+                  <span className="text-xs text-yellow-300">
+                    (Type: {currentUser?.userType || 'undefined'})
+                  </span>
+                  
+                  {/* Fix User Type Button - Temporary */}
+                  <button
+                    onClick={() => {
+                      setCurrentUser({...currentUser, userType: 'technician'});
+                      setThankYouMessage('User type updated to technician!');
+                      setShowThankYou(true);
+                      setTimeout(() => setShowThankYou(false), 3000);
+                    }}
+                    className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 rounded text-xs hover:bg-yellow-500/30 transition-all duration-200"
+                  >
+                    Fix Type
+                  </button>
+                  
+                  {/* Logout Button */}
+                  <button
+                    onClick={() => {
+                      setCurrentUser(null);
+                      setThankYouMessage('You have been logged out successfully.');
+                      setShowThankYou(true);
+                      setTimeout(() => setShowThankYou(false), 3000);
+                    }}
+                    className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-200 rounded-lg text-sm hover:bg-red-500/30 transition-all duration-200"
+                  >
+                    Logout
+                  </button>
                 </div>
               </div>
             ) : (
-              <button 
-                onClick={() => setShowRegistration(true)}
-                className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
-              >
-                Join Now
-              </button>
+              <div className="flex gap-3 items-center">
+                <button 
+                  onClick={() => setShowRegistration(true)}
+                  className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => setShowRegistration(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200"
+                >
+                  Join Now
+                </button>
+              </div>
             )}
             <button 
               onClick={() => setShowSearch(!showSearch)}
@@ -654,12 +693,12 @@ export default function Home() {
 
         {/* Modern Rolodex Card */}
         <div id="rolodex-card" className={`card-container relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
-          {/* Glass morphism background layers - Much wider and dynamic height */}
-          <div className={`absolute top-3 left-3 w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem] ${expandedCard ? 'h-auto min-h-[28rem] sm:min-h-[32rem]' : 'h-[28rem] sm:h-[32rem]'} bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
-          <div className={`absolute top-1.5 left-1.5 w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem] ${expandedCard ? 'h-auto min-h-[28rem] sm:min-h-[32rem]' : 'h-[28rem] sm:h-[32rem]'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
+          {/* Glass morphism background layers - Wider and dynamic height */}
+          <div className={`absolute top-3 left-3 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
+          <div className={`absolute top-1.5 left-1.5 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
           
-          {/* Main Modern Card - Fixed height with overflow control */}
-          <div className="relative w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem]">
+          {/* Main Modern Card - Responsive width with proper overflow control */}
+          <div className="relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
             {/* Manila Folder Tab - positioned above the main folder */}
             <div className="absolute -top-6 right-8 sm:right-12 z-10">
               <div className="bg-gradient-to-b from-amber-100 to-amber-200 border-2 border-amber-300/80 shadow-lg px-4 py-2 rounded-t-lg">
@@ -672,7 +711,7 @@ export default function Home() {
             </div>
             
             {/* Main Manila Folder Body */}
-            <div className={`relative ${expandedCard ? 'h-auto min-h-[28rem] sm:min-h-[32rem]' : 'h-[28rem] sm:h-[32rem]'} bg-gradient-to-br from-amber-50 to-amber-100 backdrop-blur-lg shadow-2xl border-2 border-amber-200/60 rounded-lg p-4 sm:p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-3xl group-hover:-translate-y-3 group-hover:shadow-amber-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''} overflow-hidden`}>
+            <div className={`relative ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-amber-50 to-amber-100 backdrop-blur-lg shadow-2xl border-2 border-amber-200/60 rounded-lg p-4 sm:p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-3xl group-hover:-translate-y-3 group-hover:shadow-amber-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''} ${expandedCard ? 'overflow-visible' : 'overflow-hidden'}`}>
 
             <div className="flex flex-col h-full">
               {/* Header Section */}
@@ -740,7 +779,7 @@ export default function Home() {
                 {/* Left Column - About & Basic Info */}
                 <div className="space-y-3">
                   <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed">{profile.about}</p>
+                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.about}</p>
                   </div>
 
                   {/* Basic Contact Info Grid - Only show when expanded */}
@@ -755,10 +794,10 @@ export default function Home() {
                     </div>
                   )}
                   {profile.businessEmail && (
-                    <div className="bg-indigo-50/80 backdrop-blur-sm rounded-lg p-3 border border-indigo-100">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-indigo-500">✉️</span>
-                        <span className="text-xs text-indigo-700 font-medium">{profile.businessEmail}</span>
+                    <div className="bg-indigo-50/80 backdrop-blur-sm rounded-lg p-3 border border-indigo-100 col-span-2">
+                      <div className="flex items-start space-x-2">
+                        <span className="text-indigo-500 mt-0.5">✉️</span>
+                        <span className="text-xs sm:text-sm text-indigo-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
                       </div>
                     </div>
                   )}
@@ -785,7 +824,7 @@ export default function Home() {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.businessAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-red-700 font-medium hover:text-red-800 hover:underline transition-colors break-words"
+                          className="text-xs text-red-700 font-medium hover:text-red-800 hover:underline transition-colors break-words leading-relaxed"
                         >
                           {profile.businessAddress}
                         </a>
@@ -835,7 +874,7 @@ export default function Home() {
                     {profile.certifications && (
                       <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
                         <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Certifications & Licenses</h4>
-                        <p className="text-xs text-gray-600">{profile.certifications}</p>
+                        <p className="text-xs text-gray-600 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.certifications}</p>
                       </div>
                     )}
                     
@@ -843,7 +882,7 @@ export default function Home() {
                     {profile.availability && (
                       <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
                         <h4 className="text-sm font-semibold text-gray-800 mb-2">📅 Detailed Schedule</h4>
-                        <p className="text-xs text-gray-600">{profile.availability}</p>
+                        <p className="text-xs text-gray-600 max-h-28 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.availability}</p>
                       </div>
                     )}
 
@@ -1063,118 +1102,147 @@ export default function Home() {
         </div>
       )}
 
-      {/* Technician Dashboard Modal */}
-      {showTechDashboard && currentUser?.userType === 'technician' && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
-            {/* Dashboard Header */}
-            <div className="p-6 border-b border-white/10">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                    Technician Dashboard
-                  </h2>
-                  <p className="text-gray-300 mt-1">Manage your profile and view your stats</p>
-                </div>
-                <button
-                  onClick={() => setShowTechDashboard(false)}
-                  className="text-gray-400 hover:text-white transition-colors p-2"
-                >
-                  <span className="text-2xl">×</span>
-                </button>
+      {/* Technician Dashboard Modal - Mobile-First Responsive Design */}
+      {showTechDashboard && currentUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+          {/* Mobile: Slide up from bottom, Desktop: Center modal */}
+          <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 w-full h-[85vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl sm:border border-white/10 shadow-2xl overflow-hidden animate-slideUp sm:animate-modalZoom">
+            
+            {/* Mobile-friendly Header with close button */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-slate-900/50">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h2>
+                <p className="text-sm text-gray-300 mt-1">Your profile & stats</p>
               </div>
+              <button
+                onClick={() => setShowTechDashboard(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-gray-300 hover:text-white hover:bg-white/20 transition-all duration-200"
+              >
+                <span className="text-xl">×</span>
+              </button>
             </div>
 
-            {/* Dashboard Content */}
-            <div className="p-6 space-y-6">
-              {/* Profile Stats */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">⭐</span>
-                    <div>
-                      <p className="text-sm text-gray-400">Rating</p>
-                      <p className="text-xl font-semibold text-white">{currentUser?.rating?.toFixed(1) || '5.0'}</p>
-                    </div>
-                  </div>
-                </div>
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto h-full pb-20 sm:pb-6">
+              <div className="p-4 space-y-4">
                 
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🙏</span>
-                    <div>
-                      <p className="text-sm text-gray-400">Thank Yous</p>
-                      <p className="text-xl font-semibold text-white">{currentUser?.totalThankYous || 0}</p>
+                {/* Stats Cards - Mobile: Stack, Desktop: Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">⭐</span>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Rating</p>
+                        <p className="text-lg font-bold text-white">{currentUser?.rating?.toFixed(1) || '5.0'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🙏</span>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Thank Yous</p>
+                        <p className="text-lg font-bold text-white">{currentUser?.totalThankYous || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">💰</span>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Total Tips</p>
+                        <p className="text-lg font-bold text-white">${currentUser?.totalTips || 0}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
+
+                {/* Profile Info - Simplified for mobile */}
                 <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">💰</span>
+                  <h3 className="text-lg font-semibold text-white mb-3">Profile</h3>
+                  
+                  {/* Profile Image */}
+                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-white/10">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700 border-2 border-white/20">
+                      {(currentUser?.image || currentUser?.photoURL) ? (
+                        <img 
+                          src={currentUser?.image || currentUser?.photoURL} 
+                          alt={currentUser?.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xl">
+                          👤
+                        </div>
+                      )}
+                    </div>
                     <div>
-                      <p className="text-sm text-gray-400">Total Tips</p>
-                      <p className="text-xl font-semibold text-white">${currentUser?.totalTips || 0}</p>
+                      <p className="text-white font-medium">{currentUser?.name}</p>
+                      <p className="text-sm text-gray-400">{currentUser?.email}</p>
+                      {currentUser?.photoURL && (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-400 mt-1">
+                          <span>✓</span> Google Profile
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Business</span>
+                      <span className="text-sm text-white font-medium">{currentUser?.businessName || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Category</span>
+                      <span className="text-sm text-white font-medium">{currentUser?.category || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Experience</span>
+                      <span className="text-sm text-white font-medium">{currentUser?.experience || 'Not set'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">Rate</span>
+                      <span className="text-sm text-white font-medium">${currentUser?.hourlyRate || 'Not set'}</span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Profile Information */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <h3 className="text-xl font-semibold text-white mb-4">Profile Information</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-400">Business Name</p>
-                    <p className="text-white font-medium">{currentUser?.businessName || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Category</p>
-                    <p className="text-white font-medium">{currentUser?.category || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Experience</p>
-                    <p className="text-white font-medium">{currentUser?.experience || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Hourly Rate</p>
-                    <p className="text-white font-medium">${currentUser?.hourlyRate || 'Not set'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <button className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg text-white font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
-                    📝 Edit Profile
+                {/* Mobile-friendly Action Buttons */}
+                <div className="space-y-3">
+                  <button className="w-full p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2">
+                    <span>📝</span> Edit Profile
                   </button>
-                  <button className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200">
-                    📊 View Analytics
+                  <button className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2">
+                    <span>📊</span> View Analytics
                   </button>
                 </div>
-                <p className="text-sm text-gray-400 mt-3">
-                  🚧 Profile editing and analytics features coming soon!
-                </p>
-              </div>
 
-              {/* Achievement Badges */}
-              {currentUser?.achievements && currentUser.achievements.length > 0 && (
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                  <h3 className="text-xl font-semibold text-white mb-4">Your Achievements</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {currentUser?.achievements?.map((achievement: any, index: number) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-full text-yellow-200 text-sm font-medium"
-                      >
-                        {achievement.icon} {achievement.name}
-                      </span>
-                    ))}
+                {/* Achievement Badges */}
+                {currentUser?.achievements && currentUser.achievements.length > 0 && (
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-3">Achievements</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {currentUser?.achievements?.map((achievement: any, index: number) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-full text-yellow-200 text-xs font-medium"
+                        >
+                          {achievement.icon} {achievement.name}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Coming Soon Note */}
+                <div className="text-center p-4">
+                  <p className="text-xs text-gray-400">
+                    🚧 Profile editing and analytics features coming soon!
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
