@@ -142,3 +142,33 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 #f1f5f9;
 }
+
+/* Trust-Building Blue Color Scheme */
+.trust-blue-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.trust-blue-gradient-light {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.trust-blue-gradient-dark {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+.trust-blue-text-gradient {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Trust-enhancing hover effects */
+.trust-button-hover {
+  transition: all 0.3s ease;
+}
+
+.trust-button-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+}

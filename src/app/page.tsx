@@ -502,7 +502,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
@@ -510,10 +510,10 @@ export default function Home() {
         {/* Header */}
         <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
               <span className="text-xl font-bold">🔧</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
               ThankATech
             </span>
           </div>
@@ -524,7 +524,7 @@ export default function Home() {
                 {currentUser && (
                   <button
                     onClick={() => setShowTechDashboard(true)}
-                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     {currentUser.userType === 'technician' ? 'Dashboard' : 'Profile'}
                   </button>
@@ -564,7 +564,7 @@ export default function Home() {
                 </button>
                 <button 
                   onClick={() => setShowRegistration(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
                 >
                   Join Now
                 </button>
@@ -604,7 +604,7 @@ export default function Home() {
                 onClick={() => setSelectedCategory(category.value)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   selectedCategory === category.value
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg scale-105'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg scale-105'
                     : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:scale-105'
                 }`}
               >
@@ -678,7 +678,7 @@ export default function Home() {
         {/* Modern Rolodex Card */}
         <div id="rolodex-card" className={`card-container relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
           {/* Glass morphism background layers - Wider and dynamic height */}
-          <div className={`absolute top-3 left-3 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
+          <div className={`absolute top-3 left-3 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/20 to-blue-700/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
           <div className={`absolute top-1.5 left-1.5 w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl ${expandedCard ? 'h-auto min-h-[32rem] sm:min-h-[36rem]' : 'h-[32rem] sm:h-[36rem]'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
           
           {/* Main Modern Card - Responsive width with proper overflow control */}
@@ -1211,7 +1211,7 @@ export default function Home() {
 
                 {/* Mobile-friendly Action Buttons */}
                 <div className="space-y-3">
-                  <button className="w-full p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2">
+                  <button className="w-full p-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl text-white font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200 flex items-center justify-center gap-2">
                     <span>📝</span> Edit Profile
                   </button>
                   <button className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2">
