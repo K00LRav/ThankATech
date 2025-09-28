@@ -14,12 +14,16 @@ interface TipModalProps {
     businessName: string;
     category: string;
   };
-  customerId: string;
+  customer: {
+    id: string;
+    name?: string;
+    email?: string;
+  };
 }
 
 const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: () => void }> = ({
   technician,
-  customerId,
+  customer,
   onClose,
 }) => {
   const stripe = useStripe();
@@ -65,7 +69,9 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
         body: JSON.stringify({
           amount: dollarsToCents(currentAmount),
           technicianId: technician.id,
-          customerId,
+          customerId: customer.id,
+          customerName: customer.name,
+          customerEmail: customer.email,
         }),
       });
 
@@ -92,7 +98,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       } else if (paymentIntent?.status === 'succeeded') {
         console.log('✅ Payment succeeded, recording transaction...', {
           technicianId: technician.id,
-          customerId: customerId,
+          customerId: customer.id,
           amount: dollarsToCents(currentAmount),
           paymentIntentId: paymentIntent.id,
           technicianName: technician.name,
@@ -102,7 +108,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
         try {
           await recordTransaction({
             technicianId: technician.id,
-            customerId: customerId,
+            customerId: customer.id,
             amount: dollarsToCents(currentAmount), // Store in cents
             paymentIntentId: paymentIntent.id,
             technicianName: technician.name,
@@ -267,7 +273,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
   );
 };
 
-export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician, customerId }) => {
+export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician, customer }) => {
   if (!isOpen) return null;
 
   // Check if Stripe is configured
@@ -310,7 +316,7 @@ export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician,
         </div>
 
         <Elements stripe={stripePromise}>
-          <TipForm technician={technician} customerId={customerId} onClose={onClose} />
+          <TipForm technician={technician} customer={customer} onClose={onClose} />
         </Elements>
       </div>
     </div>

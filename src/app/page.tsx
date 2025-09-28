@@ -1131,7 +1131,11 @@ export default function Home() {
           businessName: profiles[currentProfileIndex]?.businessName || '',
           category: profiles[currentProfileIndex]?.category || '',
         }}
-        customerId={currentUser?.id || ''}
+        customer={{
+          id: currentUser?.id || '',
+          name: currentUser?.name || currentUser?.displayName || '',
+          email: currentUser?.email || '',
+        }}
       />
     </div>
   );

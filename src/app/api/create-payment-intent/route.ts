@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, technicianId, customerId } = await request.json();
+    const { amount, technicianId, customerId, customerName, customerEmail } = await request.json();
 
     // Validate input
     if (!amount || !technicianId || !customerId) {
@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           technicianId,
           customerId,
+          customerName: customerName || '',
+          customerEmail: customerEmail || '',
           platformFee: platformFee.toString(),
           technicianPayout: technicianPayout.toString(),
           type: 'tip',
@@ -73,6 +75,8 @@ export async function POST(request: NextRequest) {
         metadata: {
           technicianId,
           customerId,
+          customerName: customerName || '',
+          customerEmail: customerEmail || '',
           platformFee: platformFee.toString(),
           technicianPayout: technicianPayout.toString(),
           type: 'tip',
