@@ -88,7 +88,7 @@ export async function registerTechnician(technicianData) {
       availability: technicianData.availability,
       
       // Use Google profile image if available, otherwise default
-      image: technicianData.photoURL || '/api/placeholder/150/150',
+      image: technicianData.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       
       // System fields
       points: 0,
