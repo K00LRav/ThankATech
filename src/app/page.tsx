@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip } from '../lib/firebase';
+import { initializeUsersCollection } from '../lib/initializeCollections';
 import Registration from '../components/Registration';
 import Footer from '../components/Footer';
 
@@ -518,6 +519,22 @@ export default function Home() {
           <div className="flex gap-4 items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
+                {/* Initialize Collections Button (Temporary - Remove after use) */}
+                <button
+                  onClick={async () => {
+                    const success = await initializeUsersCollection();
+                    if (success) {
+                      alert('✅ Users collection initialized successfully!');
+                    } else {
+                      alert('❌ Failed to initialize users collection. Check console for details.');
+                    }
+                  }}
+                  className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg"
+                  title="Click once to recreate the users collection"
+                >
+                  Fix DB
+                </button>
+
                 {/* Technician Dashboard Button - Temporarily showing for all users for debugging */}
                 {currentUser && (
                   <button
