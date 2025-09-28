@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface UserProfile {
   uid: string;
@@ -476,7 +477,7 @@ Please complete your profile information below and click "Save Changes" to creat
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 {formData.photoURL ? (
-                  <img src={formData.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                  <Image src={formData.photoURL} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-2xl font-bold text-white">
                     {formData.name?.charAt(0) || 'T'}

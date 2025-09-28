@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { registerUser, registerTechnician } from '../lib/firebase';
 import { TECHNICIAN_CATEGORIES, getSubcategoriesForCategory } from '../lib/categories';
 import GoogleSignIn from './GoogleSignIn';
@@ -186,9 +187,11 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           <div className="mb-4 mx-6 p-4 bg-green-500/20 backdrop-blur-sm border border-green-400/30 rounded-xl shadow-sm">
             <div className="flex items-center space-x-3">
               {googleUser.photoURL && (
-                <img 
+                <Image 
                   src={googleUser.photoURL} 
                   alt="Profile" 
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full border-2 border-green-400/50 shadow-sm"
                 />
               )}

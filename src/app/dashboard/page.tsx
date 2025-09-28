@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
 import { auth, db, migrateTechnicianProfile, getTechnicianTransactions } from '@/lib/firebase';
 import { onAuthStateChanged, Auth } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore } from 'firebase/firestore';
 import Link from 'next/link';
+import Image from 'next/image';
 import PayoutModal from '@/components/PayoutModal';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
 
@@ -219,7 +220,7 @@ export default function TechnicianDashboard() {
 
 
 
-  const loadWithdrawals = async () => {
+  const loadWithdrawals = useCallback(async () => {
     if (!user?.uid || !technicianProfile?.id) return;
 
     try {
@@ -242,9 +243,9 @@ export default function TechnicianDashboard() {
       console.error('❌ Error loading withdrawals:', error);
       setWithdrawals([]);
     }
-  };
+  }, [user?.uid, technicianProfile?.id]);
 
-  const checkStripeAccountStatus = async () => {
+  const checkStripeAccountStatus = useCallback(async () => {
     if (!user?.uid) return;
 
     try {
@@ -266,7 +267,7 @@ export default function TechnicianDashboard() {
     } catch (error) {
       console.error('Failed to check Stripe account status:', error);
     }
-  };
+  }, [user?.uid]);
 
   // Check for setup completion or refresh from URL params
   useEffect(() => {
@@ -287,7 +288,7 @@ export default function TechnicianDashboard() {
       checkStripeAccountStatus();
       window.history.replaceState({}, document.title, '/dashboard');
     }
-  }, [user]);
+  }, [user, checkStripeAccountStatus]);
 
   // Load transactions when technician profile is available
   useEffect(() => {
@@ -311,7 +312,7 @@ export default function TechnicianDashboard() {
 
     loadTransactions();
     loadWithdrawals();
-  }, [technicianProfile]);
+  }, [technicianProfile, loadWithdrawals]);
 
   // Check account status periodically
   useEffect(() => {
@@ -327,7 +328,7 @@ export default function TechnicianDashboard() {
 
       return () => clearInterval(interval);
     }
-  }, [user, technicianProfile, stripeAccountStatus]);
+  }, [user, technicianProfile, stripeAccountStatus, checkStripeAccountStatus]);
 
   if (!user) {
     return (
@@ -389,9 +390,11 @@ export default function TechnicianDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {technicianProfile?.photoURL && (
-                <img 
+                <Image 
                   src={technicianProfile.photoURL} 
                   alt={technicianProfile.name}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-full border-2 border-blue-400"
                 />
               )}

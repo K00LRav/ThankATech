@@ -10,6 +10,7 @@ import SignIn from '../components/SignIn';
 import { TipModal } from '../components/TipModal';
 import Footer from '../components/Footer';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTechnicianEarnings } from '../hooks/useTechnicianEarnings';
 
 // Utility function to format currency
@@ -632,9 +633,11 @@ export default function Home() {
                 
                 <div className="flex items-center space-x-3">
                   {currentUser?.photoURL && (
-                    <img 
+                    <Image 
                       src={currentUser.photoURL} 
                       alt="Profile" 
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-full border-2 border-white/20"
                     />
                   )}
@@ -919,9 +922,11 @@ export default function Home() {
                 {/* Profile Image with modern styling */}
                 <div className="relative">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
-                    <img
+                    <Image
                       src={profile.photoURL || profile.image}
                       alt={profile.name}
+                      width={112}
+                      height={112}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // Fallback to default image if Google photo fails to load
