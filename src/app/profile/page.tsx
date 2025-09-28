@@ -476,7 +476,7 @@ Please complete your profile information below and click "Save Changes" to creat
                   <h3 className="text-lg font-medium text-white mb-4">Favorite Service Categories</h3>
                   <p className="text-blue-200 text-sm mb-4">Select categories you're most interested in to see relevant technicians first.</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {['plumber', 'electrician', 'hvac', 'mechanic', 'appliance', 'handyman'].map((category) => (
+                    {['plumbing', 'electrical', 'hvac', 'automotive', 'appliance', 'handyman', 'computer', 'locksmith', 'contractor', 'roofing', 'landscaping', 'cleaning', 'painting'].map((category) => (
                       <label key={category} className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -497,7 +497,15 @@ Please complete your profile information below and click "Save Changes" to creat
                           }}
                           className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
                         />
-                        <span className="text-white capitalize">{category === 'hvac' ? 'HVAC' : category}</span>
+                        <span className="text-white capitalize">
+                          {category === 'hvac' ? 'HVAC' : 
+                           category === 'automotive' ? 'Auto Mechanic' :
+                           category === 'electrical' ? 'Electrician' :
+                           category === 'plumbing' ? 'Plumber' :
+                           category === 'computer' ? 'Computer Tech' :
+                           category === 'contractor' ? 'General Contractor' :
+                           category}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -680,12 +688,19 @@ Please complete your profile information below and click "Save Changes" to creat
                     className="w-full px-4 py-3 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                   >
                     <option className="bg-slate-800 text-white" value="">Select category...</option>
-                    <option className="bg-slate-800 text-white" value="plumber">Plumber</option>
-                    <option className="bg-slate-800 text-white" value="electrician">Electrician</option>
+                    <option className="bg-slate-800 text-white" value="plumbing">Plumber</option>
+                    <option className="bg-slate-800 text-white" value="electrical">Electrician</option>
                     <option className="bg-slate-800 text-white" value="hvac">HVAC Technician</option>
-                    <option className="bg-slate-800 text-white" value="mechanic">Auto Mechanic</option>
+                    <option className="bg-slate-800 text-white" value="automotive">Auto Mechanic</option>
                     <option className="bg-slate-800 text-white" value="appliance">Appliance Repair</option>
                     <option className="bg-slate-800 text-white" value="handyman">Handyman</option>
+                    <option className="bg-slate-800 text-white" value="computer">Computer Technician</option>
+                    <option className="bg-slate-800 text-white" value="locksmith">Locksmith</option>
+                    <option className="bg-slate-800 text-white" value="contractor">General Contractor</option>
+                    <option className="bg-slate-800 text-white" value="roofing">Roofing Contractor</option>
+                    <option className="bg-slate-800 text-white" value="landscaping">Landscaping</option>
+                    <option className="bg-slate-800 text-white" value="cleaning">House Cleaning</option>
+                    <option className="bg-slate-800 text-white" value="painting">Painting</option>
                     <option className="bg-slate-800 text-white" value="other">Other</option>
                   </select>
                 </div>

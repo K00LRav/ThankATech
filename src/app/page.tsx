@@ -15,6 +15,7 @@ interface Technician {
   title: string;
   about: string;
   image: string;
+  photoURL?: string; // Google profile photo URL
   points: number;
   category: string;
   rating?: number;
@@ -692,9 +693,13 @@ export default function Home() {
                 <div className="relative">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
                     <img
-                      src={profile.image}
+                      src={profile.photoURL || profile.image}
                       alt={profile.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to default image if Google photo fails to load
+                        e.currentTarget.src = profile.image;
+                      }}
                     />
                   </div>
                   {/* Dynamic Rating overlay */}
