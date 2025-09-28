@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripe, formatCurrency, dollarsToCents, calculatePlatformFee, calculateTechnicianPayout } from '@/lib/stripe';
+import { recordTransaction } from '../lib/firebase';
 
 const stripePromise = getStripe();
 
@@ -89,9 +90,26 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       if (error) {
         setError(error.message || 'Payment failed');
       } else if (paymentIntent?.status === 'succeeded') {
-        // Payment successful!
-        alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
-        onClose();
+        // Record the successful transaction in Firebase
+        try {
+          await recordTransaction({
+            technicianId: technician.id,
+            customerId: customerId,
+            amount: dollarsToCents(currentAmount), // Store in cents
+            paymentIntentId: paymentIntent.id,
+            technicianName: technician.name,
+            customerNote: '', // Could add a note field later
+          });
+          
+          // Payment successful and recorded!
+          alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
+          onClose();
+        } catch (recordError) {
+          console.error('Failed to record transaction:', recordError);
+          // Still show success since payment went through
+          alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
+          onClose();
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');

@@ -700,4 +700,94 @@ export async function deleteUserProfile(userId, userType = 'customer') {
   }
 }
 
+/**
+ * Record a successful tip transaction
+ * @param {Object} transactionData - Transaction details
+ * @returns {Promise<string>} Transaction ID
+ */
+export async function recordTransaction(transactionData) {
+  if (!db) {
+    console.warn('Firebase not configured - transaction not recorded');
+    return null;
+  }
+  
+  try {
+    const transaction = {
+      ...transactionData,
+      createdAt: new Date().toISOString(),
+      status: 'completed'
+    };
+    
+    // Add to tips collection
+    const docRef = await addDoc(collection(db, COLLECTIONS.TIPS), transaction);
+    
+    // Update technician's total earnings
+    const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
+    await updateDoc(technicianRef, {
+      totalEarnings: increment(transactionData.amount),
+      lastTipDate: new Date().toISOString()
+    });
+    
+    console.log('Transaction recorded:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error recording transaction:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get technician's earnings from Firebase
+ * @param {string} technicianId - Technician ID
+ * @returns {Promise<Object>} Earnings data
+ */
+export async function getTechnicianEarnings(technicianId) {
+  if (!db) {
+    console.warn('Firebase not configured - using mock earnings');
+    return {
+      totalEarnings: 0,
+      availableBalance: 0,
+      pendingBalance: 0
+    };
+  }
+  
+  try {
+    // Get technician document
+    const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
+    const techData = techDoc.data();
+    
+    // Get total from recorded tips
+    const tipsQuery = query(
+      collection(db, COLLECTIONS.TIPS),
+      where('technicianId', '==', technicianId),
+      where('status', '==', 'completed')
+    );
+    const tipsSnapshot = await getDocs(tipsQuery);
+    
+    let totalEarnings = 0;
+    tipsSnapshot.forEach(doc => {
+      const tip = doc.data();
+      totalEarnings += tip.amount || 0;
+    });
+    
+    // Calculate platform fee (stored in cents)
+    const platformFee = parseInt(process.env.PLATFORM_FLAT_FEE || '99');
+    const availableBalance = Math.max(0, totalEarnings - (tipsSnapshot.size * platformFee));
+    
+    return {
+      totalEarnings: totalEarnings / 100, // Convert to dollars
+      availableBalance: availableBalance / 100, // Convert to dollars
+      pendingBalance: 0, // For now, no pending payments
+      tipCount: tipsSnapshot.size
+    };
+  } catch (error) {
+    console.error('Error fetching technician earnings:', error);
+    return {
+      totalEarnings: 0,
+      availableBalance: 0,
+      pendingBalance: 0
+    };
+  }
+}
+
 export default app;
