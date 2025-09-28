@@ -1,0 +1,41 @@
+// Firebase Admin SDK configuration for server-side operations
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+let adminApp;
+let adminDb;
+
+try {
+  // Check if admin app already exists
+  if (getApps().length === 0) {
+    // Initialize Firebase Admin SDK
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+      // Using service account key from environment variable
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      });
+    } else if (process.env.FIREBASE_PROJECT_ID) {
+      // Using default credentials (for deployed environments)
+      adminApp = initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      });
+    } else {
+      console.warn('Firebase Admin SDK not configured - no service account or project ID found');
+    }
+  } else {
+    adminApp = getApps()[0];
+  }
+
+  if (adminApp) {
+    adminDb = getFirestore(adminApp);
+    console.log('✅ Firebase Admin SDK initialized successfully');
+  }
+} catch (error) {
+  console.error('❌ Firebase Admin SDK initialization failed:', error);
+  adminDb = null;
+}
+
+export { adminDb };
+export default adminApp;

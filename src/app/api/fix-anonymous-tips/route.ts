@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔧 Starting to fix anonymous tips...');
     
-    // Get all tips
-    const tipsRef = collection(db, 'tips');
-    const tipsSnapshot = await getDocs(tipsRef);
+    if (!adminDb) {
+      return NextResponse.json(
+        { error: 'Firebase Admin SDK not configured' },
+        { status: 500 }
+      );
+    }
+    
+    // Get all tips using Admin SDK
+    const tipsCollection = adminDb.collection('tips');
+    const tipsSnapshot = await tipsCollection.get();
     
     let fixedCount = 0;
     let totalTips = 0;
@@ -41,8 +47,8 @@ export async function POST(request: NextRequest) {
       if (tip.customerId) {
         try {
           // Look in users collection first
-          const userQuery = query(collection(db, 'users'), where('uid', '==', tip.customerId));
-          const userSnapshot = await getDocs(userQuery);
+          const userQuery = adminDb.collection('users').where('uid', '==', tip.customerId);
+          const userSnapshot = await userQuery.get();
           
           if (!userSnapshot.empty) {
             const userData = userSnapshot.docs[0].data();
@@ -51,8 +57,8 @@ export async function POST(request: NextRequest) {
             tipInfo.foundInCollection = 'users';
           } else {
             // Look in technicians collection
-            const techQuery = query(collection(db, 'technicians'), where('uid', '==', tip.customerId));
-            const techSnapshot = await getDocs(techQuery);
+            const techQuery = adminDb.collection('technicians').where('uid', '==', tip.customerId);
+            const techSnapshot = await techQuery.get();
             
             if (!techSnapshot.empty) {
               const techData = techSnapshot.docs[0].data();
@@ -76,7 +82,7 @@ export async function POST(request: NextRequest) {
       // Update the tip if we found a name
       if (customerName) {
         try {
-          await updateDoc(doc(db, 'tips', tipDoc.id), {
+          await adminDb.collection('tips').doc(tipDoc.id).update({
             customerName: customerName,
             customerEmail: customerEmail || tip.customerEmail,
             updatedAt: new Date().toISOString()
