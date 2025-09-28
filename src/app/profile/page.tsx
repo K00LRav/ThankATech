@@ -506,6 +506,46 @@ Please complete your profile information below and click "Save Changes" to creat
             </div>
           )}
 
+          {/* Payment Methods for Customers */}
+          {profile.userType === 'customer' && (
+            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">Payment Methods</h2>
+                <button className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200 text-sm">
+                  Add Payment Method
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Default Card Display */}
+                <div className="bg-slate-700/50 rounded-lg p-4 border border-blue-500/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">Payment via Stripe</p>
+                        <p className="text-blue-200 text-sm">Secure payment processing for tips</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-medium">Active</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center py-4">
+                  <p className="text-blue-200 text-sm">
+                    Payment methods are securely managed through Stripe during the tip process.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tip History for Customers */}
           {profile.userType === 'customer' && (
             <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
@@ -527,6 +567,82 @@ Please complete your profile information below and click "Save Changes" to creat
                   </svg>
                   Find Technicians
                 </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Favorite Technicians for Customers */}
+          {profile.userType === 'customer' && (
+            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+              <h2 className="text-xl font-bold text-white mb-6">Favorite Technicians</h2>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">No favorites yet</h3>
+                <p className="text-blue-200 mb-4">Save your favorite technicians for quick access and easy tipping.</p>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Browse Technicians
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Account Settings for Customers */}
+          {profile.userType === 'customer' && (
+            <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+              <h2 className="text-xl font-bold text-white mb-6">Account Settings</h2>
+              <div className="space-y-6">
+                {/* Privacy Settings */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-4">Privacy & Security</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-white font-medium">Profile Visibility</p>
+                        <p className="text-blue-200 text-sm">Control who can see your profile information</p>
+                      </div>
+                      <select className="bg-slate-700 border border-blue-500/30 rounded-lg text-white px-3 py-2 text-sm">
+                        <option value="private">Private</option>
+                        <option value="public">Public</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-white font-medium">Data Export</p>
+                        <p className="text-blue-200 text-sm">Download your account data</p>
+                      </div>
+                      <button className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Export Data
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Danger Zone */}
+                <div className="border-t border-red-500/20 pt-6">
+                  <h3 className="text-lg font-medium text-red-400 mb-4">Danger Zone</h3>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">Delete Account</p>
+                        <p className="text-red-200 text-sm">Permanently delete your account and all data</p>
+                      </div>
+                      <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Delete Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
