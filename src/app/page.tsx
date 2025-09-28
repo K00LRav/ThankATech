@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
-import { sendThankYou, sendTip } from '../lib/firebase';
+import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
 import { TipModal } from '../components/TipModal';
@@ -249,6 +249,63 @@ export default function Home() {
   useEffect(() => {
     filterTechnicians(searchQuery, selectedCategory);
   }, [selectedCategory, filterTechnicians, searchQuery]);
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = authHelpers.onAuthStateChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in, restore their profile data
+        try {
+          // Try to get user data from either technicians or users collection
+          let userData: any = await getTechnician(firebaseUser.uid);
+          if (!userData) {
+            userData = await getUser(firebaseUser.uid);
+          }
+
+          if (userData) {
+            setCurrentUser({
+              id: userData.id,
+              uid: firebaseUser.uid,
+              name: userData.name || userData.displayName || firebaseUser.displayName,
+              email: userData.email || firebaseUser.email,
+              displayName: userData.displayName || firebaseUser.displayName,
+              photoURL: userData.photoURL || firebaseUser.photoURL,
+              userType: userData.userType || 'customer'
+            });
+          } else {
+            // Firebase user exists but no profile data, create basic user object
+            setCurrentUser({
+              id: firebaseUser.uid,
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              userType: 'customer'
+            });
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+          // Still set basic user data from Firebase auth
+          setCurrentUser({
+            id: firebaseUser.uid,
+            uid: firebaseUser.uid,
+            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            userType: 'customer'
+          });
+        }
+      } else {
+        // User is signed out
+        setCurrentUser(null);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   const achievementBadges = getAchievementBadges(profile);
 
