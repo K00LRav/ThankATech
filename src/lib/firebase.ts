@@ -346,11 +346,7 @@ export async function getRegisteredTechnicians() {
       
       // Debug logging for tip recipients  
       if (totalAmount >= 1000) { // $10 or more
-          const tip = JSON.parse(tipStr);
-          const gross = tip.amount || 0;
-          const net = tip.technicianPayout || tip.amount || 0;
-          return `Gross: $${(gross / 100).toFixed(2)}, Net: $${(net / 100).toFixed(2)} (${tip.paymentIntentId})`;
-        }));
+        // Significant tip amount received
       }
     });
     

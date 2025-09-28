@@ -9,12 +9,6 @@ export async function POST(request: NextRequest) {
     const { amount, technicianId, customerId, customerName, customerEmail } = await request.json();
 
     // Debug: Log received customer data
-      customerId,
-      customerName,
-      customerEmail,
-      hasName: !!customerName,
-      hasEmail: !!customerEmail
-    });
 
     // Validate input
     if (!amount || !technicianId || !customerId) {

@@ -239,12 +239,6 @@ export default function ProfilePage() {
           setProfile(userData);
           setFormData(userData);
         } else {
-            uid: user.uid, 
-            email: user.email, 
-            displayName: user.displayName,
-            photoURL: user.photoURL 
-          });
-          
           // Create a basic profile structure if none exists
           const basicProfile: Partial<UserProfile> = {
             uid: user.uid,

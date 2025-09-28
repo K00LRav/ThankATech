@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
+import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
 import { TipModal } from '../components/TipModal';
@@ -137,24 +138,21 @@ export default function Home() {
 
   // Get category icon based on category/title
   const getCategoryIcon = (category: string, title: string) => {
-    const categoryLower = (category || title || '').toLowerCase();
+    // First try to find by exact category ID or name
+    const categoryObj = getCategoryById(category) || 
+                       TECHNICIAN_CATEGORIES.find(cat => 
+                         cat.name.toLowerCase() === category.toLowerCase()
+                       );
     
-    if (categoryLower.includes('auto') || categoryLower.includes('mechanic') || categoryLower.includes('car')) return '🚗';
-    if (categoryLower.includes('electric') || categoryLower.includes('electrical')) return '⚡';
-    if (categoryLower.includes('plumb') || categoryLower.includes('pipe')) return '🔧';
-    if (categoryLower.includes('hvac') || categoryLower.includes('air') || categoryLower.includes('heat')) return '🌡️';
-    if (categoryLower.includes('computer') || categoryLower.includes('tech') || categoryLower.includes('it')) return '💻';
-    if (categoryLower.includes('appliance') || categoryLower.includes('repair')) return '🔧';
-    if (categoryLower.includes('lock') || categoryLower.includes('security')) return '🔐';
-    if (categoryLower.includes('contractor') || categoryLower.includes('construction')) return '🏗️';
-    if (categoryLower.includes('handyman') || categoryLower.includes('handy')) return '🔨';
-    if (categoryLower.includes('paint') || categoryLower.includes('decorator')) return '🎨';
-    if (categoryLower.includes('roof') || categoryLower.includes('gutter')) return '🏠';
-    if (categoryLower.includes('garden') || categoryLower.includes('landscape')) return '🌱';
-    if (categoryLower.includes('clean') || categoryLower.includes('janitor')) return '🧹';
+    if (categoryObj) {
+      return categoryObj.icon;
+    }
     
-    // Default fallback
-    return '🔧';
+    // Fallback to legacy mapping for existing data
+    const mappedCategory = mapLegacyCategoryToNew(category || title || '');
+    const mappedCategoryObj = getCategoryById(mappedCategory);
+    
+    return mappedCategoryObj ? mappedCategoryObj.icon : '🔧';
   };
 
   // Format category name with proper capitalization
@@ -218,21 +216,59 @@ export default function Home() {
     
     // Apply category filter
     if (category && category !== 'all') {
-      filtered = filtered.filter(technician => 
-        technician.category.toLowerCase() === category.toLowerCase()
-      );
+      filtered = filtered.filter(technician => {
+        const techCategory = technician.category || '';
+        
+        // Direct match (for legacy categories)
+        if (techCategory.toLowerCase() === category.toLowerCase()) {
+          return true;
+        }
+        
+        // Check if the category matches a main category ID
+        const categoryObj = getCategoryById(category);
+        if (categoryObj) {
+          // Check if technician's category matches the category name
+          if (techCategory.toLowerCase() === categoryObj.name.toLowerCase()) {
+            return true;
+          }
+          
+          // Check if technician's legacy category maps to this main category
+          const mappedCategory = mapLegacyCategoryToNew(techCategory);
+          return mappedCategory === category;
+        }
+        
+        return false;
+      });
     }
     
     // Apply search query filter
     if (query.trim()) {
-      filtered = filtered.filter(technician => 
-        technician.name.toLowerCase().includes(query.toLowerCase()) ||
-        technician.category.toLowerCase().includes(query.toLowerCase()) ||
-        technician.title.toLowerCase().includes(query.toLowerCase()) ||
-        technician.businessName?.toLowerCase().includes(query.toLowerCase()) ||
-        technician.businessAddress?.toLowerCase().includes(query.toLowerCase()) ||
-        technician.serviceArea?.toLowerCase().includes(query.toLowerCase())
-      );
+      const searchTerm = query.toLowerCase();
+      filtered = filtered.filter(technician => {
+        // Basic fields search
+        const basicMatch = 
+          technician.name.toLowerCase().includes(searchTerm) ||
+          technician.category.toLowerCase().includes(searchTerm) ||
+          technician.title.toLowerCase().includes(searchTerm) ||
+          technician.businessName?.toLowerCase().includes(searchTerm) ||
+          technician.businessAddress?.toLowerCase().includes(searchTerm) ||
+          technician.serviceArea?.toLowerCase().includes(searchTerm);
+        
+        if (basicMatch) return true;
+        
+        // Search in subcategories - find the main category and search its subcategories
+        const techCategory = technician.category || '';
+        const mappedCategoryId = mapLegacyCategoryToNew(techCategory);
+        const categoryObj = getCategoryById(mappedCategoryId);
+        
+        if (categoryObj) {
+          return categoryObj.subcategories.some(sub => 
+            sub.toLowerCase().includes(searchTerm)  
+          );
+        }
+        
+        return false;
+      });
     }
     
     setFilteredProfiles(filtered);
@@ -309,11 +345,36 @@ export default function Home() {
 
   const achievementBadges = getAchievementBadges(profile);
 
-  // Get unique categories from all profiles
+  // Get available categories - show all main categories plus any that have active technicians
   const getAvailableCategories = useCallback(() => {
-    const categories = allProfiles.map(p => p.category);
-    const uniqueCategories = [...new Set(categories)].sort();
-    return [{ value: 'all', label: 'All Categories' }, ...uniqueCategories.map(cat => ({ value: cat, label: formatCategory(cat) }))];
+    // Always show "All Categories" first
+    const categories = [{ value: 'all', label: 'All Categories' }];
+    
+    // Add all main categories from our configuration
+    TECHNICIAN_CATEGORIES.forEach(cat => {
+      categories.push({
+        value: cat.id,
+        label: cat.name
+      });
+    });
+    
+    // Also check for any legacy categories from existing profiles that don't match our main categories
+    const existingCategories = allProfiles.map(p => p.category);
+    const uniqueExistingCategories = [...new Set(existingCategories)];
+    
+    uniqueExistingCategories.forEach(existingCat => {
+      if (existingCat && !TECHNICIAN_CATEGORIES.some(cat => 
+        cat.id === existingCat || cat.name.toLowerCase() === existingCat.toLowerCase()
+      )) {
+        // This is a legacy category, add it
+        categories.push({
+          value: existingCat,
+          label: formatCategory(existingCat)
+        });
+      }
+    });
+    
+    return categories;
   }, [allProfiles]);
 
   // Minimum swipe distance (in px)
@@ -654,45 +715,80 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Category Filter */}
-        <div className="mb-12 lg:mb-16">
-          {/* Mobile Dropdown */}
-          <div className="sm:hidden px-4">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
-            >
-              {getAvailableCategories().map((category) => (
-                <option key={category.value} value={category.value} className="bg-slate-800 text-white">
-                  {category.value !== 'all' && getCategoryIcon(category.value, '')} {category.label}
-                </option>
-              ))}
-            </select>
+        {/* Categories Showcase */}
+        <div className="mb-8 px-4">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-2">
+              🛠️ Find Your Tech Hero
+            </h2>
+            <p className="text-gray-300 text-sm">Choose a category to discover skilled technicians in your area</p>
           </div>
           
-          {/* Desktop Buttons */}
-          <div className="hidden sm:flex flex-wrap justify-center gap-2 px-4">
-            {getAvailableCategories().map((category) => (
+          {/* Category Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 max-w-6xl mx-auto">
+            {/* Show All Categories Button */}
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`group p-4 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+                selectedCategory === 'all'
+                  ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg shadow-green-500/25'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+              }`}
+            >
+              <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">
+                🔧
+              </div>
+              <div className="text-white text-xs font-medium text-center leading-tight">
+                All Categories
+              </div>
+              <div className="text-gray-400 text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                View all technicians
+              </div>
+            </button>
+
+            {TECHNICIAN_CATEGORIES.slice(0, 9).map((category) => (
               <button
-                key={category.value}
-                onClick={() => setSelectedCategory(category.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  selectedCategory === category.value
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg scale-105'
-                    : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 hover:scale-105'
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`group p-4 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+                  selectedCategory === category.id
+                    ? 'bg-gradient-to-r from-blue-600/30 to-blue-800/30 border-blue-400/50 shadow-lg shadow-blue-500/25'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                 }`}
               >
-                {category.value !== 'all' && getCategoryIcon(category.value, '')} {category.label}
+                <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">
+                  {category.icon}
+                </div>
+                <div className="text-white text-xs font-medium text-center leading-tight">
+                  {category.name.replace(' Technicians', '').replace(' (IT)', '')}
+                </div>
+                <div className="text-gray-400 text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {category.description.split(',')[0]}
+                </div>
               </button>
             ))}
           </div>
           
-          {selectedCategory !== 'all' && (
-            <div className="mt-3 text-center text-white/70 text-sm">
-              Showing {profiles.length} {formatCategory(selectedCategory)} technician{profiles.length !== 1 ? 's' : ''}
-            </div>
-          )}
+          {/* Filter Status */}
+          <div className="mt-6 text-center">
+            {selectedCategory !== 'all' ? (
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-400/30 rounded-full">
+                <span className="text-blue-300 text-sm">
+                  Showing {profiles.length} {getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)} technician{profiles.length !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className="text-blue-400 hover:text-blue-300 text-sm underline ml-2"
+                >
+                  Clear filter
+                </button>
+              </div>
+            ) : (
+              <div className="text-gray-400 text-sm">
+                Showing all {profiles.length} technician{profiles.length !== 1 ? 's' : ''} in your area
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Search Input */}

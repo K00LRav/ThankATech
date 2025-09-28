@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { registerUser, registerTechnician } from '../lib/firebase';
+import { TECHNICIAN_CATEGORIES, getSubcategoriesForCategory } from '../lib/categories';
 import GoogleSignIn from './GoogleSignIn';
 
 interface RegistrationProps {
@@ -23,6 +24,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     // Technician-specific fields
     businessName: '',
     category: '',
+    subcategory: '',
     experience: '',
     certifications: '',
     description: '',
@@ -111,6 +113,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           ...userData,
           businessName: formData.businessName,
           category: formData.category,
+          subcategory: formData.subcategory,
           experience: formData.experience,
           certifications: formData.certifications,
           description: formData.description,
@@ -372,23 +375,37 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                     required={userType === 'technician'}
                     className="w-full px-3 py-2 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                   >
-                    <option className="bg-slate-800 text-white" value="">Select category...</option>
-                    <option className="bg-slate-800 text-white" value="plumbing">Plumber</option>
-                    <option className="bg-slate-800 text-white" value="electrical">Electrician</option>
-                    <option className="bg-slate-800 text-white" value="hvac">HVAC Technician</option>
-                    <option className="bg-slate-800 text-white" value="automotive">Auto Mechanic</option>
-                    <option className="bg-slate-800 text-white" value="appliance">Appliance Repair</option>
-                    <option className="bg-slate-800 text-white" value="handyman">Handyman</option>
-                    <option className="bg-slate-800 text-white" value="computer">Computer Technician</option>
-                    <option className="bg-slate-800 text-white" value="locksmith">Locksmith</option>
-                    <option className="bg-slate-800 text-white" value="contractor">General Contractor</option>
-                    <option className="bg-slate-800 text-white" value="roofing">Roofing Contractor</option>
-                    <option className="bg-slate-800 text-white" value="landscaping">Landscaping</option>
-                    <option className="bg-slate-800 text-white" value="cleaning">House Cleaning</option>
-                    <option className="bg-slate-800 text-white" value="painting">Painting</option>
-                    <option className="bg-slate-800 text-white" value="other">Other</option>
+                    <option className="bg-slate-800 text-white" value="">Select main category...</option>
+                    {TECHNICIAN_CATEGORIES.map((category) => (
+                      <option key={category.id} className="bg-slate-800 text-white" value={category.id}>
+                        {category.icon} {category.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+                
+                {/* Subcategory Selection */}
+                {formData.category && (
+                  <div>
+                    <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1">
+                      Specialization <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <select
+                      id="subcategory"
+                      name="subcategory"
+                      value={formData.subcategory}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                    >
+                      <option className="bg-slate-800 text-white" value="">Select specialization...</option>
+                      {getSubcategoriesForCategory(formData.category).map((subcategory) => (
+                        <option key={subcategory} className="bg-slate-800 text-white" value={subcategory}>
+                          {subcategory}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>

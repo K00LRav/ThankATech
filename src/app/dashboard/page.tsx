@@ -170,11 +170,6 @@ export default function TechnicianDashboard() {
           
           // Debug logging and migration attempt
           if (!technicianFound) {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName
-            });
-            
             // Try to migrate from users collection
             try {
               const migratedProfile = await migrateTechnicianProfile(firebaseUser.uid);
@@ -299,12 +294,6 @@ export default function TechnicianDashboard() {
     const loadTransactions = async () => {
       if (technicianProfile) {
         try {
-            id: technicianProfile.id,
-            email: technicianProfile.email,
-            uniqueId: (technicianProfile as any).uniqueId,
-            name: technicianProfile.name
-          });
-          
           const realTransactions = await getTechnicianTransactions(
             technicianProfile.id, 
             technicianProfile.email, 

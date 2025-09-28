@@ -83,12 +83,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
   const { technicianId, customerId, customerName, customerEmail, platformFee, technicianPayout, type } = paymentIntent.metadata;
   
   // Debug: Log received metadata
-    customerId,
-    customerName,
-    customerEmail,
-    hasCustomerName: !!customerName,
-    hasCustomerEmail: !!customerEmail
-  });
   
   try {
     // Only process tip payments
@@ -105,11 +99,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
       // Parse fees from metadata, or calculate if missing
       const parsedPlatformFee = parseInt(platformFee) || calculatePlatformFee(paymentIntent.amount);
       const parsedTechnicianPayout = parseInt(technicianPayout) || calculateTechnicianPayout(paymentIntent.amount);
-      
-        amount: paymentIntent.amount, 
-        platformFee: parsedPlatformFee, 
-        technicianPayout: parsedTechnicianPayout 
-      });
       
       // Record the transaction in Firebase
       const transactionData = {
