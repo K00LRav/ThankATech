@@ -242,7 +242,7 @@ export async function registerUser(userData) {
 }
 
 /**
- * Get all registered technicians from Firebase
+ * Get all registered technicians from Firebase with real-time tip calculations
  */
 export async function getRegisteredTechnicians() {
   if (!db) {
@@ -251,7 +251,7 @@ export async function getRegisteredTechnicians() {
   }
 
   try {
-    // Simplified query - no index needed for now
+    // Get all technicians
     const querySnapshot = await getDocs(collection(db, COLLECTIONS.TECHNICIANS));
     const technicians = [];
     
@@ -263,6 +263,41 @@ export async function getRegisteredTechnicians() {
           id: doc.id,
           ...data
         });
+      }
+    });
+
+    // Get all tips and calculate totals for each technician
+    const tipsSnapshot = await getDocs(collection(db, 'tips'));
+    const tipsByTechnician = new Map();
+    
+    tipsSnapshot.forEach((tipDoc) => {
+      const tipData = tipDoc.data();
+      const techId = tipData.technicianId;
+      
+      if (techId) {
+        if (!tipsByTechnician.has(techId)) {
+          tipsByTechnician.set(techId, {
+            count: 0,
+            totalAmount: 0
+          });
+        }
+        
+        const current = tipsByTechnician.get(techId);
+        current.count += 1;
+        current.totalAmount += tipData.amount || 0;
+      }
+    });
+
+    // Enhance technicians with calculated tip data
+    technicians.forEach(tech => {
+      const tips = tipsByTechnician.get(tech.id);
+      if (tips) {
+        tech.totalTips = tips.count;
+        tech.totalTipAmount = tips.totalAmount;
+      } else {
+        // Ensure these fields exist even if no tips
+        tech.totalTips = tech.totalTips || 0;
+        tech.totalTipAmount = tech.totalTipAmount || 0;
       }
     });
     
