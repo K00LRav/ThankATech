@@ -1,6 +1,6 @@
 // Firebase configuration and services for ThankATech
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -23,7 +23,9 @@ const isFirebaseConfigured = process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
 let app, db, auth, storage, googleProvider;
 
 if (isFirebaseConfigured) {
-  app = initializeApp(firebaseConfig);
+  // Check if Firebase app already exists, if not initialize it
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  
   db = getFirestore(app);
   auth = getAuth(app);
   storage = getStorage(app);
