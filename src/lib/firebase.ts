@@ -245,6 +245,8 @@ export async function registerUser(userData) {
  * Get all registered technicians from Firebase with real-time tip calculations
  */
 export async function getRegisteredTechnicians() {
+  console.log('🔥 getRegisteredTechnicians called - starting enhanced tip matching...');
+  
   if (!db) {
     console.warn('Firebase not configured. Returning empty array.');
     return [];
@@ -267,7 +269,16 @@ export async function getRegisteredTechnicians() {
     });
 
     // Get all tips and calculate totals for each technician
-    const tipsSnapshot = await getDocs(collection(db, 'tips'));
+    console.log('🔥 About to fetch tips collection...');
+    let tipsSnapshot;
+    try {
+      tipsSnapshot = await getDocs(collection(db, 'tips'));
+      console.log('🔥 Tips collection fetched successfully');
+    } catch (tipError) {
+      console.error('❌ Error fetching tips collection:', tipError);
+      // Continue without tip data if tips collection fails
+      tipsSnapshot = { size: 0, forEach: () => {} };
+    }
     const tipsByTechnician = new Map();
     
     // First pass: group tips by various identifiers
@@ -306,6 +317,10 @@ export async function getRegisteredTechnicians() {
     // Debug: Log tip collection summary
     console.log(`🔍 TIP MATCHING DEBUG: Found ${tipsSnapshot.size} total tips in database`);
     console.log(`📊 Tips by ID: ${tipsByTechId.size}, by Email: ${tipsByEmail.size}, by UniqueID: ${tipsByUniqueId.size}`);
+    
+    if (tipsSnapshot.size === 0) {
+      console.warn('⚠️ No tips found in database - this might be the issue!');
+    }
 
     // Enhance technicians with calculated tip data using multiple matching strategies
     technicians.forEach(tech => {
