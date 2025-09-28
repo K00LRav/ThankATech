@@ -462,79 +462,79 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Animated background elements - hidden on mobile to reduce "spammy" look */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       <div className="relative z-10">
-        {/* Header */}
-        <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl font-bold">🔧</span>
+        {/* Header - Responsive mobile layout */}
+        <header className="flex justify-between items-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <span className="text-lg sm:text-xl font-bold">🔧</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               ThankATech
             </span>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-2 sm:gap-4 items-center">
             {currentUser ? (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 {currentUser.photoURL && (
                   <img 
                     src={currentUser.photoURL} 
                     alt="Profile" 
-                    className="w-8 h-8 rounded-full border-2 border-white/20"
+                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white/20"
                   />
                 )}
-                <span className="text-gray-300">Welcome, {currentUser.name}!</span>
+                <span className="text-gray-300 text-sm sm:text-base hidden sm:block">Welcome, {currentUser.name}!</span>
               </div>
             ) : (
               <button 
                 onClick={() => setShowRegistration(true)}
-                className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium"
+                className="text-gray-300 hover:text-indigo-400 transition-colors duration-200 font-medium text-sm sm:text-base px-2 sm:px-0"
               >
                 Join Now
               </button>
             )}
             <button 
               onClick={() => setShowSearch(!showSearch)}
-              className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium"
+              className="px-3 py-2 sm:px-6 sm:py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {showSearch ? 'Close' : 'Search'}
             </button>
           </div>
         </header>
 
-        {/* Search Input */}
+        {/* Search Input - Better mobile layout */}
         {showSearch && (
-          <div className="w-full max-w-2xl mx-auto px-4 py-4 animate-fadeIn">
+          <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-2 sm:py-4 animate-fadeIn">
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search technicians by name, category, business, or location..."
-                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200"
+                placeholder="Search by name, category, or location..."
+                className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg sm:rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
               />
               {searchQuery && (
                 <button
                   onClick={() => {setSearchQuery(''); filterTechnicians('');}}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
+                  className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors text-sm sm:text-base"
                 >
                   ✕
                 </button>
               )}
             </div>
             {filteredProfiles.length > 0 && searchQuery && (
-              <div className="mt-2 text-center text-white/70 text-sm">
+              <div className="mt-2 text-center text-white/70 text-xs sm:text-sm">
                 Found {filteredProfiles.length} technician{filteredProfiles.length !== 1 ? 's' : ''}
               </div>
             )}
             {filteredProfiles.length === 0 && searchQuery && (
-              <div className="mt-2 text-center text-orange-300 text-sm">
+              <div className="mt-2 text-center text-orange-300 text-xs sm:text-sm">
                 No technicians found matching &quot;{searchQuery}&quot;
               </div>
             )}
@@ -545,13 +545,13 @@ export default function Home() {
       <div className="flex flex-col items-center space-y-8">
         
         {/* Sample Data Notice */}
-                {/* Location Permission Banner */}
+                {/* Location Permission Banner - Better mobile text */}
         {locationPermission === 'denied' && (
-          <div className="mb-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm border border-blue-300/30 rounded-2xl p-4">
+          <div className="mb-4 sm:mb-6 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm border border-blue-300/30 rounded-xl sm:rounded-2xl p-3 sm:p-4">
             <div className="text-blue-100">
-              <h3 className="font-semibold mb-2 text-lg">📍 Location Services Disabled</h3>
-              <p className="text-sm text-blue-200">
-                Enable location services to see technicians sorted by distance and find the nearest help! 
+              <h3 className="font-semibold mb-2 text-base sm:text-lg">📍 Location Services Disabled</h3>
+              <p className="text-xs sm:text-sm text-blue-200">
+                Enable location to see nearby technicians first!
                 <button 
                   onClick={() => window.location.reload()} 
                   className="text-blue-300 hover:text-blue-100 hover:underline font-semibold ml-1 transition-colors duration-200"
@@ -563,43 +563,43 @@ export default function Home() {
           </div>
         )}
 
-        {/* Sample Profile Warning */}
+        {/* Sample Profile Warning - Better mobile text */}
         {profile.isSample && (
-          <div className="mb-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border border-yellow-300/30 rounded-2xl p-4">
+          <div className="mb-4 sm:mb-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border border-yellow-300/30 rounded-xl sm:rounded-2xl p-3 sm:p-4">
             <div className="text-yellow-100">
-              <h3 className="font-semibold mb-2 text-lg">🔧 These are sample profiles!</h3>
-              <p className="text-sm text-yellow-200">
+              <h3 className="font-semibold mb-2 text-base sm:text-lg">🔧 Sample profiles shown</h3>
+              <p className="text-xs sm:text-sm text-yellow-200">
                 Real technicians can <button 
                   onClick={() => setShowRegistration(true)} 
                   className="text-yellow-300 hover:text-yellow-100 hover:underline font-semibold transition-colors duration-200"
-                >register here</button> to create their own profile and start receiving thanks and tips from customers!
+                >register here</button> to appear on ThankATech!
               </p>
             </div>
           </div>
         )}
-        {/* Modern Rolodex Card */}
-        <div id="rolodex-card" className={`relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
-          {/* Glass morphism background layers - Much wider and dynamic height */}
-          <div className={`absolute top-3 left-3 w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem] ${expandedCard ? 'h-auto min-h-96 sm:min-h-[32rem]' : 'h-96 sm:h-[32rem]'} bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-2xl transform rotate-2 transition-all duration-500 group-hover:rotate-3 group-hover:top-4 group-hover:left-4 border border-white/20`}></div>
-          <div className={`absolute top-1.5 left-1.5 w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem] ${expandedCard ? 'h-auto min-h-96 sm:min-h-[32rem]' : 'h-96 sm:h-[32rem]'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-2.5 group-hover:left-2.5 border border-white/10`}></div>
+        {/* Modern Rolodex Card - Mobile responsive with fixed width classes */}
+        <div id="rolodex-card" className={`mobile-card-fix relative group cursor-pointer ${isFlipping ? 'animate-pulse' : ''}`}>
+          {/* Glass morphism background layers - Responsive width */}
+          <div className={`absolute top-2 left-2 sm:top-3 sm:left-3 mobile-card-fix ${expandedCard ? 'h-auto min-h-80 sm:min-h-96' : 'h-80 sm:h-96'} bg-gradient-to-br from-indigo-400/20 to-purple-600/20 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-1 sm:rotate-2 transition-all duration-500 group-hover:rotate-2 sm:group-hover:rotate-3 group-hover:top-3 sm:group-hover:top-4 group-hover:left-3 sm:group-hover:left-4 border border-white/20`}></div>
+          <div className={`absolute top-1 left-1 sm:top-1.5 sm:left-1.5 mobile-card-fix ${expandedCard ? 'h-auto min-h-80 sm:min-h-96' : 'h-80 sm:h-96'} bg-gradient-to-br from-blue-400/15 to-indigo-600/15 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-0.5 sm:rotate-1 transition-all duration-500 group-hover:rotate-1 sm:group-hover:rotate-2 group-hover:top-2 sm:group-hover:top-2.5 group-hover:left-2 sm:group-hover:left-2.5 border border-white/10`}></div>
           
-          {/* Main Modern Card - Much wider and dynamic height */}
-          <div className={`relative w-96 sm:w-[28rem] md:w-[36rem] lg:w-[42rem] xl:w-[48rem] ${expandedCard ? 'h-auto min-h-96 sm:min-h-[32rem]' : 'h-96 sm:h-[32rem]'} bg-gradient-to-br from-white to-gray-50 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-3xl group-hover:-translate-y-3 group-hover:shadow-indigo-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''}`}>
+          {/* Main Modern Card - Mobile responsive */}
+          <div className={`relative mobile-card-fix ${expandedCard ? 'h-auto min-h-80 sm:min-h-96' : 'h-80 sm:h-96'} bg-gradient-to-br from-white to-gray-50 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-4 sm:p-6 lg:p-8 transition-all duration-500 ease-out group-hover:shadow-2xl sm:group-hover:shadow-3xl group-hover:-translate-y-2 sm:group-hover:-translate-y-3 group-hover:shadow-indigo-500/25 ${isFlipping ? 'scale-105 rotate-1' : ''}`}>
             
-            {/* Modern Category Badge */}
-            <div className="absolute -top-3 right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg">
-              <span className="text-sm font-semibold tracking-wide flex items-center gap-1">
-                <span className="text-base">{getCategoryIcon(profile.category, profile.title)}</span>
-                {formatCategory(profile.category)}
+            {/* Modern Category Badge - Mobile responsive */}
+            <div className="absolute -top-2 sm:-top-3 right-4 sm:right-8 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-full shadow-lg">
+              <span className="text-xs sm:text-sm font-semibold tracking-wide flex items-center gap-1">
+                <span className="text-sm sm:text-base">{getCategoryIcon(profile.category, profile.title)}</span>
+                <span className="hidden sm:inline">{formatCategory(profile.category)}</span>
               </span>
             </div>
 
             <div className="flex flex-col h-full">
-              {/* Header Section */}
-              <div className="flex items-start space-x-4 mb-4">
+              {/* Header Section - Better mobile spacing */}
+              <div className="flex items-start space-x-3 sm:space-x-4 mb-3 sm:mb-4">
                 {/* Profile Image with modern styling */}
-                <div className="relative">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg ring-2 sm:ring-4 ring-white/50">
                     <img
                       src={profile.image}
                       alt={profile.name}
@@ -607,27 +607,27 @@ export default function Home() {
                     />
                   </div>
                   {/* Dynamic Rating overlay */}
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">
-                    {dynamicRating.toFixed(1)}⭐
+                  <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white">
+                    <span className="text-xs">{dynamicRating.toFixed(1)}⭐</span>
                   </div>
                 </div>
 
                 {/* Name and Title */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{profile.name}</h2>
-                  <p className="text-sm sm:text-base lg:text-lg text-indigo-600 font-semibold mt-1">{profile.businessName || profile.title}</p>
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{profile.name}</h2>
+                  <p className="text-sm sm:text-base lg:text-lg text-indigo-600 font-semibold mt-1 truncate">{profile.businessName || profile.title}</p>
                   {profile.serviceArea && (
-                    <p className="text-xs text-gray-500 mt-1 flex items-center">
+                    <p className="text-xs text-gray-500 mt-1 flex items-center truncate">
                       <span className="mr-1">📍</span>
-                      {profile.serviceArea}
+                      <span className="truncate">{profile.serviceArea}</span>
                     </p>
                   )}
                   
                   {/* Distance and Location Info */}
                   {profile.distance !== undefined && (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1 sm:gap-2 mt-1 flex-wrap">
                       <span className="text-xs text-gray-500 flex items-center">
-                        🚗 {profile.distance.toFixed(1)} miles away
+                        🚗 {profile.distance.toFixed(1)} mi
                       </span>
                       {profile.isNearby && (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
@@ -637,13 +637,13 @@ export default function Home() {
                     </div>
                   )}
                   
-                  {/* Achievement Badges */}
+                  {/* Achievement Badges - Horizontal scroll on mobile */}
                   {achievementBadges.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex gap-1 mt-2 overflow-x-auto scrollbar-hide pb-1">
                       {achievementBadges.map((badge, index) => (
                         <span 
                           key={index}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${badge.color} shadow-sm`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${badge.color} shadow-sm flex-shrink-0`}
                           title={`Achievement: ${badge.text}`}
                         >
                           <span className="text-xs">{badge.icon}</span>
@@ -924,34 +924,40 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll Hint */}
-        <div className="text-center text-gray-400 text-sm flex items-center justify-center space-x-2 flex-wrap">
-          <span>🖱️</span>
-          <span className="hidden sm:inline">Scroll to flip through technicians</span>
-          <span className="sm:hidden">Swipe up/down to flip through technicians</span>
-          <span className="text-xs bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">({currentProfileIndex + 1}/{profiles.length})</span>
-          {userLocation && (
-            <span className="text-xs bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-green-400/30 text-green-300">
-              📍 Sorted by distance
+        {/* Scroll Hint - Better mobile display */}
+        <div className="text-center text-gray-400 text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-2 sm:space-x-2">
+          <div className="flex items-center gap-2">
+            <span>�</span>
+            <span className="hidden sm:inline">Scroll to flip through technicians</span>
+            <span className="sm:hidden">Swipe up/down to flip</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full border border-white/20">
+              ({currentProfileIndex + 1}/{profiles.length})
             </span>
-          )}
+            {userLocation && (
+              <span className="text-xs bg-green-500/20 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full border border-green-400/30 text-green-300">
+                📍 <span className="hidden sm:inline">Sorted by distance</span><span className="sm:hidden">Near you</span>
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex space-x-6">
+        {/* Action Buttons - Mobile responsive */}
+        <div className="mobile-button-spacing flex flex-col sm:flex-row gap-3 sm:space-x-6 sm:gap-0">
           <button 
             onClick={handleThankYou}
-            className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1"
+            className="group flex items-center justify-center space-x-2 sm:space-x-3 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1 min-h-[44px] text-sm sm:text-base font-semibold text-white"
           >
-            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">👍</span>
-            <span className="font-semibold text-white">Thank You</span>
+            <span className="text-lg sm:text-lg group-hover:scale-110 transition-transform duration-200">👍</span>
+            <span>Thank You</span>
           </button>
           <button 
             onClick={handleTip}
-            className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 backdrop-blur-sm rounded-2xl hover:from-yellow-400 hover:to-orange-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1"
+            className="group flex items-center justify-center space-x-2 sm:space-x-3 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-yellow-500 to-orange-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-yellow-400 hover:to-orange-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1 min-h-[44px] text-sm sm:text-base font-semibold text-white"
           >
-            <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💰</span>
-            <span className="font-semibold text-white">Tip $5</span>
+            <span className="text-lg sm:text-lg group-hover:scale-110 transition-transform duration-200">💰</span>
+            <span>Tip $5</span>
           </button>
         </div>
       </div>
