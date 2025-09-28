@@ -537,7 +537,7 @@ export default function Home() {
         </header>
 
         {/* Category Filter */}
-        <div className="mb-10">
+        <div className="mb-12 lg:mb-16">
           {/* Mobile Dropdown */}
           <div className="sm:hidden px-4">
             <select
