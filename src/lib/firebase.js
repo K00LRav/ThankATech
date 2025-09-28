@@ -894,6 +894,70 @@ export async function recordTransaction(transactionData) {
 }
 
 /**
+ * Get a single technician by ID
+ * @param {string} technicianId - Technician ID
+ * @returns {Promise<Object|null>} Technician data or null
+ */
+export async function getTechnician(technicianId) {
+  if (!db || !technicianId) return null;
+  
+  try {
+    console.log('🔍 Getting technician:', technicianId);
+    
+    // Try technicians collection first
+    const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
+    if (techDoc.exists()) {
+      const techData = { id: techDoc.id, ...techDoc.data() };
+      console.log('✅ Found technician:', techData.name || techData.businessName);
+      return techData;
+    }
+    
+    // Try users collection as fallback
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.userType === 'technician') {
+        const techData = { id: userDoc.id, ...userData };
+        console.log('✅ Found technician in users collection:', techData.name || techData.businessName);
+        return techData;
+      }
+    }
+    
+    console.log('❌ Technician not found:', technicianId);
+    return null;
+  } catch (error) {
+    console.error('❌ Error getting technician:', error);
+    return null;
+  }
+}
+
+/**
+ * Get a single user by ID
+ * @param {string} userId - User ID
+ * @returns {Promise<Object|null>} User data or null
+ */
+export async function getUser(userId) {
+  if (!db || !userId) return null;
+  
+  try {
+    console.log('🔍 Getting user:', userId);
+    
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+    if (userDoc.exists()) {
+      const userData = { id: userDoc.id, ...userDoc.data() };
+      console.log('✅ Found user:', userData.name || userData.displayName);
+      return userData;
+    }
+    
+    console.log('❌ User not found:', userId);
+    return null;
+  } catch (error) {
+    console.error('❌ Error getting user:', error);
+    return null;
+  }
+}
+
+/**
  * Get technician's earnings from Firebase
  * @param {string} technicianId - Technician ID
  * @returns {Promise<Object>} Earnings data

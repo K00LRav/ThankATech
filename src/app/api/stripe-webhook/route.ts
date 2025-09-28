@@ -85,19 +85,45 @@ export async function POST(request: NextRequest) {
 // Handler functions for different event types
 async function handlePaymentSuccess(paymentIntent: any) {
   console.log('💰 Payment succeeded:', paymentIntent.id);
-  const { technicianId, customerId, platformFee, technicianPayout } = paymentIntent.metadata;
+  const { technicianId, customerId, platformFee, technicianPayout, type } = paymentIntent.metadata;
   
   try {
-    // Update your database with successful payment
-    // Add your Firebase/database logic here
-    console.log(`✅ Processing tip: $${paymentIntent.amount / 100} to technician ${technicianId}`);
-    
-    // You can import and use your Firebase functions here
-    // const { sendTip } = await import('@/lib/firebase');
-    // await sendTip(technicianId, customerId, paymentIntent.amount, 'Stripe payment completed');
-    
-    // Log the transaction
-    console.log(`Platform fee: $${platformFee / 100}, Technician payout: $${technicianPayout / 100}`);
+    // Only process tip payments
+    if (type === 'tip') {
+      console.log(`✅ Processing tip: $${paymentIntent.amount / 100} to technician ${technicianId}`);
+      
+      // Import Firebase functions and record the transaction
+      const { recordTransaction, getTechnician, getUser } = await import('@/lib/firebase');
+      
+      // Get technician and customer details
+      const technician = await getTechnician(technicianId);
+      const customer = customerId ? await getUser(customerId) : null;
+      
+      // Record the transaction in Firebase
+      const transactionData = {
+        amount: paymentIntent.amount, // Amount in cents
+        technicianId: technicianId,
+        technicianEmail: technician?.email,
+        technicianName: technician?.name || technician?.businessName,
+        customerId: customerId || null,
+        customerEmail: customer?.email,
+        customerName: customer?.name || customer?.displayName || 'Anonymous',
+        paymentIntentId: paymentIntent.id,
+        platformFee: parseInt(platformFee) || 0,
+        technicianPayout: parseInt(technicianPayout) || 0,
+        status: 'completed',
+        paymentMethod: paymentIntent.metadata.paymentMethod || 'unknown',
+        createdAt: new Date().toISOString(),
+        description: `Tip payment via Stripe`
+      };
+      
+      await recordTransaction(transactionData);
+      
+      console.log(`✅ Tip recorded: $${paymentIntent.amount / 100} to ${technician?.name || 'Unknown'}`);
+      console.log(`Platform fee: $${platformFee / 100}, Technician payout: $${technicianPayout / 100}`);
+    } else {
+      console.log(`ℹ️ Skipping non-tip payment: ${type || 'unknown'}`);
+    }
     
   } catch (error) {
     console.error('❌ Error processing successful payment:', error);
