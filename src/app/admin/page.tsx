@@ -174,6 +174,14 @@ export default function AdminPage() {
   const [showUserDetails, setShowUserDetails] = useState<string | null>(null);
   const [bulkActionType, setBulkActionType] = useState<'activate' | 'deactivate' | 'delete' | 'email'>('activate');
 
+  // Transaction Management State
+  const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
+  const [transactionDateFilter, setTransactionDateFilter] = useState('all');
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
+  const [showTransactionDetails, setShowTransactionDetails] = useState<string | null>(null);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -1385,125 +1393,391 @@ export default function AdminPage() {
     </div>
   );
 
-  const renderTransactions = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-200">Transaction Management</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={loadAdminData}
-            className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200"
-          >
-            Refresh Data
-          </button>
-        </div>
-      </div>
+  const renderTransactions = () => {
+    // Mock transaction data - replace with real data from Firebase
+    const mockTransactions = [
+      {
+        id: 'txn_1234567890',
+        customerId: 'cus_abcdef123',
+        customerEmail: 'customer@example.com',
+        technicianId: 'tech_123',
+        technicianName: 'John Smith',
+        amount: 2500, // cents
+        tip: 500, // cents
+        total: 3000, // cents
+        status: 'completed',
+        paymentMethod: 'card',
+        stripePaymentIntentId: 'pi_1234567890',
+        createdAt: new Date().toISOString(),
+        description: 'AC Repair Service'
+      },
+      {
+        id: 'txn_0987654321',
+        customerId: 'cus_xyz789',
+        customerEmail: 'user@test.com',
+        technicianId: 'tech_456',
+        technicianName: 'Jane Doe',
+        amount: 15000, // cents
+        tip: 3000, // cents
+        total: 18000, // cents
+        status: 'completed',
+        paymentMethod: 'card',
+        stripePaymentIntentId: 'pi_0987654321',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        description: 'Plumbing Installation'
+      },
+      {
+        id: 'txn_1122334455',
+        customerId: 'cus_def456',
+        customerEmail: 'client@company.com',
+        technicianId: 'tech_789',
+        technicianName: 'Mike Johnson',
+        amount: 7500, // cents
+        tip: 1500, // cents
+        total: 9000, // cents
+        status: 'pending',
+        paymentMethod: 'card',
+        stripePaymentIntentId: 'pi_1122334455',
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        description: 'Electrical Wiring'
+      }
+    ];
 
-      {/* Transaction Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-300">${stats.totalRevenue}</div>
-            <div className="text-sm text-slate-400">Total Revenue</div>
-          </div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-300">{stats.totalTransactions}</div>
-            <div className="text-sm text-slate-400">Total Transactions</div>
-          </div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-300">${stats.averageTip}</div>
-            <div className="text-sm text-slate-400">Average Tip</div>
-          </div>
-        </div>
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-300">{stats.activeTechnicians}</div>
-            <div className="text-sm text-slate-400">Active Technicians</div>
-          </div>
-        </div>
-      </div>
+    const filteredTransactions = () => {
+      return mockTransactions.filter(transaction => {
+        const matchesSearch = transactionSearchQuery === '' || 
+          transaction.id.toLowerCase().includes(transactionSearchQuery.toLowerCase()) ||
+          transaction.customerEmail.toLowerCase().includes(transactionSearchQuery.toLowerCase()) ||
+          transaction.technicianName.toLowerCase().includes(transactionSearchQuery.toLowerCase());
+        
+        const matchesStatus = transactionStatusFilter === 'all' || transaction.status === transactionStatusFilter;
+        
+        const matchesDate = (() => {
+          const transactionDate = new Date(transaction.createdAt);
+          const now = new Date();
+          switch (transactionDateFilter) {
+            case 'today':
+              return transactionDate.toDateString() === now.toDateString();
+            case 'week':
+              const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              return transactionDate >= weekAgo;
+            case 'month':
+              const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              return transactionDate >= monthAgo;
+            default:
+              return true;
+          }
+        })();
 
-      {/* Transaction Search & Filters */}
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-        <h3 className="text-xl font-semibold text-slate-200 mb-4">Search & Filter Transactions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Search by ID or Email
-            </label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              placeholder="Transaction ID or customer email..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Date Range
-            </label>
-            <select className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Status
-            </label>
-            <select className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-              <option value="all">All Statuses</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="refunded">Refunded</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200">
-            Search
-          </button>
-          <button className="px-4 py-2 bg-slate-600/20 text-slate-300 border border-slate-500/30 rounded-lg hover:bg-slate-600/30 transition-all duration-200">
-            Clear Filters
-          </button>
-        </div>
-      </div>
+        return matchesSearch && matchesStatus && matchesDate;
+      });
+    };
 
-      {/* Recent Transactions */}
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-        <h3 className="text-xl font-semibold text-slate-200 mb-4">Recent Transactions</h3>
-        <div className="text-center py-8">
-          <p className="text-slate-400">Loading transaction data...</p>
-          <p className="text-sm text-slate-500 mt-2">
-            This feature will show recent transactions with options to view details, process refunds, and manage disputes.
-          </p>
-        </div>
-      </div>
+    const handleTransactionSelection = (transactionId: string) => {
+      setSelectedTransactions(prev => 
+        prev.includes(transactionId) 
+          ? prev.filter(id => id !== transactionId)
+          : [...prev, transactionId]
+      );
+    };
 
-      {/* Admin Actions */}
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-        <h3 className="text-xl font-semibold text-slate-200 mb-4">Admin Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="px-4 py-2 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-lg hover:bg-yellow-600/30 transition-all duration-200">
-            Export Transactions
-          </button>
-          <button className="px-4 py-2 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-all duration-200">
-            Process Refunds
-          </button>
-          <button className="px-4 py-2 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-all duration-200">
-            Generate Reports
-          </button>
+    const handleSelectAllTransactions = () => {
+      const filtered = filteredTransactions();
+      if (selectedTransactions.length === filtered.length) {
+        setSelectedTransactions([]);
+      } else {
+        setSelectedTransactions(filtered.map(t => t.id));
+      }
+    };
+
+    const processRefund = async (transactionId: string, amount?: number) => {
+      setIsProcessingRefund(true);
+      try {
+        // Mock refund processing - replace with actual Stripe refund API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        alert(`Refund processed for transaction ${transactionId}`);
+      } catch (error) {
+        alert('Failed to process refund');
+      } finally {
+        setIsProcessingRefund(false);
+      }
+    };
+
+    const exportTransactionData = (format: 'csv' | 'json') => {
+      const transactions = filteredTransactions();
+      const data = transactions.map(t => ({
+        ID: t.id,
+        Customer: t.customerEmail,
+        Technician: t.technicianName,
+        Amount: `$${(t.amount / 100).toFixed(2)}`,
+        Tip: `$${(t.tip / 100).toFixed(2)}`,
+        Total: `$${(t.total / 100).toFixed(2)}`,
+        Status: t.status,
+        Date: new Date(t.createdAt).toLocaleDateString(),
+        Description: t.description
+      }));
+
+      if (format === 'csv') {
+        const csv = [
+          Object.keys(data[0]).join(','),
+          ...data.map(row => Object.values(row).join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+      } else {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transactions_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-200">Transaction Management</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportTransactionData('csv')}
+              className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => exportTransactionData('json')}
+              className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={loadAdminData}
+              className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200"
+            >
+              Refresh Data
+            </button>
+          </div>
         </div>
+
+        {/* Transaction Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-300">${stats.totalRevenue}</div>
+              <div className="text-sm text-slate-400">Total Revenue</div>
+            </div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-300">{stats.totalTransactions}</div>
+              <div className="text-sm text-slate-400">Total Transactions</div>
+            </div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-300">${stats.averageTip}</div>
+              <div className="text-sm text-slate-400">Average Tip</div>
+            </div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-300">{stats.activeTechnicians}</div>
+              <div className="text-sm text-slate-400">Active Technicians</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Search & Filters */}
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4">Search & Filter Transactions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Search by ID, Email, or Technician
+              </label>
+              <input
+                type="text"
+                value={transactionSearchQuery}
+                onChange={(e) => setTransactionSearchQuery(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                placeholder="Transaction ID, email, or technician name..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Date Range
+              </label>
+              <select 
+                value={transactionDateFilter}
+                onChange={(e) => setTransactionDateFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Status
+              </label>
+              <select 
+                value={transactionStatusFilter}
+                onChange={(e) => setTransactionStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              >
+                <option value="all">All Statuses</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200">
+              Apply Filters
+            </button>
+            <button 
+              onClick={() => {
+                setTransactionSearchQuery('');
+                setTransactionDateFilter('all');
+                setTransactionStatusFilter('all');
+              }}
+              className="px-4 py-2 bg-slate-600/20 text-slate-300 border border-slate-500/30 rounded-lg hover:bg-slate-600/30 transition-all duration-200"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedTransactions.length > 0 && (
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-blue-300">{selectedTransactions.length} transaction(s) selected</span>
+              <div className="flex gap-2">
+                <button className="px-3 py-1 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded text-sm hover:bg-yellow-600/30 transition-all duration-200">
+                  Export Selected
+                </button>
+                <button className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-sm hover:bg-red-600/30 transition-all duration-200">
+                  Bulk Refund
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transactions Table */}
+        <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-700/50">
+                <tr>
+                  <th className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedTransactions.length === filteredTransactions().length && filteredTransactions().length > 0}
+                      onChange={handleSelectAllTransactions}
+                      className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Transaction</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Technician</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {filteredTransactions().map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-slate-700/30 transition-colors duration-200">
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedTransactions.includes(transaction.id)}
+                        onChange={() => handleTransactionSelection(transaction.id)}
+                        className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-slate-200">{transaction.id}</div>
+                      <div className="text-sm text-slate-400">{transaction.description}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-200">{transaction.customerEmail}</div>
+                      <div className="text-xs text-slate-400">ID: {transaction.customerId}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-200">{transaction.technicianName}</div>
+                      <div className="text-xs text-slate-400">ID: {transaction.technicianId}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-slate-200">${(transaction.total / 100).toFixed(2)}</div>
+                      <div className="text-xs text-slate-400">
+                        Service: ${(transaction.amount / 100).toFixed(2)} + Tip: ${(transaction.tip / 100).toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        transaction.status === 'completed' 
+                          ? 'bg-green-900/50 text-green-300 border border-green-500/30'
+                          : transaction.status === 'pending'
+                          ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-500/30'
+                          : transaction.status === 'failed'
+                          ? 'bg-red-900/50 text-red-300 border border-red-500/30'
+                          : 'bg-gray-900/50 text-gray-300 border border-gray-500/30'
+                      }`}>
+                        {transaction.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-300">
+                      {new Date(transaction.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowTransactionDetails(transaction.id)}
+                          className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-xs hover:bg-blue-600/30 transition-all duration-200"
+                        >
+                          View
+                        </button>
+                        {transaction.status === 'completed' && (
+                          <button
+                            onClick={() => processRefund(transaction.id)}
+                            disabled={isProcessingRefund}
+                            className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-xs hover:bg-red-600/30 transition-all duration-200 disabled:opacity-50"
+                          >
+                            Refund
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {filteredTransactions().length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-slate-400">No transactions found matching your criteria.</p>
+            <p className="text-sm text-slate-500 mt-2">Try adjusting your search or filter settings.</p>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Main component return
   return (
