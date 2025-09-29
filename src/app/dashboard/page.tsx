@@ -1742,14 +1742,17 @@ export default function ModernDashboard() {
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 ${userProfile?.userType === 'customer' ? 'bg-purple-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center`}>
-              <span className="text-white font-bold text-sm">
-                {userProfile?.userType === 'customer' ? '👤' : '🔧'}
-              </span>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">🔧</span>
+              </div>
+              <div>
+                <h1 className="text-white font-bold text-xl">ThankATech</h1>
+                <p className="text-blue-300 text-xs font-medium">
+                  {userProfile?.userType === 'customer' ? 'Customer Portal' : 'Technician Portal'}
+                </p>
+              </div>
             </div>
-            <h1 className="text-white font-bold text-lg">
-              {userProfile?.userType === 'customer' ? 'Customer Dashboard' : 'Technician Dashboard'}
-            </h1>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -1855,11 +1858,12 @@ export default function ModernDashboard() {
               </svg>
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-white capitalize">
-                {userProfile?.userType === 'customer' ? '👤 Customer Dashboard' : '🔧 Technician Dashboard'} - {activeTab}
+              <h2 className="text-2xl font-bold text-white capitalize flex items-center gap-2">
+                {userProfile?.userType === 'customer' ? '👤' : '🔧'}
+                {activeTab}
               </h2>
               <p className="text-slate-400 text-sm">
-                {activeTab === 'overview' && (userProfile?.userType === 'customer' ? 'Your activity overview' : 'Your performance overview')}
+                {activeTab === 'overview' && (userProfile?.userType === 'customer' ? 'Your spending and appreciation activity' : 'Your earnings and performance metrics')}
                 {activeTab === 'profile' && 'Manage your profile information'}
                 {activeTab === 'transactions' && 'View your transaction history'}
                 {activeTab === 'payouts' && 'Manage your earnings and payouts'}
