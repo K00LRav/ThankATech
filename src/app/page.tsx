@@ -863,11 +863,11 @@ export default function Home() {
                       }}
                     />
                   </div>
-                  {/* Dynamic Rating - Made MUCH more prominent */}
-                  <div className="absolute -bottom-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-sm sm:text-lg font-bold shadow-2xl border-3 border-white ring-2 ring-yellow-300/50">
+                  {/* Dynamic Rating - Positioned to avoid overlap */}
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-sm font-bold shadow-xl border-2 border-white">
                     <div className="text-center">
-                      <div className="text-lg sm:text-xl font-black">{dynamicRating.toFixed(1)}</div>
-                      <div className="text-xs sm:text-sm -mt-1">⭐⭐⭐⭐⭐</div>
+                      <div className="text-sm sm:text-base font-black">{dynamicRating.toFixed(1)}</div>
+                      <div className="text-xs -mt-0.5">⭐⭐⭐</div>
                     </div>
                   </div>
                 </div>
@@ -1160,12 +1160,12 @@ export default function Home() {
 
               </div>
 
-              {/* View Profile Button */}
+              {/* View Profile Button - Curiosity-inducing purple */}
               {profile.username && (
-                <div className="mt-3 text-center">
+                <div className="mt-4 mb-3 text-center">
                   <Link 
                     href={`/${profile.username}`}
-                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm"
                   >
                     <span>View Profile</span>
                     <span>→</span>
