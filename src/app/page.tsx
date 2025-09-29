@@ -1061,6 +1061,69 @@ export default function Home() {
                         {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips
                       </div>
                     </div>
+
+                    {/* Quick Contact Actions - Moved from main card */}
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-3">📞 Quick Contact</h4>
+                      <div className="flex items-center justify-center space-x-3">
+                        {profile.businessEmail && (
+                          <button 
+                            onClick={() => {
+                              const subject = `Inquiry about ${profile.businessName} services`;
+                              const body = `Hello ${profile.name},\n\nI found your profile on ThankATech and I'm interested in your ${profile.category} services.\n\nPlease let me know your availability.\n\nThank you!`;
+                              window.location.href = `mailto:${profile.businessEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2 hover:scale-105"
+                            title="Send Email"
+                          >
+                            <span className="text-sm">💬</span>
+                            <span className="text-xs font-medium">Email</span>
+                          </button>
+                        )}
+                        {profile.businessPhone && (
+                          <button 
+                            onClick={() => {
+                              window.location.href = `tel:${profile.businessPhone}`;
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2 hover:scale-105"
+                            title="Call Now"
+                          >
+                            <span className="text-sm">📞</span>
+                            <span className="text-xs font-medium">Call</span>
+                          </button>
+                        )}
+                        {profile.website && (
+                          <button 
+                            onClick={() => {
+                              if (profile.website) {
+                                const url = profile.website.startsWith('http') ? profile.website : `https://${profile.website}`;
+                                window.open(url, '_blank');
+                              }
+                            }}
+                            className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2 hover:scale-105"
+                            title="Visit Website"
+                          >
+                            <span className="text-sm">🌐</span>
+                            <span className="text-xs font-medium">Website</span>
+                          </button>
+                        )}
+                        {profile.businessAddress && (
+                          <button 
+                            onClick={() => {
+                              if (profile.businessAddress) {
+                                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.businessAddress)}`;
+                                window.open(mapsUrl, '_blank');
+                              }
+                            }}
+                            className="bg-red-500 hover:bg-red-600 text-white rounded-lg px-4 py-2 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2 hover:scale-105"
+                            title="Get Directions"
+                          >
+                            <span className="text-sm">📍</span>
+                            <span className="text-xs font-medium">Directions</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1081,82 +1144,26 @@ export default function Home() {
 
               {/* Bottom Section - Contained within card */}
               <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200/50">
-                {/* Thank You Points Display - Compact mobile layout */}
-                <div className="flex items-center justify-center gap-2 flex-wrap mb-3">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-lg">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-xs lg:text-sm">👍</span>
-                      <span className="text-xs lg:text-sm font-bold">{profile.totalThankYous || 0}</span>
-                      <span className="text-xs lg:text-sm opacity-90 hidden sm:inline">thanks</span>
+                {/* Thank You and Tips Display - Clean and simple */}
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-4 py-2 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">👍</span>
+                      <span className="text-sm font-bold">{profile.totalThankYous || 0}</span>
+                      <span className="text-sm opacity-90">thanks</span>
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-lg">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-xs lg:text-sm">💰</span>
-                      <span className="text-xs lg:text-sm font-bold">{profile.totalTips || 0}</span>
-                      <span className="text-xs lg:text-sm opacity-90 hidden sm:inline">tips</span>
+                  <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-4 py-2 shadow-lg">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">💰</span>
+                      <span className="text-sm font-bold">{profile.totalTips || 0}</span>
+                      <span className="text-sm opacity-90">tips</span>
                     </div>
                   </div>
                   {profile.certifications && (
-                    <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1 lg:px-3 lg:py-1.5 shadow-sm">
-                      <span className="text-xs lg:text-sm font-medium">✓ Certified</span>
+                    <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1.5 shadow-sm">
+                      <span className="text-sm font-medium">✓ Certified</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Quick Actions - Balanced sizing */}
-                <div className="flex items-center justify-center space-x-2 lg:space-x-3">
-                  {profile.businessEmail && (
-                    <button 
-                      onClick={() => {
-                        const subject = `Inquiry about ${profile.businessName} services`;
-                        const body = `Hello ${profile.name},\n\nI found your profile on ThankATech and I'm interested in your ${profile.category} services.\n\nPlease let me know your availability.\n\nThank you!`;
-                        window.location.href = `mailto:${profile.businessEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                      }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-indigo-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-indigo-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
-                      title="Send Email"
-                    >
-                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">💬</span>
-                    </button>
-                  )}
-                  {profile.businessPhone && (
-                    <button 
-                      onClick={() => {
-                        window.location.href = `tel:${profile.businessPhone}`;
-                      }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-green-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-green-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
-                      title="Call Now"
-                    >
-                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">📞</span>
-                    </button>
-                  )}
-                  {profile.website && (
-                    <button 
-                      onClick={() => {
-                        if (profile.website) {
-                          const url = profile.website.startsWith('http') ? profile.website : `https://${profile.website}`;
-                          window.open(url, '_blank');
-                        }
-                      }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-blue-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-blue-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
-                      title="Visit Website"
-                    >
-                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">🌐</span>
-                    </button>
-                  )}
-                  {profile.businessAddress && (
-                    <button 
-                      onClick={() => {
-                        if (profile.businessAddress) {
-                          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.businessAddress)}`;
-                          window.open(mapsUrl, '_blank');
-                        }
-                      }}
-                      className="bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-red-600 rounded-full p-2 lg:p-2.5 transition-all duration-200 border border-gray-200 hover:border-red-300 shadow-sm group min-h-[36px] min-w-[36px] lg:min-h-[44px] lg:min-w-[44px] flex items-center justify-center hover:scale-105"
-                      title="Get Directions"
-                    >
-                      <span className="text-base lg:text-lg group-hover:scale-110 transition-transform duration-200">📍</span>
-                    </button>
                   )}
                 </div>
               </div>
