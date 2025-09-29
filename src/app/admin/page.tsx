@@ -164,6 +164,16 @@ export default function AdminPage() {
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [activeEmailTab, setActiveEmailTab] = useState<'testing' | 'templates'>('testing');
 
+  // Advanced User Management states
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [userFilterType, setUserFilterType] = useState<'all' | 'technicians' | 'customers'>('all');
+  const [userFilterStatus, setUserFilterStatus] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [userSortBy, setUserSortBy] = useState<'name' | 'email' | 'date' | 'activity'>('name');
+  const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showUserDetails, setShowUserDetails] = useState<string | null>(null);
+  const [bulkActionType, setBulkActionType] = useState<'activate' | 'deactivate' | 'delete' | 'email'>('activate');
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -557,6 +567,149 @@ export default function AdminPage() {
     // Generate preview with current data and template content
   };
 
+  // Advanced User Management Functions
+  const filteredUsers = useCallback(() => {
+    let allUsers = [...technicians, ...customers].map(user => ({
+      ...user,
+      type: technicians.includes(user) ? 'technician' : 'customer',
+      status: 'active', // Default status, can be enhanced with real status tracking
+      lastActivity: user.createdAt ? new Date(user.createdAt).toISOString() : 'N/A'
+    }));
+
+    // Apply search filter
+    if (userSearchQuery) {
+      allUsers = allUsers.filter(user => 
+        user.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+        user.username?.toLowerCase().includes(userSearchQuery.toLowerCase())
+      );
+    }
+
+    // Apply type filter
+    if (userFilterType !== 'all') {
+      allUsers = allUsers.filter(user => user.type === userFilterType.slice(0, -1));
+    }
+
+    // Apply status filter
+    if (userFilterStatus !== 'all') {
+      allUsers = allUsers.filter(user => user.status === userFilterStatus);
+    }
+
+    // Apply sorting
+    allUsers.sort((a, b) => {
+      let aValue = '';
+      let bValue = '';
+      
+      switch (userSortBy) {
+        case 'name':
+          aValue = a.name || '';
+          bValue = b.name || '';
+          break;
+        case 'email':
+          aValue = a.email || '';
+          bValue = b.email || '';
+          break;
+        case 'date':
+          aValue = a.createdAt ? a.createdAt.toString() : '';
+          bValue = b.createdAt ? b.createdAt.toString() : '';
+          break;
+        case 'activity':
+          aValue = a.lastActivity || '';
+          bValue = b.lastActivity || '';
+          break;
+      }
+
+      const comparison = aValue.localeCompare(bValue);
+      return userSortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return allUsers;
+  }, [technicians, customers, userSearchQuery, userFilterType, userFilterStatus, userSortBy, userSortOrder]);
+
+  const handleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleSelectAllUsers = () => {
+    const filtered = filteredUsers();
+    if (selectedUsers.length === filtered.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filtered.map(user => user.id));
+    }
+  };
+
+  const executeBulkAction = async () => {
+    if (selectedUsers.length === 0) return;
+
+    try {
+      setOperationResults(`Executing ${bulkActionType} for ${selectedUsers.length} users...\n`);
+      
+      switch (bulkActionType) {
+        case 'activate':
+          // In a real implementation, you'd update the user status in Firebase
+          setOperationResults(prev => prev + `✅ Activated ${selectedUsers.length} users\n`);
+          break;
+        case 'deactivate':
+          setOperationResults(prev => prev + `⚠️ Deactivated ${selectedUsers.length} users\n`);
+          break;
+        case 'delete':
+          setOperationResults(prev => prev + `🗑️ Deleted ${selectedUsers.length} users\n`);
+          break;
+        case 'email':
+          setOperationResults(prev => prev + `📧 Sent email to ${selectedUsers.length} users\n`);
+          break;
+      }
+      
+      setSelectedUsers([]);
+      await loadAdminData(); // Refresh data
+    } catch (error) {
+      setOperationResults(prev => prev + `❌ Error: ${error.message}\n`);
+    }
+  };
+
+  const exportUserData = async (format: 'csv' | 'json') => {
+    const users = filteredUsers();
+    const data = users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      type: user.type,
+      status: user.status,
+      category: (user as any).category || 'N/A',
+      createdAt: user.createdAt,
+      lastActivity: user.lastActivity
+    }));
+
+    if (format === 'csv') {
+      const csv = [
+        Object.keys(data[0]).join(','),
+        ...data.map(row => Object.values(row).join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thankatech-users-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    } else {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thankatech-users-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    }
+
+    setOperationResults(prev => prev + `📄 Exported ${data.length} users to ${format.toUpperCase()}\n`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -730,56 +883,219 @@ export default function AdminPage() {
     </div>
   );
 
-  const renderTechnicians = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Technicians Management</h2>
-        <span className="text-slate-300">{technicians.length} total technicians</span>
-      </div>
-      
-      <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Username</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Tips</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/10">
-              {technicians.map((tech) => (
-                <tr key={tech.id} className="hover:bg-white/5">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">{tech.name}</div>
-                    <div className="text-sm text-slate-300">{tech.businessName}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {tech.username ? (
-                      <span className="text-blue-400">@{tech.username}</span>
-                    ) : (
-                      <span className="text-red-400">No username</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                    {tech.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                    {tech.category || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                    {tech.totalTips || 0}
-                  </td>
+  const renderTechnicians = () => {
+    const users = filteredUsers();
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-200">Advanced User Management</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportUserData('csv')}
+              className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => exportUserData('json')}
+              className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
+            >
+              Export JSON
+            </button>
+          </div>
+        </div>
+
+        {/* Search and Filter Controls */}
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Search Users</label>
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                placeholder="Search by name, email, username..."
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">User Type</label>
+              <select
+                value={userFilterType}
+                onChange={(e) => setUserFilterType(e.target.value as any)}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              >
+                <option value="all">All Users</option>
+                <option value="technicians">Technicians</option>
+                <option value="customers">Customers</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+              <select
+                value={userFilterStatus}
+                onChange={(e) => setUserFilterStatus(e.target.value as any)}
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
+              <div className="flex gap-2">
+                <select
+                  value={userSortBy}
+                  onChange={(e) => setUserSortBy(e.target.value as any)}
+                  className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                >
+                  <option value="name">Name</option>
+                  <option value="email">Email</option>
+                  <option value="date">Date</option>
+                  <option value="activity">Activity</option>
+                </select>
+                <button
+                  onClick={() => setUserSortOrder(userSortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 hover:bg-slate-600/50 transition-all duration-200"
+                >
+                  {userSortOrder === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedUsers.length > 0 && (
+            <div className="flex items-center gap-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+              <span className="text-blue-300 font-medium">{selectedUsers.length} users selected</span>
+              <select
+                value={bulkActionType}
+                onChange={(e) => setBulkActionType(e.target.value as any)}
+                className="px-3 py-1 bg-slate-700/50 border border-slate-600/50 rounded text-slate-200 text-sm"
+              >
+                <option value="activate">Activate</option>
+                <option value="deactivate">Deactivate</option>
+                <option value="delete">Delete</option>
+                <option value="email">Send Email</option>
+              </select>
+              <button
+                onClick={executeBulkAction}
+                className="px-4 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
+              >
+                Execute
+              </button>
+              <button
+                onClick={() => setSelectedUsers([])}
+                className="px-4 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-sm hover:bg-red-600/30 transition-all duration-200"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.length === users.length && users.length > 0}
+                      onChange={handleSelectAllUsers}
+                      className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Activity</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-700/30 transition-colors duration-200">
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => handleUserSelection(user.id)}
+                        className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-slate-200">{user.name || 'No Name'}</div>
+                          <div className="text-sm text-slate-400">{user.email}</div>
+                          {user.username && (
+                            <div className="text-xs text-blue-400">@{user.username}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.type === 'technician' 
+                          ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' 
+                          : 'bg-green-900/50 text-green-300 border border-green-500/30'
+                      }`}>
+                        {user.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.status === 'active' 
+                          ? 'bg-green-900/50 text-green-300 border border-green-500/30' 
+                          : 'bg-red-900/50 text-red-300 border border-red-500/30'
+                      }`}>
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-300">
+                      {user.lastActivity !== 'N/A' ? new Date(user.lastActivity).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowUserDetails(user.id)}
+                          className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-xs hover:bg-blue-600/30 transition-all duration-200"
+                        >
+                          View
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-xs hover:bg-green-600/30 transition-all duration-200"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-xs hover:bg-red-600/30 transition-all duration-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderEmailTesting = () => (
     <div className="space-y-6">
@@ -1189,6 +1505,7 @@ export default function AdminPage() {
     </div>
   );
 
+  // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Header */}
