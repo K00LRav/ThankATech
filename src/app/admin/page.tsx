@@ -249,6 +249,38 @@ export default function AdminPage() {
     }
   ]);
 
+  // Notifications State
+  const [notificationView, setNotificationView] = useState<'center' | 'settings' | 'scheduled' | 'templates'>('center');
+  const [notifications, setNotifications] = useState([
+    {
+      id: '1',
+      type: 'system',
+      title: 'High Transaction Volume Alert',
+      message: 'Transaction volume is 150% above normal for this time period',
+      timestamp: new Date().toISOString(),
+      read: false,
+      priority: 'high'
+    },
+    {
+      id: '2',
+      type: 'user',
+      title: 'New User Registration Spike',
+      message: '25 new users registered in the last hour',
+      timestamp: new Date(Date.now() - 1800000).toISOString(),
+      read: false,
+      priority: 'medium'
+    },
+    {
+      id: '3',
+      type: 'security',
+      title: 'Multiple Failed Login Attempts',
+      message: 'User admin@example.com has exceeded failed login threshold',
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      read: true,
+      priority: 'high'
+    }
+  ]);
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -2818,6 +2850,362 @@ export default function AdminPage() {
     );
   };
 
+  const renderNotifications = () => {
+    const markAsRead = (notificationId: string) => {
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId ? { ...notif, read: true } : notif
+        )
+      );
+    };
+
+    const markAllAsRead = () => {
+      setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    };
+
+    const deleteNotification = (notificationId: string) => {
+      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    };
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    // Mock scheduled notifications and settings
+    const mockScheduledReports = [
+      {
+        id: '1',
+        name: 'Weekly Revenue Report',
+        type: 'revenue',
+        schedule: 'Every Monday at 9:00 AM',
+        recipients: ['k00lrav@gmail.com'],
+        status: 'active'
+      },
+      {
+        id: '2',
+        name: 'Monthly User Growth Summary',
+        type: 'user-analytics',
+        schedule: '1st of every month at 8:00 AM',
+        recipients: ['k00lrav@gmail.com', 'admin@thankatech.com'],
+        status: 'active'
+      },
+      {
+        id: '3',
+        name: 'Security Alert Digest',
+        type: 'security',
+        schedule: 'Daily at 6:00 PM',
+        recipients: ['k00lrav@gmail.com'],
+        status: 'paused'
+      }
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-slate-200">Notification Center</h2>
+            {unreadCount > 0 && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-900/50 text-red-300 border border-red-500/30">
+                {unreadCount} Unread
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={markAllAsRead}
+              className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
+            >
+              Mark All Read
+            </button>
+            <button className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200">
+              Test Notification
+            </button>
+          </div>
+        </div>
+
+        {/* Notification Navigation */}
+        <div className="border-b border-slate-700/50">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setNotificationView('center')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                notificationView === 'center'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Notification Center
+            </button>
+            <button
+              onClick={() => setNotificationView('scheduled')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                notificationView === 'scheduled'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Scheduled Reports
+            </button>
+            <button
+              onClick={() => setNotificationView('settings')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                notificationView === 'settings'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Alert Settings
+            </button>
+            <button
+              onClick={() => setNotificationView('templates')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                notificationView === 'templates'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Templates
+            </button>
+          </nav>
+        </div>
+
+        {/* Notification Center Tab */}
+        {notificationView === 'center' && (
+          <div className="space-y-4">
+            {notifications.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-4">🔔</div>
+                <p className="text-slate-400 mb-2">No notifications</p>
+                <p className="text-sm text-slate-500">You&apos;re all caught up!</p>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-4 rounded-lg border transition-all duration-200 ${
+                    notification.read
+                      ? 'bg-slate-800/30 border-slate-700/30'
+                      : 'bg-blue-900/10 border-blue-500/20'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        notification.type === 'system'
+                          ? 'bg-blue-500/20 text-blue-300'
+                          : notification.type === 'security'
+                          ? 'bg-red-500/20 text-red-300'
+                          : 'bg-green-500/20 text-green-300'
+                      }`}>
+                        {notification.type === 'system' && '⚙️'}
+                        {notification.type === 'security' && '🔒'}
+                        {notification.type === 'user' && '👥'}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className={`font-medium ${notification.read ? 'text-slate-300' : 'text-slate-200'}`}>
+                            {notification.title}
+                          </h4>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+                            notification.priority === 'high'
+                              ? 'text-red-300 bg-red-900/50 border-red-500/30'
+                              : notification.priority === 'medium'
+                              ? 'text-yellow-300 bg-yellow-900/50 border-yellow-500/30'
+                              : 'text-green-300 bg-green-900/50 border-green-500/30'
+                          }`}>
+                            {notification.priority}
+                          </span>
+                          {!notification.read && (
+                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          )}
+                        </div>
+                        <p className={`text-sm ${notification.read ? 'text-slate-400' : 'text-slate-300'}`}>
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                          {new Date(notification.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!notification.read && (
+                        <button
+                          onClick={() => markAsRead(notification.id)}
+                          className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-xs hover:bg-blue-600/30 transition-all duration-200"
+                        >
+                          Mark Read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notification.id)}
+                        className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-xs hover:bg-red-600/30 transition-all duration-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Scheduled Reports Tab */}
+        {notificationView === 'scheduled' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-slate-200">Automated Reports</h3>
+              <button className="px-4 py-2 bg-green-600/20 text-green-300 border border-green-500/30 rounded-lg hover:bg-green-600/30 transition-all duration-200">
+                Create New Report
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              {mockScheduledReports.map((report) => (
+                <div key={report.id} className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-lg font-medium text-slate-200">{report.name}</h4>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+                        report.status === 'active'
+                          ? 'text-green-300 bg-green-900/50 border-green-500/30'
+                          : 'text-yellow-300 bg-yellow-900/50 border-yellow-500/30'
+                      }`}>
+                        {report.status}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200">
+                        Edit
+                      </button>
+                      <button className="px-3 py-1 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded text-sm hover:bg-yellow-600/30 transition-all duration-200">
+                        {report.status === 'active' ? 'Pause' : 'Resume'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-300 mb-2">
+                    <strong>Schedule:</strong> {report.schedule}
+                  </div>
+                  <div className="text-sm text-slate-300 mb-2">
+                    <strong>Type:</strong> {report.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    <strong>Recipients:</strong> {report.recipients.join(', ')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Alert Settings Tab */}
+        {notificationView === 'settings' && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-slate-200">Alert Configuration</h3>
+
+            <div className="grid gap-6">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <h4 className="text-lg font-medium text-slate-200 mb-4">System Alerts</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">High Transaction Volume</div>
+                      <div className="text-sm text-slate-400">Alert when transactions exceed 150% of normal volume</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">System Performance</div>
+                      <div className="text-sm text-slate-400">Alert when response time exceeds 500ms</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <h4 className="text-lg font-medium text-slate-200 mb-4">Security Alerts</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">Failed Login Attempts</div>
+                      <div className="text-sm text-slate-400">Alert after 5 failed attempts from same IP</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">Large Data Exports</div>
+                      <div className="text-sm text-slate-400">Alert when exporting more than 1,000 records</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <h4 className="text-lg font-medium text-slate-200 mb-4">Business Alerts</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">New User Registrations</div>
+                      <div className="text-sm text-slate-400">Alert when new registrations exceed 20 per hour</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-slate-200 font-medium">Revenue Milestones</div>
+                      <div className="text-sm text-slate-400">Alert when daily revenue exceeds targets</div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" defaultChecked className="sr-only peer" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Templates Tab */}
+        {notificationView === 'templates' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-slate-200">Notification Templates</h3>
+              <button className="px-4 py-2 bg-green-600/20 text-green-300 border border-green-500/30 rounded-lg hover:bg-green-600/30 transition-all duration-200">
+                Create Template
+              </button>
+            </div>
+
+            <div className="text-center py-12">
+              <div className="text-4xl mb-4">📝</div>
+              <p className="text-slate-400 mb-2">Notification Templates Coming Soon</p>
+              <p className="text-sm text-slate-500">
+                Create custom templates for different types of admin notifications and alerts.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -2933,6 +3321,16 @@ export default function AdminPage() {
             >
               Security
             </button>
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'notifications'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Notifications
+            </button>
           </div>
         </div>
       </nav>
@@ -2951,6 +3349,7 @@ export default function AdminPage() {
         {activeTab === 'monitoring' && renderSystemMonitoring()}
         {activeTab === 'analytics' && renderAnalytics()}
         {activeTab === 'security' && renderSecurity()}
+        {activeTab === 'notifications' && renderNotifications()}
       </main>
     </div>
   );
