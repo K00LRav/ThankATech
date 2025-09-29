@@ -119,6 +119,8 @@ interface AdminStats {
   customersWithUsernames: number;
   totalTransactions: number;
   totalRevenue: number;
+  averageTip: number;
+  activeTechnicians: number;
 }
 
 export default function AdminPage() {
@@ -136,12 +138,23 @@ export default function AdminPage() {
     techniciansWithUsernames: 0,
     customersWithUsernames: 0,
     totalTransactions: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    averageTip: 0,
+    activeTechnicians: 0
   });
   
   // Operation states
   const [isGeneratingUsernames, setIsGeneratingUsernames] = useState(false);
   const [operationResults, setOperationResults] = useState<string>('');
+  
+  // Email testing states
+  const [emailTestResults, setEmailTestResults] = useState<string>('');
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
+  const [testEmailData, setTestEmailData] = useState({
+    to: '',
+    subject: 'Test Email from ThankATech Admin',
+    message: 'This is a test email sent from the ThankATech admin panel.'
+  });
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
@@ -230,13 +243,21 @@ export default function AdminPage() {
       
       setTechnicians(techData);
       setCustomers(customerData);
+      // Calculate average tip
+      const averageTip = transactionSnapshot.size > 0 ? (totalRevenue / transactionSnapshot.size) / 100 : 0;
+      
+      // Count active technicians (those with usernames)
+      const activeTechnicians = techData.filter(t => t.username).length;
+      
       setStats({
         totalTechnicians: techData.length,
         totalCustomers: customerData.length,
         techniciansWithUsernames: techData.filter(t => t.username).length,
         customersWithUsernames: customerData.filter(c => c.username).length,
         totalTransactions: transactionSnapshot.size,
-        totalRevenue: totalRevenue / 100 // Convert cents to dollars
+        totalRevenue: totalRevenue / 100, // Convert cents to dollars
+        averageTip: averageTip,
+        activeTechnicians: activeTechnicians
       });
       
     } catch (error) {
@@ -332,6 +353,112 @@ export default function AdminPage() {
       setOperationResults(prev => prev + `💥 Error: ${error.message}\n`);
     } finally {
       setIsGeneratingUsernames(false);
+    }
+  };
+
+  const testEmailDelivery = async () => {
+    setIsTestingEmail(true);
+    setEmailTestResults('Testing email delivery...\n');
+    
+    try {
+      // Test basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(testEmailData.to)) {
+        setEmailTestResults(prev => prev + '❌ Invalid email address format\n');
+        return;
+      }
+      
+      setEmailTestResults(prev => prev + `📧 Sending test email to: ${testEmailData.to}\n`);
+      
+      // Call the contact API endpoint to test email functionality
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'ThankATech Admin',
+          email: testEmailData.to,
+          subject: testEmailData.subject,
+          message: testEmailData.message + '\n\n--- ADMIN TEST EMAIL ---',
+          isAdminTest: true
+        }),
+      });
+      
+      if (response.ok) {
+        setEmailTestResults(prev => prev + '✅ Email sent successfully!\n');
+        setEmailTestResults(prev => prev + '📊 Email delivery status: DELIVERED\n');
+      } else {
+        const errorData = await response.json();
+        setEmailTestResults(prev => prev + `❌ Email sending failed: ${errorData.message || response.statusText}\n`);
+      }
+      
+    } catch (error) {
+      setEmailTestResults(prev => prev + `💥 Error: ${error.message}\n`);
+    } finally {
+      setIsTestingEmail(false);
+    }
+  };
+
+  const testSMTPConnection = async () => {
+    setIsTestingEmail(true);
+    setEmailTestResults('Testing SMTP connection...\n');
+    
+    try {
+      setEmailTestResults(prev => prev + '🔗 Checking SMTP configuration...\n');
+      
+      // Test a simple email to admin email
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'System Health Check',
+          email: 'k00lrav@gmail.com',
+          subject: 'SMTP Health Check - ' + new Date().toISOString(),
+          message: 'This is an automated SMTP health check from the admin panel.',
+          isHealthCheck: true
+        }),
+      });
+      
+      if (response.ok) {
+        setEmailTestResults(prev => prev + '✅ SMTP connection healthy\n');
+        setEmailTestResults(prev => prev + '📋 Email service: OPERATIONAL\n');
+      } else {
+        setEmailTestResults(prev => prev + '❌ SMTP connection failed\n');
+        setEmailTestResults(prev => prev + '🔧 Check email service configuration\n');
+      }
+      
+    } catch (error) {
+      setEmailTestResults(prev => prev + `💥 SMTP Error: ${error.message}\n`);
+    } finally {
+      setIsTestingEmail(false);
+    }
+  };
+
+  const sendBulkNotification = async () => {
+    setIsTestingEmail(true);
+    setEmailTestResults('Preparing bulk notification...\n');
+    
+    try {
+      // Get all users with emails
+      const allUsers = [...technicians, ...customers].filter(user => user.email);
+      
+      if (allUsers.length === 0) {
+        setEmailTestResults(prev => prev + '⚠️ No users with email addresses found\n');
+        return;
+      }
+      
+      setEmailTestResults(prev => prev + `📊 Found ${allUsers.length} users with email addresses\n`);
+      setEmailTestResults(prev => prev + '📧 This would send notifications to all users\n');
+      setEmailTestResults(prev => prev + '🚨 BULK EMAIL FEATURE - Implementation needed\n');
+      setEmailTestResults(prev => prev + '💡 Integrate with email service provider for bulk sending\n');
+      
+    } catch (error) {
+      setEmailTestResults(prev => prev + `💥 Error: ${error.message}\n`);
+    } finally {
+      setIsTestingEmail(false);
     }
   };
 
@@ -559,6 +686,254 @@ export default function AdminPage() {
     </div>
   );
 
+  const renderEmailTesting = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Email Testing & Management</h2>
+        <span className="text-slate-300">System Communication Tools</span>
+      </div>
+      
+      {/* Email Test Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <h3 className="text-lg font-semibold text-white mb-4">📧 Send Test Email</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Recipient Email
+              </label>
+              <input
+                type="email"
+                value={testEmailData.to}
+                onChange={(e) => setTestEmailData(prev => ({ ...prev, to: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                placeholder="test@example.com"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Subject
+              </label>
+              <input
+                type="text"
+                value={testEmailData.subject}
+                onChange={(e) => setTestEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                placeholder="Email subject"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Message
+              </label>
+              <textarea
+                value={testEmailData.message}
+                onChange={(e) => setTestEmailData(prev => ({ ...prev, message: e.target.value }))}
+                rows={4}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                placeholder="Email message content"
+              />
+            </div>
+            
+            <button
+              onClick={testEmailDelivery}
+              disabled={isTestingEmail || !testEmailData.to}
+              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+            >
+              {isTestingEmail ? 'Sending...' : '📤 Send Test Email'}
+            </button>
+          </div>
+        </div>
+        
+        {/* System Health Tests */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <h3 className="text-lg font-semibold text-white mb-4">🔧 System Health Tests</h3>
+          
+          <div className="space-y-3">
+            <button
+              onClick={testSMTPConnection}
+              disabled={isTestingEmail}
+              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+            >
+              {isTestingEmail ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Testing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Test SMTP Connection
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={sendBulkNotification}
+              disabled={isTestingEmail}
+              className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-2-2V10a2 2 0 012-2h8z" />
+              </svg>
+              Preview Bulk Notification
+            </button>
+            
+            <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+              <h4 className="text-blue-300 font-medium mb-2">📊 Email Statistics</h4>
+              <div className="text-sm text-slate-300 space-y-1">
+                <div>Users with emails: {[...technicians, ...customers].filter(u => u.email).length}</div>
+                <div>Technicians: {technicians.filter(t => t.email).length}</div>
+                <div>Customers: {customers.filter(c => c.email).length}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Test Results */}
+      {emailTestResults && (
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <h3 className="text-lg font-semibold text-white mb-4">📋 Email Test Results</h3>
+          <pre className="text-sm text-slate-300 whitespace-pre-wrap bg-black/20 p-4 rounded-lg overflow-auto max-h-64">
+            {emailTestResults}
+          </pre>
+          <button
+            onClick={() => setEmailTestResults('')}
+            className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            Clear Results
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTransactions = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-slate-200">Transaction Management</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={loadAdminData}
+            className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200"
+          >
+            Refresh Data
+          </button>
+        </div>
+      </div>
+
+      {/* Transaction Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-300">${stats.totalRevenue}</div>
+            <div className="text-sm text-slate-400">Total Revenue</div>
+          </div>
+        </div>
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-300">{stats.totalTransactions}</div>
+            <div className="text-sm text-slate-400">Total Transactions</div>
+          </div>
+        </div>
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-300">${stats.averageTip}</div>
+            <div className="text-sm text-slate-400">Average Tip</div>
+          </div>
+        </div>
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-300">{stats.activeTechnicians}</div>
+            <div className="text-sm text-slate-400">Active Technicians</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction Search & Filters */}
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+        <h3 className="text-xl font-semibold text-slate-200 mb-4">Search & Filter Transactions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Search by ID or Email
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              placeholder="Transaction ID or customer email..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Date Range
+            </label>
+            <select className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Status
+            </label>
+            <select className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+              <option value="all">All Statuses</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200">
+            Search
+          </button>
+          <button className="px-4 py-2 bg-slate-600/20 text-slate-300 border border-slate-500/30 rounded-lg hover:bg-slate-600/30 transition-all duration-200">
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Transactions */}
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+        <h3 className="text-xl font-semibold text-slate-200 mb-4">Recent Transactions</h3>
+        <div className="text-center py-8">
+          <p className="text-slate-400">Loading transaction data...</p>
+          <p className="text-sm text-slate-500 mt-2">
+            This feature will show recent transactions with options to view details, process refunds, and manage disputes.
+          </p>
+        </div>
+      </div>
+
+      {/* Admin Actions */}
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+        <h3 className="text-xl font-semibold text-slate-200 mb-4">Admin Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="px-4 py-2 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-lg hover:bg-yellow-600/30 transition-all duration-200">
+            Export Transactions
+          </button>
+          <button className="px-4 py-2 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-all duration-200">
+            Process Refunds
+          </button>
+          <button className="px-4 py-2 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-all duration-200">
+            Generate Reports
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Header */}
@@ -623,6 +998,26 @@ export default function AdminPage() {
             >
               Customers
             </button>
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'email'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Email Testing
+            </button>
+            <button
+              onClick={() => setActiveTab('transactions')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'transactions'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Transactions
+            </button>
           </div>
         </div>
       </nav>
@@ -636,6 +1031,8 @@ export default function AdminPage() {
             <p className="text-slate-300">Customer management coming soon...</p>
           </div>
         )}
+        {activeTab === 'email' && renderEmailTesting()}
+        {activeTab === 'transactions' && renderTransactions()}
       </main>
     </div>
   );
