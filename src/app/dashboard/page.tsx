@@ -1419,7 +1419,7 @@ export default function ModernDashboard() {
             <div className="space-y-2">
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Make profile {userProfile?.userType === 'client' ? 'visible to technicians' : 'visible to customers'}</span>
+                <span className="text-slate-300">Make profile {userProfile?.userType === 'client' ? 'visible to technicians' : 'visible to clients'}</span>
               </label>
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" />
