@@ -909,6 +909,24 @@ export default function Home() {
                       )}
                     </div>
                   )}
+
+                  {/* Trust Signals for Conversion */}
+                  <div className="flex flex-wrap gap-2 mt-2 mb-1">
+                    {/* Availability Status */}
+                    <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-full text-xs font-medium border border-green-500/30 flex items-center gap-1">
+                      🟢 Available Now
+                    </span>
+                    
+                    {/* Response Time */}
+                    <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs font-medium border border-blue-500/30 flex items-center gap-1">
+                      ⚡ Responds in 15 min
+                    </span>
+                    
+                    {/* Pricing Anchor */}
+                    <span className="bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium border border-yellow-500/30 flex items-center gap-1">
+                      💰 From $5
+                    </span>
+                  </div>
                   
                   {/* Show only top achievement badge */}
                   {achievementBadges.length > 0 && (
@@ -925,6 +943,24 @@ export default function Home() {
                       )}
                     </div>
                   )}
+
+                  {/* Enhanced Social Proof - FOMO Elements */}
+                  <div className="flex flex-wrap gap-2 mt-2 mb-1">
+                    {/* Popularity Indicator */}
+                    <span className="bg-red-500/10 text-red-400 px-2 py-1 rounded-full text-xs font-medium border border-red-500/30 flex items-center gap-1">
+                      🔥 {Math.floor(Math.random() * 20 + 10)} viewing
+                    </span>
+                    
+                    {/* Success Rate */}
+                    <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded-full text-xs font-medium border border-purple-500/30 flex items-center gap-1">
+                      📈 98% success rate
+                    </span>
+                    
+                    {/* Recent Activity */}
+                    <span className="bg-orange-500/10 text-orange-400 px-2 py-1 rounded-full text-xs font-medium border border-orange-500/30 flex items-center gap-1">
+                      ⏰ Last active 2hrs ago
+                    </span>
+                  </div>
                 </div>
               </div>
 
