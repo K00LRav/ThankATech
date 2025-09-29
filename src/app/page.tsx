@@ -877,23 +877,11 @@ export default function Home() {
                   <h2 className="text-xl sm:text-2xl font-bold text-white">{profile.name}</h2>
                   <p className="text-base sm:text-lg text-blue-200 font-semibold mt-1">{profile.businessName || profile.title}</p>
                   
-                  {/* Recent Activity Social Proof */}
-                  <div className="flex flex-wrap gap-2 mt-2 mb-2">
-                    {(profile.totalThankYous && profile.totalThankYous > 0) && (
-                      <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs font-medium border border-green-400/30">
-                        🙏 Thanked {profile.totalThankYous} times
-                      </span>
-                    )}
-                    {(profile.totalTips && profile.totalTips > 0) && (
-                      <span className="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full text-xs font-medium border border-emerald-400/30">
-                        💝 {profile.totalTips} tips received
-                      </span>
-                    )}
-                    {profile.certifications && (
-                      <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-medium border border-blue-400/30">
-                        ✓ Licensed
-                      </span>
-                    )}
+                  {/* Verified Badge - Single clean indicator */}
+                  <div className="mt-2">
+                    <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-medium border border-blue-400/30 flex items-center gap-2 w-fit">
+                      ✓ Verified Technician
+                    </span>
                   </div>
                   
                   {/* Only show distance if available */}
@@ -910,57 +898,31 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Trust Signals for Conversion */}
-                  <div className="flex flex-wrap gap-2 mt-2 mb-1">
-                    {/* Availability Status */}
-                    <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-full text-xs font-medium border border-green-500/30 flex items-center gap-1">
-                      🟢 Available Now
+                  {/* Key Metrics - Limit to 3 essential ones */}
+                  <div className="flex flex-wrap gap-3 mt-3 mb-2">
+                    <span className="text-sm text-gray-300 flex items-center gap-1">
+                      ⚡ <span className="text-white">15 min response</span>
                     </span>
-                    
-                    {/* Response Time */}
-                    <span className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs font-medium border border-blue-500/30 flex items-center gap-1">
-                      ⚡ Responds in 15 min
+                    <span className="text-sm text-gray-300 flex items-center gap-1">
+                      💰 <span className="text-white">From $5</span>
                     </span>
-                    
-                    {/* Pricing Anchor */}
-                    <span className="bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium border border-yellow-500/30 flex items-center gap-1">
-                      💰 From $5
+                    <span className="text-sm text-gray-300 flex items-center gap-1">
+                      � <span className="text-white">{profile.totalTips || 0} tips</span>
                     </span>
                   </div>
                   
-                  {/* Show only top achievement badge */}
+                  {/* Single Achievement Badge - Only show the most impressive one */}
                   {achievementBadges.length > 0 && (
-                    <div className="mt-2">
+                    <div className="mt-2 mb-3">
                       <span 
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${achievementBadges[0].color} shadow-sm`}
                         title={`Achievement: ${achievementBadges[0].text}`}
                       >
                         <span>{achievementBadges[0].icon}</span>
-                        <span className="hidden sm:inline">{achievementBadges[0].text}</span>
+                        <span>{achievementBadges[0].text}</span>
                       </span>
-                      {achievementBadges.length > 1 && (
-                        <span className="text-xs text-gray-300 ml-2">+{achievementBadges.length - 1} more</span>
-                      )}
                     </div>
                   )}
-
-                  {/* Enhanced Social Proof - FOMO Elements */}
-                  <div className="flex flex-wrap gap-2 mt-2 mb-1">
-                    {/* Popularity Indicator */}
-                    <span className="bg-red-500/10 text-red-400 px-2 py-1 rounded-full text-xs font-medium border border-red-500/30 flex items-center gap-1">
-                      🔥 {Math.floor(Math.random() * 20 + 10)} viewing
-                    </span>
-                    
-                    {/* Success Rate */}
-                    <span className="bg-purple-500/10 text-purple-400 px-2 py-1 rounded-full text-xs font-medium border border-purple-500/30 flex items-center gap-1">
-                      📈 98% success rate
-                    </span>
-                    
-                    {/* Recent Activity */}
-                    <span className="bg-orange-500/10 text-orange-400 px-2 py-1 rounded-full text-xs font-medium border border-orange-500/30 flex items-center gap-1">
-                      ⏰ Last active 2hrs ago
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -968,8 +930,15 @@ export default function Home() {
               <div className={`${expandedCard ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : 'space-y-3'}`}>
                 {/* Left Column - About & Basic Info */}
                 <div className="space-y-3">
+                  {/* Short Emotional Hook Bio */}
                   <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
-                    <p className="text-sm text-gray-800 leading-relaxed max-h-32 lg:max-h-40 overflow-y-auto">{profile.about}</p>
+                    <p className="text-sm text-gray-800 leading-relaxed">
+                      {profile.about 
+                        ? profile.about.split('.').slice(0, 2).join('.') + (profile.about.split('.').length > 2 ? '.' : '')
+                        : `Professional ${formatCategory(profile.category || profile.title || '')} with quality service and care.`
+                      }
+                    </p>
+                    <p className="text-xs text-gray-600 mt-2 font-medium">Free estimates • Full warranty</p>
                   </div>
 
                   {/* Basic Contact Info Grid - Only show when expanded, unified styling */}
@@ -1207,36 +1176,34 @@ export default function Home() {
               {/* Bottom Section - Action Buttons Integrated */}
               <div className="mt-auto pt-4 border-t border-white/20 space-y-4">
                 {/* Conversion-Focused Action Buttons - NOW INSIDE CARD! */}
-                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
                   <button 
                     onClick={handleThankYou}
-                    className="group flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-blue-500 backdrop-blur-sm rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-400/25 hover:-translate-y-1 flex-1"
+                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 backdrop-blur-sm rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
                     <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">�</span>
-                    <span className="font-semibold text-white text-sm">Say Thank You</span>
+                    <span className="text-white text-base">Say Thank You</span>
                   </button>
                   <button 
                     onClick={handleTip}
-                    className="group flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-600 backdrop-blur-sm rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1"
+                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 backdrop-blur-sm rounded-2xl hover:from-yellow-600 hover:to-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
                     <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💝</span>
-                    <span className="font-semibold text-white text-sm">Send Tip</span>
+                    <span className="text-white text-base">Send Tip</span>
                   </button>
                 </div>
                 
-                {/* Stats Display - More subtle now */}
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-300">
+                {/* Minimal Stats - Clean and focused */}
+                <div className="flex items-center justify-center gap-3 text-sm text-gray-300">
                   <span className="flex items-center gap-1">
-                    <span className="text-green-400">🙏</span>
-                    {profile.totalThankYous || 0} thanks
+                    <span className="text-yellow-400">⭐</span>
+                    <span className="text-white font-medium">{dynamicRating.toFixed(1)}</span>
                   </span>
                   <span className="text-gray-500">•</span>
                   <span className="flex items-center gap-1">
                     <span className="text-emerald-400">💝</span>
-                    {profile.totalTips || 0} tips
+                    <span className="text-white font-medium">{profile.totalTips || 0} tips</span>
                   </span>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-yellow-400">⭐ {dynamicRating.toFixed(1)}</span>
                 </div>
               </div>
             </div>
