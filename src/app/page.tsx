@@ -1193,16 +1193,16 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-4 sm:space-x-6 sm:gap-0 w-full max-w-md lg:max-w-lg mx-auto">
           <button 
             onClick={handleThankYou}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-blue-500 to-cyan-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-blue-600 hover:to-cyan-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-blue-400 to-blue-500 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-400/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">�</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🙏</span>
             <span className="font-semibold text-white text-sm lg:text-base">Say Thank You</span>
           </button>
           <button 
             onClick={handleTip}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-amber-500 to-yellow-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-amber-400 hover:to-yellow-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-amber-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-green-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">💰</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">�</span>
             <span className="font-semibold text-white text-sm lg:text-base">Send Tip</span>
           </button>
         </div>
