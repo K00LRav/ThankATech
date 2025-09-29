@@ -216,6 +216,10 @@ export default function AdminPage() {
     }
   ]);
 
+  // Analytics State
+  const [analyticsDateRange, setAnalyticsDateRange] = useState('30d');
+  const [analyticsView, setAnalyticsView] = useState<'overview' | 'revenue' | 'users' | 'geographic'>('overview');
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -2026,6 +2030,366 @@ export default function AdminPage() {
     );
   };
 
+  const renderAnalytics = () => {
+    // Mock analytics data - replace with real data from Firebase/Analytics APIs
+    const mockAnalyticsData = {
+      revenue: {
+        current: 45230.50,
+        previous: 38950.25,
+        growth: 16.1,
+        chartData: [
+          { date: '2024-01-01', amount: 1200 },
+          { date: '2024-01-08', amount: 1450 },
+          { date: '2024-01-15', amount: 1680 },
+          { date: '2024-01-22', amount: 1920 },
+          { date: '2024-01-29', amount: 2100 }
+        ]
+      },
+      users: {
+        total: 2847,
+        new: 156,
+        active: 1923,
+        retention: 78.4,
+        growth: 12.3
+      },
+      transactions: {
+        total: 1245,
+        successful: 1198,
+        failed: 47,
+        successRate: 96.2,
+        averageAmount: 125.50
+      },
+      topTechnicians: [
+        { id: '1', name: 'John Smith', revenue: 5430, tips: 1200, jobs: 45 },
+        { id: '2', name: 'Jane Doe', revenue: 4890, tips: 980, jobs: 38 },
+        { id: '3', name: 'Mike Johnson', revenue: 4205, tips: 845, jobs: 33 },
+        { id: '4', name: 'Sarah Wilson', revenue: 3875, tips: 775, jobs: 29 },
+        { id: '5', name: 'David Brown', revenue: 3520, tips: 704, jobs: 26 }
+      ],
+      geographic: [
+        { state: 'California', revenue: 12450, users: 456, percentage: 27.5 },
+        { state: 'Texas', revenue: 8920, users: 321, percentage: 19.7 },
+        { state: 'New York', revenue: 7650, users: 289, percentage: 16.9 },
+        { state: 'Florida', revenue: 5840, users: 198, percentage: 12.9 },
+        { state: 'Illinois', revenue: 4320, users: 167, percentage: 9.5 }
+      ]
+    };
+
+    const exportAnalyticsReport = (format: 'pdf' | 'csv' | 'excel') => {
+      // Mock export functionality
+      alert(`Exporting analytics report as ${format.toUpperCase()}...`);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-200">Analytics Dashboard</h2>
+          <div className="flex gap-2">
+            <select 
+              value={analyticsDateRange}
+              onChange={(e) => setAnalyticsDateRange(e.target.value)}
+              className="px-3 py-1 bg-slate-700/50 border border-slate-600/50 rounded text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="1y">Last Year</option>
+            </select>
+            <button
+              onClick={() => exportAnalyticsReport('pdf')}
+              className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-sm hover:bg-red-600/30 transition-all duration-200"
+            >
+              Export PDF
+            </button>
+            <button
+              onClick={() => exportAnalyticsReport('excel')}
+              className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200"
+            >
+              Export Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Analytics Navigation */}
+        <div className="border-b border-slate-700/50">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setAnalyticsView('overview')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                analyticsView === 'overview'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setAnalyticsView('revenue')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                analyticsView === 'revenue'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Revenue Trends
+            </button>
+            <button
+              onClick={() => setAnalyticsView('users')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                analyticsView === 'users'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              User Analytics
+            </button>
+            <button
+              onClick={() => setAnalyticsView('geographic')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                analyticsView === 'geographic'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Geographic Data
+            </button>
+          </nav>
+        </div>
+
+        {/* Overview Tab */}
+        {analyticsView === 'overview' && (
+          <div className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-slate-300">Total Revenue</div>
+                  <div className="text-xs text-green-400">+{mockAnalyticsData.revenue.growth}%</div>
+                </div>
+                <div className="text-2xl font-bold text-green-300">
+                  ${mockAnalyticsData.revenue.current.toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  vs ${mockAnalyticsData.revenue.previous.toLocaleString()} last period
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-slate-300">Total Users</div>
+                  <div className="text-xs text-blue-400">+{mockAnalyticsData.users.growth}%</div>
+                </div>
+                <div className="text-2xl font-bold text-blue-300">
+                  {mockAnalyticsData.users.total.toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  {mockAnalyticsData.users.new} new this period
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-slate-300">Success Rate</div>
+                  <div className="text-xs text-purple-400">
+                    {mockAnalyticsData.transactions.successRate}%
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-purple-300">
+                  {mockAnalyticsData.transactions.successful}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  of {mockAnalyticsData.transactions.total} transactions
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-slate-300">Avg Transaction</div>
+                  <div className="text-xs text-orange-400">+8.2%</div>
+                </div>
+                <div className="text-2xl font-bold text-orange-300">
+                  ${mockAnalyticsData.transactions.averageAmount}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  per transaction
+                </div>
+              </div>
+            </div>
+
+            {/* Top Technicians */}
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">Top Performing Technicians</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left py-3 text-sm font-medium text-slate-300">Technician</th>
+                      <th className="text-left py-3 text-sm font-medium text-slate-300">Revenue</th>
+                      <th className="text-left py-3 text-sm font-medium text-slate-300">Tips</th>
+                      <th className="text-left py-3 text-sm font-medium text-slate-300">Jobs</th>
+                      <th className="text-left py-3 text-sm font-medium text-slate-300">Avg/Job</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockAnalyticsData.topTechnicians.map((tech, index) => (
+                      <tr key={tech.id} className="border-b border-slate-700/30">
+                        <td className="py-3">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                              {index + 1}
+                            </div>
+                            <span className="text-slate-200 font-medium">{tech.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-green-300 font-semibold">${tech.revenue.toLocaleString()}</td>
+                        <td className="py-3 text-blue-300 font-semibold">${tech.tips.toLocaleString()}</td>
+                        <td className="py-3 text-slate-300">{tech.jobs}</td>
+                        <td className="py-3 text-purple-300 font-semibold">
+                          ${(tech.revenue / tech.jobs).toFixed(0)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Revenue Trends Tab */}
+        {analyticsView === 'revenue' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">Revenue Trend Analysis</h3>
+              <div className="text-center py-12">
+                <div className="text-4xl mb-4">📈</div>
+                <p className="text-slate-400 mb-2">Revenue Chart Coming Soon</p>
+                <p className="text-sm text-slate-500">
+                  Integration with Chart.js or similar library for visual revenue trends, 
+                  weekly/monthly comparisons, and growth projections.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <h4 className="text-lg font-semibold text-slate-200 mb-4">Revenue Breakdown</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Service Fees</span>
+                    <span className="text-green-300 font-semibold">$38,450</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Tips</span>
+                    <span className="text-blue-300 font-semibold">$6,780</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Platform Fees</span>
+                    <span className="text-purple-300 font-semibold">$2,150</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <h4 className="text-lg font-semibold text-slate-200 mb-4">Growth Metrics</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Monthly Growth</span>
+                    <span className="text-green-300 font-semibold">+16.1%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Quarterly Growth</span>
+                    <span className="text-blue-300 font-semibold">+42.3%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">YoY Growth</span>
+                    <span className="text-purple-300 font-semibold">+125.7%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Analytics Tab */}
+        {analyticsView === 'users' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-300">{mockAnalyticsData.users.total}</div>
+                  <div className="text-sm text-slate-400">Total Users</div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-300">{mockAnalyticsData.users.active}</div>
+                  <div className="text-sm text-slate-400">Active Users</div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{mockAnalyticsData.users.retention}%</div>
+                  <div className="text-sm text-slate-400">Retention Rate</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">User Growth Analysis</h3>
+              <div className="text-center py-12">
+                <div className="text-4xl mb-4">👥</div>
+                <p className="text-slate-400 mb-2">User Analytics Charts Coming Soon</p>
+                <p className="text-sm text-slate-500">
+                  Detailed user acquisition, retention, and engagement metrics with interactive charts.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Geographic Data Tab */}
+        {analyticsView === 'geographic' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">Revenue by State</h3>
+              <div className="space-y-4">
+                {mockAnalyticsData.geographic.map((state, index) => (
+                  <div key={state.state} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-4">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="text-slate-200 font-medium">{state.state}</div>
+                        <div className="text-xs text-slate-400">{state.users} users</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-300 font-semibold">${state.revenue.toLocaleString()}</div>
+                      <div className="text-xs text-slate-400">{state.percentage}% of total</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">Geographic Expansion Opportunities</h3>
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">🗺️</div>
+                <p className="text-slate-400 mb-2">Interactive Map Coming Soon</p>
+                <p className="text-sm text-slate-500">
+                  Visualization of service coverage, user density, and expansion opportunities.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -2121,6 +2485,16 @@ export default function AdminPage() {
             >
               System Health
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'analytics'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Analytics
+            </button>
           </div>
         </div>
       </nav>
@@ -2137,6 +2511,7 @@ export default function AdminPage() {
         {activeTab === 'email' && renderEmailTesting()}
         {activeTab === 'transactions' && renderTransactions()}
         {activeTab === 'monitoring' && renderSystemMonitoring()}
+        {activeTab === 'analytics' && renderAnalytics()}
       </main>
     </div>
   );
