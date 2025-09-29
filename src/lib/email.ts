@@ -169,8 +169,36 @@ export class EmailService {
         return true;
       }
 
-      // In production, use your preferred email service
-      // Example with Resend:
+      // Brevo SMTP Configuration
+      if (process.env.BREVO_API_KEY) {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            sender: {
+              name: 'ThankATech',
+              email: emailData.from || 'noreply@thankatech.com'
+            },
+            to: [{ email: emailData.to }],
+            subject: emailData.subject,
+            htmlContent: emailData.html,
+            // SMTP configuration for Brevo
+            smtpConfig: {
+              server: 'smtp-relay.brevo.com',
+              port: 587,
+              login: '982ce2001@smtp-brevo.com'
+            }
+          }),
+        });
+
+        return response.ok;
+      }
+
+      // Fallback: Example with Resend:
       if (process.env.RESEND_API_KEY) {
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -189,7 +217,7 @@ export class EmailService {
         return response.ok;
       }
 
-      // Example with SendGrid:
+      // Fallback: Example with SendGrid:
       if (process.env.SENDGRID_API_KEY) {
         const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
           method: 'POST',
@@ -213,7 +241,7 @@ export class EmailService {
         return response.ok;
       }
 
-      console.warn('No email service configured. Set RESEND_API_KEY or SENDGRID_API_KEY environment variable.');
+      console.warn('No email service configured. Set BREVO_API_KEY, RESEND_API_KEY, or SENDGRID_API_KEY environment variable.');
       return false;
 
     } catch (error) {
