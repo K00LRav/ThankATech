@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { registerUser, registerTechnician } from '../lib/firebase';
+import { registerUser, registerTechnician, isUsernameTaken, generateUsernameSuggestions, validateUsername } from '../lib/firebase';
 import { TECHNICIAN_CATEGORIES, getSubcategoriesForCategory } from '../lib/categories';
 import GoogleSignIn from './GoogleSignIn';
 
@@ -22,6 +22,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     confirmPassword: '',
     phone: '',
     location: '',
+    username: '', // New username field
     // Technician-specific fields
     businessName: '',
     category: '',
@@ -39,10 +40,69 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Username validation states
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Handle username validation
+    if (name === 'username') {
+      handleUsernameChange(value);
+    }
+  };
+
+  const handleUsernameChange = async (username: string) => {
+    if (!username.trim()) {
+      setUsernameStatus('idle');
+      setUsernameError(null);
+      setUsernameSuggestions([]);
+      return;
+    }
+
+    // Validate format first
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      setUsernameStatus('invalid');
+      setUsernameError(validation.error);
+      setUsernameSuggestions([]);
+      return;
+    }
+
+    // Check availability
+    setUsernameStatus('checking');
+    setUsernameError(null);
+    
+    try {
+      const isTaken = await isUsernameTaken(username);
+      
+      if (isTaken) {
+        setUsernameStatus('taken');
+        setUsernameError('This username is already taken');
+        
+        // Generate suggestions
+        const suggestions = await generateUsernameSuggestions(username);
+        setUsernameSuggestions(suggestions);
+      } else {
+        setUsernameStatus('available');
+        setUsernameError(null);
+        setUsernameSuggestions([]);
+      }
+    } catch (error) {
+      console.error('Error checking username:', error);
+      setUsernameStatus('invalid');
+      setUsernameError('Error checking username availability');
+      setUsernameSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setFormData(prev => ({ ...prev, username: suggestion }));
+    handleUsernameChange(suggestion);
   };
 
   const handleGoogleSignInSuccess = (result: any) => {
@@ -69,6 +129,21 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Validate username for technicians
+    if (userType === 'technician') {
+      if (!formData.username.trim()) {
+        setError('Username is required for technicians');
+        setLoading(false);
+        return;
+      }
+      
+      if (usernameStatus !== 'available') {
+        setError('Please choose an available username');
+        setLoading(false);
+        return;
+      }
+    }
 
     // Validate passwords for manual registration
     if (!googleUser) {
@@ -112,6 +187,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         // Register as technician
         result = await registerTechnician({
           ...userData,
+          username: formData.username,
           businessName: formData.businessName,
           category: formData.category,
           subcategory: formData.subcategory,
@@ -273,6 +349,76 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               />
             </div>
           </div>
+
+          {/* Username Field - Only for technicians */}
+          {userType === 'technician' && (
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-blue-200 mb-1">
+                Username * <span className="text-xs text-blue-300">(will be your profile URL: thankatech.com/username)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g., johnplumber, techexpert, mikeelectric"
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                    usernameStatus === 'checking' ? 'border-yellow-400 focus:ring-yellow-400' :
+                    usernameStatus === 'available' ? 'border-green-400 focus:ring-green-400' :
+                    usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-400 focus:ring-red-400' :
+                    'border-blue-500/30 focus:ring-blue-400'
+                  } focus:border-transparent`}
+                />
+                
+                {/* Status Icon */}
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  {usernameStatus === 'checking' && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400"></div>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <svg className="h-4 w-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {(usernameStatus === 'taken' || usernameStatus === 'invalid') && (
+                    <svg className="h-4 w-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              
+              {/* Username Status Messages */}
+              {usernameError && (
+                <p className="mt-1 text-sm text-red-300">{usernameError}</p>
+              )}
+              {usernameStatus === 'available' && (
+                <p className="mt-1 text-sm text-green-300">✓ Username is available!</p>
+              )}
+              
+              {/* Username Suggestions */}
+              {usernameSuggestions.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-blue-200 mb-2">Try these suggestions:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {usernameSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="px-3 py-1 text-xs bg-blue-500/30 hover:bg-blue-500/50 text-blue-200 rounded-full transition-colors duration-200"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Password Fields - Only show for manual registration */}
           {!googleUser && (

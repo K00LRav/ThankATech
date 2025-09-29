@@ -116,6 +116,7 @@ export async function registerTechnician(technicianData) {
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
+      username: technicianData.username?.toLowerCase().trim(),
       
       // Basic info
       name: technicianData.name,
@@ -190,11 +191,32 @@ export async function registerUser(userData) {
       createdAt: new Date(),
       totalThankYousSent: 0,
       totalTipsSent: 0,
+      totalSpent: 0,
       // Store profile image if available from Google
       profileImage: userData.photoURL || null
     });
     
-    return { id: docRef.id, uniqueId, ...userData };
+    const newUser = { id: docRef.id, uniqueId, ...userData };
+
+    // Send welcome email (in background, don't block registration)
+    if (userData.email && userData.name) {
+      try {
+        // Import EmailService dynamically to avoid issues with server-side rendering
+        const { EmailService } = await import('./email');
+        EmailService.sendWelcomeEmail(
+          userData.email,
+          userData.name,
+          userData.userType || 'customer'
+        ).catch(error => {
+          console.error('Failed to send welcome email:', error);
+          // Don't throw - email failure shouldn't fail registration
+        });
+      } catch (error) {
+        console.error('Error importing EmailService:', error);
+      }
+    }
+    
+    return newUser;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
@@ -237,6 +259,47 @@ export async function getRegisteredTechnicians() {
 }
 
 /**
+ * Check if user has reached daily thank you limit for a specific technician
+ */
+export async function checkDailyThankYouLimit(technicianId, userId) {
+  if (!db) {
+    console.warn('Firebase not configured. Mock limit check.');
+    return { canSend: true, remaining: 3 };
+  }
+
+  try {
+    // Get start and end of today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Query thank yous sent by this user to this technician today
+    const q = query(
+      collection(db, COLLECTIONS.THANK_YOUS),
+      where('technicianId', '==', technicianId),
+      where('userId', '==', userId),
+      where('timestamp', '>=', today),
+      where('timestamp', '<', tomorrow)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const todayCount = querySnapshot.size;
+    const dailyLimit = 3;
+    
+    return {
+      canSend: todayCount < dailyLimit,
+      remaining: Math.max(0, dailyLimit - todayCount),
+      todayCount: todayCount
+    };
+  } catch (error) {
+    console.error('Error checking daily thank you limit:', error);
+    // In case of error, allow the thank you but log the issue
+    return { canSend: true, remaining: 3, todayCount: 0 };
+  }
+}
+
+/**
  * Send a "Thank You" to a technician
  */
 export async function sendThankYou(technicianId, userId, message = '') {
@@ -246,6 +309,15 @@ export async function sendThankYou(technicianId, userId, message = '') {
   }
 
   try {
+    // Check daily limit first
+    const limitCheck = await checkDailyThankYouLimit(technicianId, userId);
+    if (!limitCheck.canSend) {
+      return { 
+        success: false, 
+        error: `Daily limit reached. You can send ${limitCheck.remaining} more thank yous to this technician today.`,
+        remaining: limitCheck.remaining
+      };
+    }
     // Add thank you record
     await addDoc(collection(db, COLLECTIONS.THANK_YOUS), {
       technicianId,
@@ -257,10 +329,12 @@ export async function sendThankYou(technicianId, userId, message = '') {
 
     // Update technician points (with existence check for mock data)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+    let technicianData = null;
     try {
       // First check if the document exists
       const techDoc = await getDoc(technicianRef);
       if (techDoc.exists()) {
+        technicianData = techDoc.data();
         await updateDoc(technicianRef, {
           points: increment(10),
           totalThankYous: increment(1)
@@ -274,15 +348,39 @@ export async function sendThankYou(technicianId, userId, message = '') {
     }
 
     // Update user stats (with existence check)
+    let userData = null;
     if (userId) {
       try {
         const userRef = doc(db, COLLECTIONS.USERS, userId);
-        await updateDoc(userRef, {
-          totalThankYousSent: increment(1)
-        });
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          userData = userDoc.data();
+          await updateDoc(userRef, {
+            totalThankYousSent: increment(1)
+          });
+        }
       } catch (error) {
         console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
+      }
+    }
+
+    // Send email notification to technician (in background, don't block the request)
+    if (technicianData && technicianData.email && userData) {
+      try {
+        // Import EmailService dynamically to avoid issues with server-side rendering
+        const { EmailService } = await import('./email');
+        EmailService.sendThankYouNotification(
+          technicianData.email,
+          technicianData.name || 'Technician',
+          userData.name || 'A customer',
+          message
+        ).catch(error => {
+          console.error('Failed to send thank you email notification:', error);
+          // Don't throw - email failure shouldn't fail the thank you
+        });
+      } catch (error) {
+        console.error('Error importing EmailService:', error);
       }
     }
 
@@ -317,13 +415,16 @@ export async function sendTip(technicianId, userId, amount, message = '') {
 
     // Update technician points (with existence check for mock data)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+    let technicianData = null;
     try {
       // First check if the document exists
       const techDoc = await getDoc(technicianRef);
       if (techDoc.exists()) {
+        technicianData = techDoc.data();
         await updateDoc(technicianRef, {
           points: increment(points),
-          totalTips: increment(amount)
+          totalTips: increment(1), // Count of tips, not dollar amount
+          totalEarnings: increment(amount) // Track total earnings separately
         });
       } else {
         console.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
@@ -334,15 +435,41 @@ export async function sendTip(technicianId, userId, amount, message = '') {
     }
 
     // Update user stats (with existence check)
+    let userData = null;
     if (userId) {
       try {
         const userRef = doc(db, COLLECTIONS.USERS, userId);
-        await updateDoc(userRef, {
-          totalTipsSent: increment(amount)
-        });
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          userData = userDoc.data();
+          await updateDoc(userRef, {
+            totalTipsSent: increment(amount),
+            totalSpent: increment(amount)
+          });
+        }
       } catch (error) {
         console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
+      }
+    }
+
+    // Send email notification to technician (in background, don't block the request)
+    if (technicianData && technicianData.email && userData) {
+      try {
+        // Import EmailService dynamically to avoid issues with server-side rendering
+        const { EmailService } = await import('./email');
+        EmailService.sendTipNotification(
+          technicianData.email,
+          technicianData.name || 'Technician',
+          userData.name || 'A customer',
+          amount,
+          message
+        ).catch(error => {
+          console.error('Failed to send tip email notification:', error);
+          // Don't throw - email failure shouldn't fail the tip
+        });
+      } catch (error) {
+        console.error('Error importing EmailService:', error);
       }
     }
 
@@ -769,8 +896,29 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     return;
   }
 
+  let userEmail = null;
+  let userName = null;
+
   try {
-    const { deleteDoc } = await import('firebase/firestore');
+    const { deleteDoc, getDoc } = await import('firebase/firestore');
+    
+    // Retrieve user information before deletion for email notification
+    try {
+      let userDoc;
+      if (userType === 'technician') {
+        userDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
+      } else {
+        userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+      }
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        userEmail = userData.email;
+        userName = userData.name || userData.displayName;
+      }
+    } catch (retrievalError) {
+      console.error('Error retrieving user data for email notification:', retrievalError);
+    }
     
     // Delete from appropriate collection based on user type
     if (userType === 'technician') {
@@ -789,12 +937,28 @@ export async function deleteUserProfile(userId, userType = 'customer') {
       // Delete from users collection
       await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
     }
+
+    // Send account deletion confirmation email (in background)
+    if (userEmail && userName) {
+      try {
+        const { EmailService } = await import('./email');
+        EmailService.sendAccountDeletionEmail(
+          userEmail,
+          userName,
+          userType
+        ).catch(error => {
+          console.error('Failed to send account deletion email:', error);
+          // Don't throw - email failure shouldn't fail deletion
+        });
+      } catch (error) {
+        console.error('Error importing EmailService:', error);
+      }
+    }
     
     // TODO: Future enhancements for production:
     // - Delete user's photos from Firebase Storage
     // - Clean up related data (tips, thank yous, ratings, etc.)
     // - Delete the Firebase Auth user account (requires admin SDK)
-    // - Send deletion confirmation email
     // - Archive data for compliance/recovery purposes
     
     
@@ -849,18 +1013,36 @@ export async function recordTransaction(transactionData) {
     // Add to tips collection
     const docRef = await addDoc(collection(db, COLLECTIONS.TIPS), transaction);
     
-    // Update technician's total earnings (only if technician document exists)
+    // Update technician's total earnings and tip count (only if technician document exists)
     if (transactionData.technicianId) {
       try {
         const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, transactionData.technicianId);
         
         await updateDoc(technicianRef, {
           totalEarnings: increment(transactionData.amount),
+          totalTips: increment(1), // Count of tips received, not dollar amount
+          totalThankYous: increment(1), // Each tip also counts as appreciation
           lastTipDate: new Date().toISOString()
         });
       } catch (updateError) {
         console.warn('⚠️ Could not update technician document earnings:', updateError);
         // Continue execution - the transaction is still recorded in tips collection
+      }
+    }
+
+    // Update customer's tip totals if customer exists
+    if (transactionData.customerId) {
+      try {
+        const customerRef = doc(db, COLLECTIONS.USERS, transactionData.customerId);
+        const tipAmountInDollars = transactionData.amount / 100; // Convert cents to dollars
+        
+        await updateDoc(customerRef, {
+          totalTipsSent: increment(1), // Count of tips sent, not dollar amount
+          totalSpent: increment(tipAmountInDollars) // Dollar amount spent
+        });
+      } catch (updateError) {
+        console.warn('⚠️ Could not update customer document totals:', updateError);
+        // Continue execution - the transaction is still recorded
       }
     }
     
@@ -1418,6 +1600,179 @@ export async function getCustomerTransactions(customerId, customerEmail) {
   } catch (error) {
     console.error('❌ Error loading customer transactions:', error);
     return [];
+  }
+}
+
+/**
+ * Check if a username is already taken
+ * @param {string} username - The username to check
+ * @returns {Promise<boolean>} True if username is taken, false if available
+ */
+export async function isUsernameTaken(username) {
+  if (!db) {
+    console.warn('Firebase not configured');
+    return false;
+  }
+
+  try {
+    // Normalize username (lowercase, trim)
+    const normalizedUsername = username.toLowerCase().trim();
+    
+    // Check in technicians collection
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('username', '==', normalizedUsername)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    // Check in users collection
+    const userQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('username', '==', normalizedUsername)
+    );
+    const userSnapshot = await getDocs(userQuery);
+    
+    return techSnapshot.size > 0 || userSnapshot.size > 0;
+  } catch (error) {
+    console.error('Error checking username availability:', error);
+    return true; // Assume taken on error for safety
+  }
+}
+
+/**
+ * Generate username suggestions when the desired username is taken
+ * @param {string} baseUsername - The base username to generate suggestions from
+ * @returns {Promise<string[]>} Array of available username suggestions
+ */
+export async function generateUsernameSuggestions(baseUsername) {
+  const suggestions = [];
+  const base = baseUsername.toLowerCase().trim();
+  
+  // Generate variations
+  const variations = [
+    `${base}_tech`,
+    `${base}_pro`,
+    `${base}123`,
+    `${base}_service`,
+    `${base}2024`,
+    `the_${base}`,
+    `${base}_official`,
+    `${base}_expert`
+  ];
+  
+  // Check each variation
+  for (const variation of variations) {
+    const isTaken = await isUsernameTaken(variation);
+    if (!isTaken) {
+      suggestions.push(variation);
+    }
+    
+    // Return first 3 available suggestions
+    if (suggestions.length >= 3) {
+      break;
+    }
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Find technician by username
+ * @param {string} username - The username to search for
+ * @returns {Promise<Object|null>} Technician profile or null if not found
+ */
+export async function findTechnicianByUsername(username) {
+  if (!db) {
+    console.warn('Firebase not configured');
+    return null;
+  }
+
+  try {
+    const normalizedUsername = username.toLowerCase().trim();
+    const q = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('username', '==', normalizedUsername)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+  } catch (error) {
+    console.error('Error finding technician by username:', error);
+    return null;
+  }
+}
+
+/**
+ * Validate username format
+ * @param {string} username - The username to validate
+ * @returns {Object} Validation result with isValid and error message
+ */
+export function validateUsername(username) {
+  if (!username || typeof username !== 'string') {
+    return { isValid: false, error: 'Username is required' };
+  }
+  
+  const trimmed = username.trim();
+  
+  if (trimmed.length < 3) {
+    return { isValid: false, error: 'Username must be at least 3 characters long' };
+  }
+  
+  if (trimmed.length > 20) {
+    return { isValid: false, error: 'Username must be 20 characters or less' };
+  }
+  
+  // Allow letters, numbers, underscores, hyphens
+  const validPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!validPattern.test(trimmed)) {
+    return { isValid: false, error: 'Username can only contain letters, numbers, underscores, and hyphens' };
+  }
+  
+  // Can't start or end with underscore or hyphen
+  if (trimmed.startsWith('_') || trimmed.startsWith('-') || trimmed.endsWith('_') || trimmed.endsWith('-')) {
+    return { isValid: false, error: 'Username cannot start or end with underscore or hyphen' };
+  }
+  
+  // Reserved usernames
+  const reserved = ['admin', 'api', 'www', 'mail', 'ftp', 'localhost', 'dashboard', 'profile', 'about', 'contact', 'privacy', 'terms'];
+  if (reserved.includes(trimmed.toLowerCase())) {
+    return { isValid: false, error: 'This username is reserved and cannot be used' };
+  }
+  
+  return { isValid: true, error: null };
+}
+
+// Function to add username to existing technician profile
+export async function addUsernameToTechnician(technicianId, username) {
+  try {
+    // Validate the username format first
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
+    // Check if username is already taken
+    const isTaken = await isUsernameTaken(username);
+    if (isTaken) {
+      throw new Error('Username is already taken');
+    }
+
+    // Update the technician document
+    const technicianRef = doc(db, 'technicians', technicianId);
+    await updateDoc(technicianRef, {
+      username: username.toLowerCase()
+    });
+
+    console.log(`✅ Successfully added username "${username}" to technician ${technicianId}`);
+    return { success: true, username: username.toLowerCase() };
+  } catch (error) {
+    console.error('Error adding username to technician:', error);
+    throw error;
   }
 }
 

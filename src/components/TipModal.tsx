@@ -8,6 +8,7 @@ const stripePromise = getStripe();
 interface TipModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onTipSuccess?: (amount: number) => void;
   technician: {
     id: string;
     name: string;
@@ -25,6 +26,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
   technician,
   customer,
   onClose,
+  onTipSuccess,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -113,12 +115,17 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
             customerNote: '', // Could add a note field later
           });
           
+          // Call the success callback to update the UI
+          if (onTipSuccess) {
+            onTipSuccess(currentAmount);
+          }
+          
           // Payment successful and recorded!
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
           onClose();
         } catch (recordError) {
           console.error('❌ Failed to record transaction:', recordError);
-          // Still show success since payment went through
+          // Still show success since payment went through, but don't update UI
           alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
           onClose();
         }
@@ -269,7 +276,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
   );
 };
 
-export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician, customer }) => {
+export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, onTipSuccess, technician, customer }) => {
   if (!isOpen) return null;
 
   // Check if Stripe is configured
@@ -312,7 +319,7 @@ export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, technician,
         </div>
 
         <Elements stripe={stripePromise}>
-          <TipForm technician={technician} customer={customer} onClose={onClose} />
+          <TipForm technician={technician} customer={customer} onClose={onClose} onTipSuccess={onTipSuccess} />
         </Elements>
       </div>
     </div>

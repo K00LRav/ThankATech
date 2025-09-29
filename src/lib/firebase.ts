@@ -133,6 +133,7 @@ export async function registerTechnician(technicianData) {
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
+      username: technicianData.username?.toLowerCase().trim(),
       
       // Firebase Auth UID (if created)
       authUid: authUser?.uid || null,
@@ -1545,6 +1546,133 @@ export async function getCustomerTransactions(customerId, customerEmail) {
     console.error('❌ Error loading customer transactions:', error);
     return [];
   }
+}
+
+/**
+ * Check if a username is already taken
+ */
+export async function isUsernameTaken(username: string): Promise<boolean> {
+  if (!db) {
+    console.warn('Firebase not configured');
+    return false;
+  }
+
+  try {
+    const normalizedUsername = username.toLowerCase().trim();
+    
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('username', '==', normalizedUsername)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    const userQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('username', '==', normalizedUsername)
+    );
+    const userSnapshot = await getDocs(userQuery);
+    
+    return techSnapshot.size > 0 || userSnapshot.size > 0;
+  } catch (error) {
+    console.error('Error checking username availability:', error);
+    return true;
+  }
+}
+
+/**
+ * Generate username suggestions when the desired username is taken
+ */
+export async function generateUsernameSuggestions(baseUsername: string): Promise<string[]> {
+  const suggestions: string[] = [];
+  const base = baseUsername.toLowerCase().trim();
+  
+  const variations = [
+    `${base}_tech`,
+    `${base}_pro`,
+    `${base}123`,
+    `${base}_service`,
+    `${base}2024`,
+    `the_${base}`,
+    `${base}_official`,
+    `${base}_expert`
+  ];
+  
+  for (const variation of variations) {
+    const isTaken = await isUsernameTaken(variation);
+    if (!isTaken) {
+      suggestions.push(variation);
+    }
+    
+    if (suggestions.length >= 3) {
+      break;
+    }
+  }
+  
+  return suggestions;
+}
+
+/**
+ * Find technician by username
+ */
+export async function findTechnicianByUsername(username: string): Promise<any> {
+  if (!db) {
+    console.warn('Firebase not configured');
+    return null;
+  }
+
+  try {
+    const normalizedUsername = username.toLowerCase().trim();
+    const q = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('username', '==', normalizedUsername)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+  } catch (error) {
+    console.error('Error finding technician by username:', error);
+    return null;
+  }
+}
+
+/**
+ * Validate username format
+ */
+export function validateUsername(username: string): { isValid: boolean; error: string | null } {
+  if (!username || typeof username !== 'string') {
+    return { isValid: false, error: 'Username is required' };
+  }
+  
+  const trimmed = username.trim();
+  
+  if (trimmed.length < 3) {
+    return { isValid: false, error: 'Username must be at least 3 characters long' };
+  }
+  
+  if (trimmed.length > 20) {
+    return { isValid: false, error: 'Username must be 20 characters or less' };
+  }
+  
+  const validPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!validPattern.test(trimmed)) {
+    return { isValid: false, error: 'Username can only contain letters, numbers, underscores, and hyphens' };
+  }
+  
+  if (trimmed.startsWith('_') || trimmed.startsWith('-') || trimmed.endsWith('_') || trimmed.endsWith('-')) {
+    return { isValid: false, error: 'Username cannot start or end with underscore or hyphen' };
+  }
+  
+  const reserved = ['admin', 'api', 'www', 'mail', 'ftp', 'localhost', 'dashboard', 'profile', 'about', 'contact', 'privacy', 'terms'];
+  if (reserved.includes(trimmed.toLowerCase())) {
+    return { isValid: false, error: 'This username is reserved and cannot be used' };
+  }
+  
+  return { isValid: true, error: null };
 }
 
 export default app;

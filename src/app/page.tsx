@@ -1136,21 +1136,21 @@ export default function Home() {
 
               </div>
 
-              {/* Expand/Collapse Button */}
-              <div className="mt-3 text-center">
-                <button
-                  onClick={() => setExpandedCard(!expandedCard)}
-                  className="text-xs text-gray-100 hover:text-blue-300 transition-colors duration-200 flex items-center space-x-1 mx-auto"
-                >
-                  <span>{expandedCard ? 'Less Details' : 'More Details'}</span>
-                  <span className={`transform transition-transform duration-200 ${expandedCard ? 'rotate-180' : ''}`}>
-                    ▼
-                  </span>
-                </button>
-              </div>
+              {/* View Profile Button */}
+              {profile.username && (
+                <div className="mt-3 text-center">
+                  <Link 
+                    href={`/${profile.username}`}
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    <span>View Profile</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              )}
 
               {/* Bottom Section - Contained within card */}
-              <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200/50">
+              <div className="mt-auto pt-3 border-t border-gray-200/50 space-y-3">
                 {/* Thank You and Tips Display - Clean and simple */}
                 <div className="flex items-center justify-center gap-3 flex-wrap">
                   <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-4 py-2 shadow-lg">
@@ -1194,10 +1194,10 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-4 sm:space-x-6 sm:gap-0 w-full max-w-md lg:max-w-lg mx-auto">
           <button 
             onClick={handleThankYou}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-green-500 to-emerald-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-green-400 hover:to-emerald-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-blue-500 to-cyan-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-blue-600 hover:to-cyan-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">👍</span>
-            <span className="font-semibold text-white text-sm lg:text-base">Thank You</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">�</span>
+            <span className="font-semibold text-white text-sm lg:text-base">Say Thank You</span>
           </button>
           <button 
             onClick={handleTip}
