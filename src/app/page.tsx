@@ -68,7 +68,7 @@ export default function Home() {
   const [expandedCard, setExpandedCard] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showTipModal, setShowTipModal] = useState(false);
   const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
@@ -688,110 +688,40 @@ export default function Home() {
                 </button>
               </div>
             )}
-            <button 
-              onClick={() => setShowSearch(!showSearch)}
-              className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium"
-            >
-              {showSearch ? 'Close' : 'Search'}
-            </button>
+
           </div>
         </header>
 
-        {/* Categories Showcase */}
-        <div className="mb-8 px-4">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-2">
-              🛠️ Find Your Tech Hero
-            </h2>
-            <p className="text-gray-300 text-sm">Choose a category to discover skilled technicians in your area</p>
-          </div>
+        {/* Hero Section - Showcase Technicians First */}
+        <div className="text-center mb-8 px-4">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-4">
+            🛠️ Meet Your Local Tech Heroes
+          </h1>
+          <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
+            Skilled technicians ready to help you. Browse profiles, read reviews, and connect instantly.
+          </p>
           
-          {/* Category Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 max-w-6xl mx-auto">
-            {/* Show All Categories Button */}
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`group p-4 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg shadow-green-500/25'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-              }`}
-            >
-              <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">
-                🔧
-              </div>
-              <div className="text-white text-xs font-medium text-center leading-tight">
-                All Categories
-              </div>
-              <div className="text-gray-400 text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                View all technicians
-              </div>
-            </button>
-
-            {TECHNICIAN_CATEGORIES.slice(0, 9).map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`group p-4 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
-                  selectedCategory === category.id
-                    ? 'bg-gradient-to-r from-blue-600/30 to-blue-800/30 border-blue-400/50 shadow-lg shadow-blue-500/25'
-                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                }`}
-              >
-                <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200">
-                  {category.icon}
-                </div>
-                <div className="text-white text-xs font-medium text-center leading-tight">
-                  {category.name.replace(' Technicians', '').replace(' (IT)', '')}
-                </div>
-                <div className="text-gray-400 text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {category.description.split(',')[0]}
-                </div>
-              </button>
-            ))}
-          </div>
-          
-          {/* Filter Status */}
-          <div className="mt-6 text-center">
-            {selectedCategory !== 'all' ? (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-400/30 rounded-full">
-                <span className="text-blue-300 text-sm">
-                  Showing {profiles.length} {getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)} technician{profiles.length !== 1 ? 's' : ''}
-                </span>
-                <button
-                  onClick={() => setSelectedCategory('all')}
-                  className="text-blue-400 hover:text-blue-300 text-sm underline ml-2"
-                >
-                  Clear filter
-                </button>
-              </div>
-            ) : (
-              <div className="text-gray-400 text-sm">
-                Showing all {profiles.length} technician{profiles.length !== 1 ? 's' : ''} in your area
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Search Input */}
-        {showSearch && (
-          <div className="w-full max-w-2xl mx-auto px-4 py-1 mb-8 animate-fadeIn">
+          {/* Search Input - Right above technician showcase */}
+          <div className="w-full max-w-2xl mx-auto mb-6">
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search technicians by name, category, business, or location..."
-                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                placeholder="Search by name, service type, or location..."
+                className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 shadow-lg"
               />
-              {searchQuery && (
-                <button
-                  onClick={() => {setSearchQuery(''); filterTechnicians('');}}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors"
-                >
-                  ✕
-                </button>
-              )}
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                {searchQuery && (
+                  <button
+                    onClick={() => {setSearchQuery(''); filterTechnicians('');}}
+                    className="text-gray-300 hover:text-white transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+                <span className="text-gray-400">🔍</span>
+              </div>
             </div>
             {filteredProfiles.length > 0 && searchQuery && (
               <div className="mt-2 text-center text-white/70 text-sm">
@@ -804,7 +734,7 @@ export default function Home() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
       {/* Main Content */}
       <div className="flex flex-col items-center space-y-6 sm:space-y-8">
@@ -898,11 +828,11 @@ export default function Home() {
         {/* Modern Glass Rolodex Card */}
         <div id="rolodex-card" className={`card-container relative group ${isFlipping ? 'animate-pulse' : ''} flex justify-center`}>
           {/* Glass morphism background layers for depth */}
-          <div className="absolute top-4 left-4 w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-auto min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem] bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-3xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-6 group-hover:left-6 border border-white/10 shadow-xl"></div>
-          <div className="absolute top-2 left-2 w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl h-auto min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem] bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-3xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 group-hover:top-3 group-hover:left-3 border border-white/15 shadow-2xl"></div>
+          <div className="absolute top-3 left-3 w-full max-w-md sm:max-w-2xl lg:max-w-4xl h-auto min-h-[20rem] sm:min-h-[24rem] bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-4 group-hover:left-4 border border-white/10 shadow-xl"></div>
+          <div className="absolute top-1.5 left-1.5 w-full max-w-md sm:max-w-2xl lg:max-w-4xl h-auto min-h-[20rem] sm:min-h-[24rem] bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 group-hover:top-2 group-hover:left-2 border border-white/15 shadow-2xl"></div>
           
-          {/* Main Glass Card */}
-          <div className="relative w-full max-w-md sm:max-w-3xl lg:max-w-5xl xl:max-w-6xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden">
+          {/* Main Glass Card - More focused size */}
+          <div className="relative w-full max-w-md sm:max-w-2xl lg:max-w-4xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden">
             {/* Category Badge - Top Right */}
             <div className="absolute top-4 right-4 z-10">
               <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
@@ -914,19 +844,19 @@ export default function Home() {
             </div>
             
             {/* Card Content */}
-            <div className="relative p-6 sm:p-8 lg:p-10 h-full min-h-[28rem] sm:min-h-[32rem] lg:min-h-[36rem]">
+            <div className="relative p-6 sm:p-8 h-full min-h-[20rem] sm:min-h-[24rem]">
 
             <div className="flex flex-col h-full">
-              {/* Header Section */}
-              <div className="flex items-start space-x-3 sm:space-x-4 mb-3 sm:mb-4">
+              {/* Header Section - Simplified */}
+              <div className="flex items-start space-x-4 mb-4">
                 {/* Profile Image with modern styling */}
                 <div className="relative">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
                     <Image
                       src={profile.photoURL || profile.image}
                       alt={profile.name}
-                      width={112}
-                      height={112}
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // Fallback to default image if Google photo fails to load
@@ -935,92 +865,86 @@ export default function Home() {
                     />
                   </div>
                   {/* Dynamic Rating overlay */}
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center text-sm lg:text-base font-bold shadow-lg border-2 border-white">
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg border-2 border-white">
                     <span className="flex items-center justify-center">
                       {dynamicRating.toFixed(1)}⭐
                     </span>
                   </div>
                 </div>
 
-                {/* Name and Title */}
+                {/* Name and Essential Info Only */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{profile.name}</h2>
-                  <p className="text-base sm:text-lg lg:text-xl text-blue-800 font-semibold mt-1">{profile.businessName || profile.title}</p>
-                  {profile.serviceArea && (
-                    <p className="text-sm sm:text-base text-gray-100 mt-1 flex items-center">
-                      <span className="mr-1">📍</span>
-                      {profile.serviceArea}
-                    </p>
-                  )}
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">{profile.name}</h2>
+                  <p className="text-base sm:text-lg text-blue-200 font-semibold mt-1">{profile.businessName || profile.title}</p>
                   
-                  {/* Distance and Location Info */}
+                  {/* Only show distance if available */}
                   {profile.distance !== undefined && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm sm:text-base text-gray-100 flex items-center">
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-sm text-gray-200 flex items-center">
                         🚗 {profile.distance.toFixed(1)} miles away
                       </span>
                       {profile.isNearby && (
-                        <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-200">
-                          📍 Near You
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                          📍 Nearby
                         </span>
                       )}
                     </div>
                   )}
                   
-                  {/* Achievement Badges */}
+                  {/* Show only top achievement badge */}
                   {achievementBadges.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {achievementBadges.map((badge, index) => (
-                        <span 
-                          key={index}
-                          className={`inline-flex items-center gap-1 px-2 py-1 lg:px-3 lg:py-1.5 rounded-full text-xs lg:text-sm font-medium border ${badge.color} shadow-sm`}
-                          title={`Achievement: ${badge.text}`}
-                        >
-                          <span className="text-xs lg:text-sm">{badge.icon}</span>
-                          <span className="hidden sm:inline">{badge.text}</span>
-                        </span>
-                      ))}
+                    <div className="mt-2">
+                      <span 
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
+                        title={`Achievement: ${achievementBadges[0].text}`}
+                      >
+                        <span>{achievementBadges[0].icon}</span>
+                        <span className="hidden sm:inline">{achievementBadges[0].text}</span>
+                      </span>
+                      {achievementBadges.length > 1 && (
+                        <span className="text-xs text-gray-300 ml-2">+{achievementBadges.length - 1} more</span>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Content Section - Responsive layout */}
-              <div className={`${expandedCard ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-3'}`}>
+              {/* Content Section - Simplified with consistent styling */}
+              <div className={`${expandedCard ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : 'space-y-3'}`}>
                 {/* Left Column - About & Basic Info */}
                 <div className="space-y-3">
-                  <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed max-h-80 lg:max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.about}</p>
+                  <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
+                    <p className="text-sm text-gray-800 leading-relaxed max-h-32 lg:max-h-40 overflow-y-auto">{profile.about}</p>
                   </div>
 
-                  {/* Basic Contact Info Grid - Only show when expanded */}
+                  {/* Basic Contact Info Grid - Only show when expanded, unified styling */}
                   {expandedCard && (
                     <div className="grid grid-cols-2 gap-2">
                   {profile.businessPhone && (
-                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-blue-500">📞</span>
-                        <span className="text-xs lg:text-sm text-blue-700 font-medium">{profile.businessPhone}</span>
+                        <span className="text-blue-600">📞</span>
+                        <span className="text-xs text-gray-800 font-medium">{profile.businessPhone}</span>
                       </div>
                     </div>
                   )}
                   {profile.businessEmail && (
-                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100 col-span-2">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm col-span-2">
                       <div className="flex items-start space-x-2">
-                        <span className="text-blue-500 mt-0.5">✉️</span>
-                        <span className="text-xs lg:text-sm text-blue-700 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
+                        <span className="text-blue-600 mt-0.5">✉️</span>
+                        <span className="text-xs text-gray-800 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
                       </div>
                     </div>
                   )}
                   {profile.website && (
-                    <div className="bg-green-50/80 backdrop-blur-sm rounded-lg p-3 border border-green-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-green-500">🌐</span>
+                        <span className="text-blue-600">🌐</span>
                         <a 
                           href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs lg:text-sm text-green-700 font-medium hover:text-green-800 hover:underline transition-colors"
+                          className="text-xs text-gray-800 font-medium hover:text-blue-600 hover:underline transition-colors"
                         >
                           {formatWebsiteTitle(profile.website)}
                         </a>
@@ -1028,14 +952,14 @@ export default function Home() {
                     </div>
                   )}
                   {profile.businessAddress && (
-                    <div className="bg-red-50/80 backdrop-blur-sm rounded-lg p-3 border border-red-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-red-500">📍</span>
+                        <span className="text-blue-600">📍</span>
                         <a 
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.businessAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-red-700 font-medium hover:text-red-800 hover:underline transition-colors break-words leading-relaxed"
+                          className="text-xs text-gray-800 font-medium hover:text-blue-600 hover:underline transition-colors break-words leading-relaxed"
                         >
                           {profile.businessAddress}
                         </a>
@@ -1043,34 +967,34 @@ export default function Home() {
                     </div>
                   )}
                   {profile.hourlyRate && (
-                    <div className="bg-blue-50/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-blue-500">💰</span>
-                        <span className="text-xs text-blue-700 font-medium">{profile.hourlyRate}/hr</span>
+                        <span className="text-blue-600">💰</span>
+                        <span className="text-xs text-gray-800 font-medium">{profile.hourlyRate}/hr</span>
                       </div>
                     </div>
                   )}
                   {profile.experience && (
-                    <div className="bg-orange-50/80 backdrop-blur-sm rounded-lg p-3 border border-orange-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-orange-500">⚡</span>
-                        <span className="text-xs text-orange-700 font-medium">{profile.experience}</span>
+                        <span className="text-blue-600">⚡</span>
+                        <span className="text-xs text-gray-800 font-medium">{profile.experience}</span>
                       </div>
                     </div>
                   )}
                   {profile.availability && (
-                    <div className="bg-teal-50/80 backdrop-blur-sm rounded-lg p-3 border border-teal-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-teal-500">🕐</span>
-                        <span className="text-xs text-teal-700 font-medium">{profile.availability}</span>
+                        <span className="text-blue-600">🕐</span>
+                        <span className="text-xs text-gray-800 font-medium">{profile.availability}</span>
                       </div>
                     </div>
                   )}
                   {profile.serviceArea && (
-                    <div className="bg-cyan-50/80 backdrop-blur-sm rounded-lg p-3 border border-cyan-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-cyan-500">🗺️</span>
-                        <span className="text-xs text-cyan-700 font-medium">{profile.serviceArea}</span>
+                        <span className="text-blue-600">🗺️</span>
+                        <span className="text-xs text-gray-800 font-medium">{profile.serviceArea}</span>
                       </div>
                     </div>
                   )}
@@ -1083,77 +1007,58 @@ export default function Home() {
                   <div className="space-y-3 animate-in slide-in-from-right-2 duration-300">
                     {/* Additional Services */}
                     {profile.certifications && (
-                      <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
                         <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Certifications & Licenses</h4>
-                        <p className="text-xs text-gray-600 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.certifications}</p>
+                        <p className="text-xs text-gray-700 max-h-32 overflow-y-auto">{profile.certifications}</p>
                       </div>
                     )}
                     
-                    {/* Detailed Availability */}
-                    {profile.availability && (
-                      <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
-                        <h4 className="text-sm font-semibold text-gray-800 mb-2">📅 Detailed Schedule</h4>
-                        <p className="text-xs text-gray-600 max-h-28 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">{profile.availability}</p>
-                      </div>
-                    )}
-
                     {/* Service Specialties */}
-                    <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3 border border-gray-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
                       <h4 className="text-sm font-semibold text-gray-800 mb-2">🔧 Service Specialties</h4>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
                           <span>{getCategoryIcon(profile.category, profile.title)}</span>
                           {formatCategory(profile.category)}
                         </span>
                         {profile.experience && (
-                          <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
+                          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
                         )}
                         {profile.certifications && (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Certified</span>
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">✓ Certified</span>
                         )}
                       </div>
                     </div>
 
                     {/* Achievement Badges Section */}
                     {achievementBadges.length > 0 && (
-                      <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm rounded-xl p-3 border border-gray-600">
-                        <h4 className="text-sm lg:text-base font-semibold text-gray-100 mb-2">🏆 Achievements</h4>
-                        <div className="grid grid-cols-1 gap-2">
-                          {achievementBadges.map((badge, index) => (
-                            <div key={index} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-gray-700/50">
-                              <span className="text-xl lg:text-2xl">{badge.icon}</span>
+                      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-2">🏆 Top Achievements</h4>
+                        <div className="space-y-2">
+                          {achievementBadges.slice(0, 2).map((badge, index) => (
+                            <div key={index} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50">
+                              <span className="text-lg">{badge.icon}</span>
                               <div className="flex-1">
-                                <span className="text-sm lg:text-base font-medium text-gray-100">{badge.text}</span>
-                                <div className="text-xs lg:text-sm text-gray-300 mt-0.5">
-                                  {badge.text.includes('Thank') && `${profile.totalThankYous || 0} thank yous received`}
-                                  {badge.text.includes('Tip') && `${profile.totalTips || 0} tips received${profile.totalTipAmount && profile.totalTipAmount > 0 ? ` ($${(profile.totalTipAmount / 100).toFixed(2)})` : ''}`}
-                                  {badge.text.includes('Excellence') && 'Top-rated technician'}
-                                  {badge.text.includes('Outstanding') && 'Highly rated by customers'}
-                                  {badge.text.includes('Master') && 'Decade+ of experience'}
-                                  {badge.text.includes('Expert') && 'Years of proven expertise'}
-                                  {badge.text.includes('Certified') && 'Professional certifications'}
-                                </div>
+                                <span className="text-sm font-medium text-gray-800">{badge.text}</span>
                               </div>
                             </div>
                           ))}
+                          {achievementBadges.length > 2 && (
+                            <div className="text-xs text-gray-600 text-center">+{achievementBadges.length - 2} more achievements</div>
+                          )}
                         </div>
                       </div>
                     )}
 
-                    {/* Rating Explanation */}
-                    <div className="bg-gradient-to-r from-gray-800/90 to-gray-700/90 backdrop-blur-sm rounded-xl p-3 lg:p-4 border border-gray-600">
-                      <h4 className="text-sm lg:text-base font-semibold text-gray-100 mb-2">⭐ Community Rating</h4>
-                      <div className="flex items-center justify-between text-xs lg:text-sm">
-                        <span className="text-gray-200">Based on customer feedback</span>
-                        <span className="font-bold text-yellow-400 text-sm lg:text-base">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
+                    {/* Rating Summary */}
+                    <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ Customer Rating</h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Community feedback</span>
+                        <span className="font-bold text-yellow-600 text-sm">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
                       </div>
-                      <div className="text-xs lg:text-sm text-gray-200 mt-2">
-                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips received
-                        {profile.totalTipAmount && profile.totalTipAmount > 0 && (
-                          <span className="ml-1 text-green-600 font-medium">
-                            (${(profile.totalTipAmount / 100).toFixed(2)})
-                          </span>
-                        )}
+                      <div className="text-xs text-gray-600 mt-1">
+                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips
                       </div>
                     </div>
                   </div>
@@ -1290,6 +1195,76 @@ export default function Home() {
         </div>
             </div>
           </div>
+
+      {/* Categories Filter - Moved below technician showcase */}
+      <div className="mt-12 mb-8 px-4">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-white mb-2">
+            Filter by Category
+          </h2>
+          <p className="text-gray-400 text-sm">Narrow down your search by service type</p>
+        </div>
+        
+        {/* Compact Category Grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 max-w-4xl mx-auto">
+          {/* Show All Categories Button */}
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`group p-3 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+              selectedCategory === 'all'
+                ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg'
+                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+            }`}
+          >
+            <div className="text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
+              🔧
+            </div>
+            <div className="text-white text-xs font-medium text-center leading-tight">
+              All
+            </div>
+          </button>
+
+          {TECHNICIAN_CATEGORIES.slice(0, 11).map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`group p-3 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+                selectedCategory === category.id
+                  ? 'bg-gradient-to-r from-blue-600/30 to-blue-800/30 border-blue-400/50 shadow-lg'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+              }`}
+            >
+              <div className="text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
+                {category.icon}
+              </div>
+              <div className="text-white text-xs font-medium text-center leading-tight">
+                {category.name.replace(' Technicians', '').replace(' (IT)', '').split(' ')[0]}
+              </div>
+            </button>
+          ))}
+        </div>
+        
+        {/* Filter Status */}
+        <div className="mt-4 text-center">
+          {selectedCategory !== 'all' ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 border border-blue-400/30 rounded-full">
+              <span className="text-blue-300 text-sm">
+                {profiles.length} {getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)} technician{profiles.length !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className="text-blue-400 hover:text-blue-300 text-xs underline ml-1"
+              >
+                Clear
+              </button>
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm">
+              {profiles.length} technician{profiles.length !== 1 ? 's' : ''} available
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Spacer before footer */}
       <div className="h-8 lg:h-12"></div>
