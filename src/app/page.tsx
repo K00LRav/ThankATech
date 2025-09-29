@@ -307,7 +307,7 @@ export default function Home() {
               email: userData.email || firebaseUser.email,
               displayName: userData.displayName || firebaseUser.displayName,
               photoURL: userData.photoURL || firebaseUser.photoURL,
-              userType: userData.userType || 'customer'
+              userType: userData.userType || 'client'
             });
           } else {
             // Firebase user exists but no profile data, create basic user object
@@ -318,7 +318,7 @@ export default function Home() {
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              userType: 'customer'
+              userType: 'client'
             });
           }
         } catch (error) {
@@ -331,7 +331,7 @@ export default function Home() {
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
-            userType: 'customer'
+            userType: 'client'
           });
         }
       } else {
@@ -1058,7 +1058,7 @@ export default function Home() {
 
                     {/* Rating Summary */}
                     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
-                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ Customer Rating</h4>
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ client Rating</h4>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-600">Community feedback</span>
                         <span className="font-bold text-yellow-600 text-sm">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
@@ -1316,7 +1316,7 @@ export default function Home() {
           businessName: profiles[currentProfileIndex]?.businessName || '',
           category: profiles[currentProfileIndex]?.category || '',
         }}
-        customer={{
+        client={{
           id: currentUser?.id || '',
           name: currentUser?.name || currentUser?.displayName || '',
           email: currentUser?.email || '',

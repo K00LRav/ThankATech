@@ -2,7 +2,7 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from 'react';
-import { auth, db, registerUser, deleteUserProfile, authHelpers, getCustomerTransactions } from '@/lib/firebase';
+import { auth, db, registerUser, deleteUserProfile, authHelpers, getClientTransactions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
@@ -16,8 +16,8 @@ interface UserProfile {
   phone: string;
   location: string;
   photoURL?: string;
-  userType: 'technician' | 'customer';
-  // Customer-specific fields
+  userType: 'technician' | 'client';
+  // Client-specific fields
   favoriteCategories?: string[];
   notificationPreferences?: {
     emailNotifications: boolean;
@@ -58,7 +58,7 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
       if (!profile?.uid && !profile?.email) return;
       
       try {
-        const tips = await getCustomerTransactions(profile.uid, profile.email);
+        const tips = await getClientTransactions(profile.uid, profile.email);
         setTransactions(tips);
       } catch (err) {
         console.error('Error loading customer transactions:', err);
@@ -260,7 +260,7 @@ export default function ProfilePage() {
             hourlyRate: '',
             availability: '',
             photoURL: user.photoURL || '',
-            userType: 'customer' // Default to customer for new profiles
+            userType: 'client' // Default to customer for new profiles
           };
           setProfile(basicProfile as UserProfile);
           setFormData(basicProfile);
@@ -560,7 +560,7 @@ Please complete your profile information below and click "Save Changes" to creat
           </div>
 
           {/* Customer Preferences */}
-          {profile.userType === 'customer' && (
+          {profile.userType === 'client' && (
             <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
               <h2 className="text-xl font-bold text-white mb-6">Preferences & Settings</h2>
               <div className="space-y-6">
@@ -666,7 +666,7 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Payment Methods for Customers */}
-          {profile.userType === 'customer' && (
+          {profile.userType === 'client' && (
             <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Payment Methods</h2>
@@ -706,10 +706,10 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Tip History for Customers */}
-          {profile.userType === 'customer' && <CustomerTipHistory profile={profile} />}
+          {profile.userType === 'client' && <CustomerTipHistory profile={profile} />}
 
           {/* Favorite Technicians for Customers */}
-          {profile.userType === 'customer' && (
+          {profile.userType === 'client' && (
             <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
               <h2 className="text-xl font-bold text-white mb-6">Favorite Technicians</h2>
               <div className="text-center py-8">
@@ -734,7 +734,7 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Account Settings for Customers */}
-          {profile.userType === 'customer' && (
+          {profile.userType === 'client' && (
             <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
               <h2 className="text-xl font-bold text-white mb-6">Account Settings</h2>
               <div className="space-y-6">

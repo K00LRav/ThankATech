@@ -992,19 +992,19 @@ export async function recordTransaction(transactionData) {
     }
     
     // Find customer if provided
-    let customerUniqueId = null;
+    let clientUniqueId = null;
     if (transactionData.customerId) {
-      const customer = await getUser(transactionData.customerId);
-      customerUniqueId = customer?.uniqueId;
+      const client = await getUser(transactionData.customerId);
+      clientUniqueId = client?.uniqueId;
     } else if (transactionData.customerEmail) {
-      const customer = await getUserByEmail(transactionData.customerEmail);
-      customerUniqueId = customer?.uniqueId;
+      const client = await getUserByEmail(transactionData.customerEmail);
+      clientUniqueId = client?.uniqueId;
     }
     
     const transaction = {
       ...transactionData,
       technicianUniqueId: technician.uniqueId || technician.id, // Fallback for legacy data
-      customerUniqueId: customerUniqueId,
+      clientUniqueId: clientUniqueId,
       createdAt: new Date().toISOString(),
       status: 'completed'
     };
@@ -1033,10 +1033,10 @@ export async function recordTransaction(transactionData) {
     // Update customer's tip totals if customer exists
     if (transactionData.customerId) {
       try {
-        const customerRef = doc(db, COLLECTIONS.USERS, transactionData.customerId);
+        const clientRef = doc(db, COLLECTIONS.USERS, transactionData.customerId);
         const tipAmountInDollars = transactionData.amount / 100; // Convert cents to dollars
         
-        await updateDoc(customerRef, {
+        await updateDoc(clientRef, {
           totalTipsSent: increment(1), // Count of tips sent, not dollar amount
           totalSpent: increment(tipAmountInDollars) // Dollar amount spent
         });
@@ -1537,12 +1537,12 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
 }
 
 /**
- * Get customer transactions (tips they've sent)
- * @param {string} customerId - Customer ID
- * @param {string} customerEmail - Customer email
- * @returns {Promise<Array>} Array of tips sent by customer
+ * Get client transactions (tips they've sent)
+ * @param {string} clientId - Client ID
+ * @param {string} clientEmail - Client email
+ * @returns {Promise<Array>} Array of tips sent by client
  */
-export async function getCustomerTransactions(customerId, customerEmail) {
+export async function getClientTransactions(clientId, clientEmail) {
   if (!db) return [];
   
   try {
@@ -1550,22 +1550,22 @@ export async function getCustomerTransactions(customerId, customerEmail) {
     const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
     const tipsRef = collection(db, 'tips');
     
-    // Query tips where this customer is the sender
+    // Query tips where this client is the sender
     let q;
-    if (customerId) {
+    if (clientId) {
       q = query(
         tipsRef,
-        where('customerId', '==', customerId),
+        where('customerId', '==', clientId),
         orderBy('createdAt', 'desc')
       );
-    } else if (customerEmail) {
+    } else if (clientEmail) {
       q = query(
         tipsRef,
-        where('customerEmail', '==', customerEmail),
+        where('customerEmail', '==', clientEmail),
         orderBy('createdAt', 'desc')
       );
     } else {
-      console.warn('No customer ID or email provided');
+      console.warn('No client ID or email provided');
       return [];
     }
     
@@ -1598,7 +1598,7 @@ export async function getCustomerTransactions(customerId, customerEmail) {
     
     return transactions;
   } catch (error) {
-    console.error('❌ Error loading customer transactions:', error);
+    console.error('❌ Error loading client transactions:', error);
     return [];
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
-import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getCustomerTransactions } from '@/lib/firebase';
+import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, Auth } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ interface UserProfile {
   email: string;
   uniqueId?: string;
   username?: string;
-  userType: 'technician' | 'customer';
+  userType: 'technician' | 'client';
   businessName?: string;
   category?: string;
   title?: string;
@@ -38,7 +38,7 @@ interface UserProfile {
   serviceArea?: string;
   hourlyRate?: string;
   availability?: string;
-  // Customer-specific fields
+  // client-specific fields
   favoriteCategories?: string[];
   totalTipsSent?: number;
   totalThankYousSent?: number;
@@ -50,7 +50,7 @@ interface UserProfile {
 interface Transaction {
   id: string;
   amount: number;
-  customerName?: string;
+  clientName?: string;
   technicianName?: string;
   date: string;
   time?: string;
@@ -214,8 +214,8 @@ export default function ModernDashboard() {
 
                 setUserProfile(techData);
                 userFound = true;
-              } else if (userData.userType === 'customer') {
-                let customerData = { 
+              } else if (userData.userType === 'client') {
+                let clientData = { 
                   id: userDoc.id, 
                   ...userData,
                   favoriteCategories: userData.favoriteCategories || [],
@@ -226,13 +226,13 @@ export default function ModernDashboard() {
                 } as UserProfile;
 
                 // Always calculate tip counts from actual transactions for customers
-                if (userData.userType === 'customer') {
-                    console.log('� Calculating customer totals from transaction history...');
+                if (userData.userType === 'client') {
+                    console.log('� Calculating client totals from transaction history...');
                     
                     // Count tips sent (each transaction = 1 tip sent)
                     const tipsQuery = query(
                       collection(db as Firestore, 'tips'),
-                      where('customerId', '==', userDoc.id)
+                      where('clientId', '==', userDoc.id)
                     );
                     const tipsSnapshot = await getDocs(tipsQuery);
                     
@@ -268,18 +268,18 @@ export default function ModernDashboard() {
                     const actualThankYous = thankYousSnapshot.size;
 
                     // Always use calculated values for customers
-                    customerData = {
-                      ...customerData,
+                    clientData = {
+                      ...clientData,
                       totalTipsSent: actualTipCount,
                       totalSpent: actualTotalSpent / 100, // Convert from cents to dollars
                       totalThankYousSent: actualThankYous,
                       favoriteTechnicians: favorites.map(f => f.technicianId)
                     };
 
-                    console.log(`✅ Customer totals: ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
+                    console.log(`✅ client totals: ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
                 }
 
-                setUserProfile(customerData);
+                setUserProfile(clientData);
                 userFound = true; // Using same flag to indicate user found
               } else {
                 // Handle users without userType (legacy users)
@@ -313,12 +313,12 @@ export default function ModernDashboard() {
                     console.error('Error updating userType:', updateError);
                   }
                 } else {
-                  // Default to customer for users without business fields
-                  console.log('👤 Treating as customer (default for non-business users)');
-                  let customerData = { 
+                  // Default to client for users without business fields
+                  console.log('👤 Treating as client (default for non-business users)');
+                  let clientData = { 
                     id: userDoc.id, 
                     ...userData,
-                    userType: 'customer',
+                    userType: 'client',
                     favoriteCategories: userData.favoriteCategories || [],
                     totalTipsSent: userData.totalTipsSent || 0,
                     totalThankYousSent: userData.totalThankYousSent || 0,
@@ -326,15 +326,15 @@ export default function ModernDashboard() {
                     totalSpent: userData.totalSpent || 0
                   } as UserProfile;
 
-                  setUserProfile(customerData);
+                  setUserProfile(clientData);
                   userFound = true;
                   
                   // Update the user record to include userType
                   try {
                     await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                      userType: 'customer'
+                      userType: 'client'
                     });
-                    console.log('✅ Updated user record with userType: customer');
+                    console.log('✅ Updated user record with userType: client');
                   } catch (updateError) {
                     console.error('Error updating userType:', updateError);
                   }
@@ -381,8 +381,8 @@ export default function ModernDashboard() {
                   } as UserProfile;
                   setUserProfile(techData);
                   userFound = true;
-                } else if (userData.userType === 'customer') {
-                  let customerData = { 
+                } else if (userData.userType === 'client') {
+                  let clientData = { 
                     id: userDoc.id, 
                     ...userData,
                     favoriteCategories: userData.favoriteCategories || [],
@@ -393,13 +393,13 @@ export default function ModernDashboard() {
                   } as UserProfile;
 
                     // Always calculate tip counts from actual transactions for customers
-                  if (userData.userType === 'customer') {
-                      console.log('� Calculating customer totals from transaction history (fallback)...');
+                  if (userData.userType === 'client') {
+                      console.log('� Calculating client totals from transaction history (fallback)...');
                       
                       // Count tips sent (each transaction = 1 tip sent)
                       const tipsQuery = query(
                         collection(db as Firestore, 'tips'),
-                        where('customerId', '==', userDoc.id)
+                        where('clientId', '==', userDoc.id)
                       );
                       const tipsSnapshot = await getDocs(tipsQuery);
                       
@@ -435,18 +435,18 @@ export default function ModernDashboard() {
                       const actualThankYous = thankYousSnapshot.size;
 
                       // Always use calculated values for customers
-                      customerData = {
-                        ...customerData,
+                      clientData = {
+                        ...clientData,
                         totalTipsSent: actualTipCount,
                         totalSpent: actualTotalSpent / 100, // Convert from cents to dollars
                         totalThankYousSent: actualThankYous,
                         favoriteTechnicians: favorites.map(f => f.technicianId)
                       };
 
-                      console.log(`✅ Customer totals (fallback): ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
+                      console.log(`✅ client totals (fallback): ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
                   }
 
-                  setUserProfile(customerData);
+                  setUserProfile(clientData);
                   userFound = true;
                 } else {
                   // Handle users without userType in fallback search
@@ -475,12 +475,12 @@ export default function ModernDashboard() {
                       console.error('Fallback: Error updating userType:', updateError);
                     }
                   } else {
-                    // Default to customer for users without business fields
-                    console.log('👤 Fallback: Treating as customer (default for non-business users)');
-                    let customerData = { 
+                    // Default to client for users without business fields
+                    console.log('👤 Fallback: Treating as client (default for non-business users)');
+                    let clientData = { 
                       id: userDoc.id, 
                       ...userData,
-                      userType: 'customer',
+                      userType: 'client',
                       favoriteCategories: userData.favoriteCategories || [],
                       totalTipsSent: userData.totalTipsSent || 0,
                       totalThankYousSent: userData.totalThankYousSent || 0,
@@ -488,15 +488,15 @@ export default function ModernDashboard() {
                       totalSpent: userData.totalSpent || 0
                     } as UserProfile;
 
-                    setUserProfile(customerData);
+                    setUserProfile(clientData);
                     userFound = true;
                     
                     // Update the user record to include userType
                     try {
                       await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                        userType: 'customer'
+                        userType: 'client'
                       });
-                      console.log('✅ Fallback: Updated user record with userType: customer');
+                      console.log('✅ Fallback: Updated user record with userType: client');
                     } catch (updateError) {
                       console.error('Fallback: Error updating userType:', updateError);
                     }
@@ -548,8 +548,8 @@ export default function ModernDashboard() {
               userProfile.email, 
               (userProfile as any).uniqueId
             );
-          } else if (userProfile.userType === 'customer') {
-            realTransactions = await getCustomerTransactions(
+          } else if (userProfile.userType === 'client') {
+            realTransactions = await getClientTransactions(
               userProfile.id, 
               userProfile.email
             );
@@ -628,7 +628,7 @@ export default function ModernDashboard() {
     }
   };
 
-  const sidebarItems = userProfile?.userType === 'customer' ? [
+  const sidebarItems = userProfile?.userType === 'client' ? [
     { id: 'overview', label: 'Overview', icon: 'home' },
     { id: 'tips', label: 'My Tips', icon: 'heart' },
     { id: 'favorites', label: 'Favorites', icon: 'star' },
@@ -670,7 +670,7 @@ export default function ModernDashboard() {
     <div className="space-y-6">
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {userProfile?.userType === 'customer' ? (
+        {userProfile?.userType === 'client' ? (
           <>
             {/* Client Stats */}
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
@@ -805,7 +805,7 @@ export default function ModernDashboard() {
         {/* Earnings Chart Placeholder */}
         <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
           <h3 className="text-lg font-semibold text-white mb-4">
-            {userProfile?.userType === 'customer' ? 'Spending Overview' : 'Earnings Overview'}
+            {userProfile?.userType === 'client' ? 'Spending Overview' : 'Earnings Overview'}
           </h3>
           <div className="h-64 bg-gradient-to-br from-slate-700/30 to-blue-900/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-slate-600/30">
             <div className="text-center">
@@ -890,9 +890,9 @@ export default function ModernDashboard() {
                   </div>
                   <div>
                     <p className="font-medium text-white">
-                      {userProfile?.userType === 'customer' 
+                      {userProfile?.userType === 'client' 
                         ? (transaction.technicianName || 'Unknown Technician')
-                        : (transaction.customerName || 'Anonymous Customer')
+                        : (transaction.clientName || 'Anonymous client')
                       }
                     </p>
                     <p className="text-sm text-slate-400">{transaction.date}</p>
@@ -902,9 +902,9 @@ export default function ModernDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${userProfile?.userType === 'customer' ? 'text-red-400' : 'text-green-400'}`}>
-                    {userProfile?.userType === 'customer' ? '-' : '+'}
-                    {formatCurrency(userProfile?.userType === 'customer' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
+                  <p className={`font-bold ${userProfile?.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
+                    {userProfile?.userType === 'client' ? '-' : '+'}
+                    {formatCurrency(userProfile?.userType === 'client' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
                   </p>
                   <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                     transaction.status === 'completed' 
@@ -1246,7 +1246,7 @@ export default function ModernDashboard() {
       <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl">
         <div className="p-6 border-b border-white/10 bg-gradient-to-r from-blue-900/20 to-slate-800/20">
           <h3 className="text-lg font-semibold text-white">
-            {userProfile?.userType === 'customer' ? 'Tips Sent' : 'Tips Received'}
+            {userProfile?.userType === 'client' ? 'Tips Sent' : 'Tips Received'}
           </h3>
         </div>
         
@@ -1272,9 +1272,9 @@ export default function ModernDashboard() {
                   </div>
                   <div>
                     <p className="font-medium text-white">
-                      {userProfile?.userType === 'customer' 
+                      {userProfile?.userType === 'client' 
                         ? (transaction.technicianName || 'Unknown Technician')
-                        : (transaction.customerName || 'Anonymous Customer')
+                        : (transaction.clientName || 'Anonymous client')
                       }
                     </p>
                     <p className="text-sm text-slate-400">{transaction.date}</p>
@@ -1284,12 +1284,12 @@ export default function ModernDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${userProfile?.userType === 'customer' ? 'text-red-400' : 'text-green-400'}`}>
-                    {userProfile?.userType === 'customer' ? '-' : '+'}
-                    {formatCurrency(userProfile?.userType === 'customer' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
+                  <p className={`font-bold ${userProfile?.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
+                    {userProfile?.userType === 'client' ? '-' : '+'}
+                    {formatCurrency(userProfile?.userType === 'client' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
                   </p>
                   <p className="text-sm text-slate-400">
-                    {userProfile?.userType === 'customer' 
+                    {userProfile?.userType === 'client' 
                       ? `Total: ${formatCurrency(transaction.amount)} (includes $0.99 fee)`
                       : `${formatCurrency(transaction.amount)} - ${formatCurrency(transaction.platformFee)} fee`
                     }
@@ -1370,7 +1370,7 @@ export default function ModernDashboard() {
     try {
       // Delete user document from Firestore
       if (userProfile?.id) {
-        await updateDoc(doc(db as Firestore, userProfile.userType === 'customer' ? 'users' : 'technicians', userProfile.id), {
+        await updateDoc(doc(db as Firestore, userProfile.userType === 'client' ? 'users' : 'technicians', userProfile.id), {
           deleted: true,
           deletedAt: Date.now()
         });
@@ -1404,7 +1404,7 @@ export default function ModernDashboard() {
             <div className="space-y-2">
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Email notifications for new {userProfile?.userType === 'customer' ? 'service updates' : 'tips received'}</span>
+                <span className="text-slate-300">Email notifications for new {userProfile?.userType === 'client' ? 'service updates' : 'tips received'}</span>
               </label>
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
@@ -1419,7 +1419,7 @@ export default function ModernDashboard() {
             <div className="space-y-2">
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Make profile {userProfile?.userType === 'customer' ? 'visible to technicians' : 'visible to customers'}</span>
+                <span className="text-slate-300">Make profile {userProfile?.userType === 'client' ? 'visible to technicians' : 'visible to customers'}</span>
               </label>
               <label className="flex items-center gap-3">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" />
@@ -1749,7 +1749,7 @@ export default function ModernDashboard() {
               <div>
                 <h1 className="text-white font-bold text-xl">ThankATech</h1>
                 <p className="text-blue-300 text-xs font-medium">
-                  {userProfile?.userType === 'customer' ? 'Client Portal' : 'Technician Portal'}
+                  {userProfile?.userType === 'client' ? 'Client Portal' : 'Technician Portal'}
                 </p>
               </div>
             </div>
@@ -1787,7 +1787,7 @@ export default function ModernDashboard() {
                 {userProfile?.name || user?.displayName || 'User'}
               </p>
               <p className="text-slate-400 text-sm truncate">
-                {userProfile?.userType === 'customer' ? '� Client' : '🔧 ' + (userProfile?.businessName || 'Technician')}
+                {userProfile?.userType === 'client' ? '� Client' : '🔧 ' + (userProfile?.businessName || 'Technician')}
               </p>
             </div>
           </div>
@@ -1859,11 +1859,11 @@ export default function ModernDashboard() {
             </button>
             <div>
               <h2 className="text-2xl font-bold text-white capitalize flex items-center gap-2">
-                {userProfile?.userType === 'customer' ? '�' : '🔧'}
+                {userProfile?.userType === 'client' ? '�' : '🔧'}
                 {activeTab}
               </h2>
               <p className="text-slate-400 text-sm">
-                {activeTab === 'overview' && (userProfile?.userType === 'customer' ? 'Your spending and appreciation activity' : 'Your earnings and performance metrics')}
+                {activeTab === 'overview' && (userProfile?.userType === 'client' ? 'Your spending and appreciation activity' : 'Your earnings and performance metrics')}
                 {activeTab === 'profile' && 'Manage your profile information'}
                 {activeTab === 'transactions' && 'View your transaction history'}
                 {activeTab === 'payouts' && 'Manage your earnings and payouts'}

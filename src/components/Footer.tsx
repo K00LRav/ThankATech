@@ -13,7 +13,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
   const faqData = [
     {
       question: "How does ThankATech work?",
-      answer: "ThankATech is a platform where customers can find skilled technicians and show appreciation through thank yous and tips. Technicians register their profiles, and customers can interact with them, view ratings, and send appreciation."
+      answer: "ThankATech is a platform where clients can find skilled technicians and show appreciation through thank yous and tips. Technicians register their profiles, and clients can interact with them, view ratings, and send appreciation."
     },
     {
       question: "How do I register as a technician?",
@@ -25,15 +25,15 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     },
     {
       question: "What are achievement badges?",
-      answer: "Achievement badges recognize technicians for milestones like receiving thank yous, tips, high ratings, experience levels, and certifications. They help customers identify top-performing technicians."
+      answer: "Achievement badges recognize technicians for milestones like receiving thank yous, tips, high ratings, experience levels, and certifications. They help clients identify top-performing technicians."
     },
     {
       question: "How do tips work?",
-      answer: "Customers can send monetary tips to show extra appreciation for excellent service. Tips contribute to higher ratings and achievement badges, helping technicians build their reputation."
+      answer: "clients can send monetary tips to show extra appreciation for excellent service. Tips contribute to higher ratings and achievement badges, helping technicians build their reputation."
     },
     {
       question: "Is ThankATech free to use?",
-      answer: "Yes! Registration and basic features are completely free for both technicians and customers. Tips are optional and go directly to the technicians."
+      answer: "Yes! Registration and basic features are completely free for both technicians and clients. Tips are optional and go directly to the technicians."
     },
     {
       question: "How do I contact a technician?",
@@ -101,7 +101,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
                 </h3>
               </div>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                Connecting customers with skilled technicians and enabling meaningful appreciation through our innovative platform. 
+                Connecting clients with skilled technicians and enabling meaningful appreciation through our innovative platform. 
                 Building stronger communities one thank you at a time.
               </p>
               <div className="flex gap-4">

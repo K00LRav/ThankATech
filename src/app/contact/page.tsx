@@ -9,7 +9,7 @@ export default function Contact() {
     email: '',
     subject: '',
     message: '',
-    userType: 'customer'
+    userType: 'client'
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -40,7 +40,7 @@ export default function Contact() {
 
       if (response.ok) {
         setSubmitMessage(result.message || 'Thank you for your message! We\'ll get back to you soon.');
-        setFormData({ name: '', email: '', subject: '', message: '', userType: 'customer' });
+        setFormData({ name: '', email: '', subject: '', message: '', userType: 'client' });
       } else {
         setSubmitMessage(result.error || 'Failed to send message. Please try again.');
       }

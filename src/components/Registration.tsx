@@ -12,7 +12,7 @@ interface RegistrationProps {
 }
 
 export default function Registration({ onRegistrationComplete, onClose }: RegistrationProps) {
-  const [userType, setUserType] = useState<'customer' | 'technician'>('customer');
+  const [userType, setUserType] = useState<'client' | 'technician'>('client');
   const [showGoogleOptions, setShowGoogleOptions] = useState(true);
   const [googleUser, setGoogleUser] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -177,11 +177,11 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         })
       };
       
-      if (userType === 'customer') {
+      if (userType === 'client') {
         // Register as customer
         result = await registerUser({
           ...userData,
-          userType: 'customer'
+          userType: 'client'
         });
       } else {
         // Register as technician
@@ -229,7 +229,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             ThankATech
           </div>
           <h2 className="text-lg font-semibold text-white">
-            {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'customer' ? 'Customer' : 'Technician'} Profile`}
+            {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'client' ? 'client' : 'Technician'} Profile`}
           </h2>
         </div>
         
@@ -285,9 +285,9 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           <div className="flex space-x-4 py-2">
             <button
               type="button"
-              onClick={() => setUserType('customer')}
+              onClick={() => setUserType('client')}
               className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:shadow-lg hover:border-blue-300 ${
-                userType === 'customer' 
+                userType === 'client' 
                   ? 'border-blue-400 bg-blue-500/20 text-blue-300 shadow-lg' 
                   : 'border-blue-500/30 bg-white/10 hover:border-blue-400 hover:bg-blue-500/10 text-blue-200'
               }`}
@@ -733,7 +733,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               type="submit"
               disabled={loading}
               className={`flex-1 px-6 py-3 text-white rounded-xl font-semibold transition-all duration-200 hover:shadow-xl disabled:opacity-50 shadow-lg ${
-                userType === 'customer' 
+                userType === 'client' 
                   ? 'bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700' 
                   : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500'
               }`}
@@ -744,7 +744,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                   <span>Joining...</span>
                 </div>
               ) : (
-                `Join as ${userType === 'customer' ? 'Customer' : 'Technician'}`
+                `Join as ${userType === 'client' ? 'client' : 'Technician'}`
               )}
             </button>
           </div>

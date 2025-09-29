@@ -20,7 +20,7 @@ declare module '@/lib/firebase' {
   export function migrateTechnicianProfile(uid: string): Promise<any>;
   export function deleteUserProfile(uid: string, userType: string): Promise<void>;
   export function getTechnicianTransactions(technicianId: string, technicianEmail: string, technicianUniqueId?: string): Promise<any[]>;
-  export function getCustomerTransactions(customerId: string, customerEmail: string): Promise<any[]>;
+  export function getClientTransactions(clientId: string, clientEmail: string): Promise<any[]>;
   export function recordTransaction(transactionData: any): Promise<any>;
   export function getTechnician(technicianId: string): Promise<any>;
   export function getUser(userId: string): Promise<any>;
