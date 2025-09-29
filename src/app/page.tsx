@@ -1209,7 +1209,7 @@ export default function Home() {
       </div>
 
       {/* Separate section for controls and buttons - prevents overlapping */}
-      <div className="action-buttons-container flex flex-col items-center space-y-6 mt-4 sm:mt-12 mb-8">
+      <div className="action-buttons-container hidden">
         {/* Location Info */}
         {userLocation && (
           <div className="text-center">
