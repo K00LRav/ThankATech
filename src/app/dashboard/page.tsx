@@ -672,7 +672,7 @@ export default function ModernDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {userProfile?.userType === 'customer' ? (
           <>
-            {/* Customer Stats */}
+            {/* Client Stats */}
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-2 bg-red-500/20 rounded-lg">
@@ -779,7 +779,7 @@ export default function ModernDashboard() {
                 <span className="text-2xl font-bold text-purple-400">{userProfile?.totalThankYous || 0}</span>
               </div>
               <h3 className="text-lg font-semibold text-white mb-1">Thank Yous</h3>
-              <p className="text-slate-300 text-sm">Customer appreciation</p>
+              <p className="text-slate-300 text-sm">Client appreciation</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
@@ -1749,7 +1749,7 @@ export default function ModernDashboard() {
               <div>
                 <h1 className="text-white font-bold text-xl">ThankATech</h1>
                 <p className="text-blue-300 text-xs font-medium">
-                  {userProfile?.userType === 'customer' ? 'Customer Portal' : 'Technician Portal'}
+                  {userProfile?.userType === 'customer' ? 'Client Portal' : 'Technician Portal'}
                 </p>
               </div>
             </div>
@@ -1787,7 +1787,7 @@ export default function ModernDashboard() {
                 {userProfile?.name || user?.displayName || 'User'}
               </p>
               <p className="text-slate-400 text-sm truncate">
-                {userProfile?.userType === 'customer' ? '👤 Customer' : '🔧 ' + (userProfile?.businessName || 'Technician')}
+                {userProfile?.userType === 'customer' ? '� Client' : '🔧 ' + (userProfile?.businessName || 'Technician')}
               </p>
             </div>
           </div>
@@ -1859,7 +1859,7 @@ export default function ModernDashboard() {
             </button>
             <div>
               <h2 className="text-2xl font-bold text-white capitalize flex items-center gap-2">
-                {userProfile?.userType === 'customer' ? '👤' : '🔧'}
+                {userProfile?.userType === 'customer' ? '�' : '🔧'}
                 {activeTab}
               </h2>
               <p className="text-slate-400 text-sm">
