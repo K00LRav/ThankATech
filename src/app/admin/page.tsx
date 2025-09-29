@@ -220,6 +220,35 @@ export default function AdminPage() {
   const [analyticsDateRange, setAnalyticsDateRange] = useState('30d');
   const [analyticsView, setAnalyticsView] = useState<'overview' | 'revenue' | 'users' | 'geographic'>('overview');
 
+  // Security State
+  const [securityView, setSecurityView] = useState<'overview' | 'login-attempts' | 'audit-logs' | 'data-exports'>('overview');
+  const [securityAlerts, setSecurityAlerts] = useState([
+    {
+      id: '1',
+      type: 'warning',
+      title: 'Multiple Failed Login Attempts',
+      description: 'User admin@example.com has 5 failed login attempts in the last hour',
+      timestamp: new Date().toISOString(),
+      resolved: false
+    },
+    {
+      id: '2',
+      type: 'info',
+      title: 'Large Data Export',
+      description: 'User k00lrav@gmail.com exported 1,500 user records',
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      resolved: true
+    },
+    {
+      id: '3',
+      type: 'critical',
+      title: 'Suspicious API Usage',
+      description: 'Unusual API request pattern detected from IP 192.168.1.100',
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+      resolved: false
+    }
+  ]);
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -2390,6 +2419,405 @@ export default function AdminPage() {
     );
   };
 
+  const renderSecurity = () => {
+    // Mock security data - replace with real security monitoring data
+    const mockSecurityData = {
+      loginAttempts: [
+        {
+          id: '1',
+          email: 'admin@example.com',
+          ip: '192.168.1.100',
+          status: 'failed',
+          timestamp: new Date().toISOString(),
+          reason: 'Invalid password'
+        },
+        {
+          id: '2',
+          email: 'k00lrav@gmail.com',
+          ip: '10.0.1.50',
+          status: 'success',
+          timestamp: new Date(Date.now() - 1800000).toISOString(),
+          reason: 'Valid credentials'
+        },
+        {
+          id: '3',
+          email: 'test@example.com',
+          ip: '172.16.0.25',
+          status: 'failed',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          reason: 'Account not found'
+        }
+      ],
+      auditLogs: [
+        {
+          id: '1',
+          user: 'k00lrav@gmail.com',
+          action: 'USER_EXPORT',
+          details: 'Exported 1,500 user records to CSV',
+          timestamp: new Date().toISOString(),
+          ip: '10.0.1.50'
+        },
+        {
+          id: '2',
+          user: 'k00lrav@gmail.com',
+          action: 'TRANSACTION_REFUND',
+          details: 'Processed refund for transaction txn_1234567890',
+          timestamp: new Date(Date.now() - 1800000).toISOString(),
+          ip: '10.0.1.50'
+        },
+        {
+          id: '3',
+          user: 'system',
+          action: 'EMAIL_TEMPLATE_UPDATE',
+          details: 'Updated welcome email template',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          ip: 'system'
+        }
+      ],
+      dataExports: [
+        {
+          id: '1',
+          user: 'k00lrav@gmail.com',
+          type: 'User Data Export',
+          format: 'CSV',
+          recordCount: 1500,
+          timestamp: new Date().toISOString(),
+          status: 'completed'
+        },
+        {
+          id: '2',
+          user: 'k00lrav@gmail.com',
+          type: 'Transaction Export',
+          format: 'JSON',
+          recordCount: 850,
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          status: 'completed'
+        }
+      ]
+    };
+
+    const resolveSecurityAlert = (alertId: string) => {
+      setSecurityAlerts(prev => 
+        prev.map(alert => 
+          alert.id === alertId ? { ...alert, resolved: true } : alert
+        )
+      );
+    };
+
+    const exportSecurityReport = (type: 'audit' | 'security' | 'login-attempts') => {
+      alert(`Exporting ${type} report...`);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-200">Security & Audit Center</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportSecurityReport('security')}
+              className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-sm hover:bg-red-600/30 transition-all duration-200"
+            >
+              Security Report
+            </button>
+            <button
+              onClick={() => exportSecurityReport('audit')}
+              className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
+            >
+              Audit Report
+            </button>
+          </div>
+        </div>
+
+        {/* Security Navigation */}
+        <div className="border-b border-slate-700/50">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setSecurityView('overview')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                securityView === 'overview'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Security Overview
+            </button>
+            <button
+              onClick={() => setSecurityView('login-attempts')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                securityView === 'login-attempts'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Login Attempts
+            </button>
+            <button
+              onClick={() => setSecurityView('audit-logs')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                securityView === 'audit-logs'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Audit Logs
+            </button>
+            <button
+              onClick={() => setSecurityView('data-exports')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                securityView === 'data-exports'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Data Exports
+            </button>
+          </nav>
+        </div>
+
+        {/* Security Overview Tab */}
+        {securityView === 'overview' && (
+          <div className="space-y-6">
+            {/* Security Alerts */}
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-slate-200">Active Security Alerts</h3>
+                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-900/50 text-red-300 border border-red-500/30">
+                  {securityAlerts.filter(alert => !alert.resolved).length} Active
+                </span>
+              </div>
+              
+              <div className="space-y-3">
+                {securityAlerts.map((alert) => (
+                  <div key={alert.id} className={`p-4 rounded-lg border ${
+                    alert.resolved
+                      ? 'bg-green-900/20 border-green-500/30'
+                      : alert.type === 'critical'
+                      ? 'bg-red-900/20 border-red-500/30'
+                      : alert.type === 'warning'
+                      ? 'bg-yellow-900/20 border-yellow-500/30'
+                      : 'bg-blue-900/20 border-blue-500/30'
+                  }`}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+                            alert.type === 'critical'
+                              ? 'text-red-300 bg-red-900/50 border-red-500/30'
+                              : alert.type === 'warning'
+                              ? 'text-yellow-300 bg-yellow-900/50 border-yellow-500/30'
+                              : 'text-blue-300 bg-blue-900/50 border-blue-500/30'
+                          }`}>
+                            {alert.type.toUpperCase()}
+                          </span>
+                          <span className="text-sm text-slate-300 font-medium">{alert.title}</span>
+                          <span className="text-xs text-slate-400">
+                            {new Date(alert.timestamp).toLocaleString()}
+                          </span>
+                          {alert.resolved && (
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-900/50 text-green-300 border border-green-500/30">
+                              RESOLVED
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-slate-300">{alert.description}</div>
+                      </div>
+                      {!alert.resolved && (
+                        <button
+                          onClick={() => resolveSecurityAlert(alert.id)}
+                          className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-xs hover:bg-green-600/30 transition-all duration-200"
+                        >
+                          Resolve
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Security Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-300">98.7%</div>
+                  <div className="text-sm text-slate-400">Security Score</div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-300">12</div>
+                  <div className="text-sm text-slate-400">Failed Logins (24h)</div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-300">47</div>
+                  <div className="text-sm text-slate-400">Audit Events (24h)</div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">3</div>
+                  <div className="text-sm text-slate-400">Data Exports (7d)</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Security Activity */}
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold text-slate-200 mb-4">Recent Security Activity</h3>
+              <div className="space-y-3">
+                {mockSecurityData.auditLogs.slice(0, 3).map((log) => (
+                  <div key={log.id} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                        {log.user.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-sm text-slate-200 font-medium">{log.action.replace('_', ' ')}</div>
+                        <div className="text-xs text-slate-400">{log.details}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-slate-300">{log.user}</div>
+                      <div className="text-xs text-slate-400">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Login Attempts Tab */}
+        {securityView === 'login-attempts' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">IP Address</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Timestamp</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {mockSecurityData.loginAttempts.map((attempt) => (
+                      <tr key={attempt.id} className="hover:bg-slate-700/30">
+                        <td className="px-6 py-4 text-sm text-slate-200">{attempt.email}</td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{attempt.ip}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+                            attempt.status === 'success'
+                              ? 'text-green-300 bg-green-900/50 border-green-500/30'
+                              : 'text-red-300 bg-red-900/50 border-red-500/30'
+                          }`}>
+                            {attempt.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {new Date(attempt.timestamp).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-400">{attempt.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audit Logs Tab */}
+        {securityView === 'audit-logs' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Action</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Details</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Timestamp</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {mockSecurityData.auditLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-700/30">
+                        <td className="px-6 py-4 text-sm text-slate-200">{log.user}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-900/50 text-blue-300 border border-blue-500/30">
+                            {log.action.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{log.details}</td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-400">{log.ip}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Data Exports Tab */}
+        {securityView === 'data-exports' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Export Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Format</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Records</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Timestamp</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {mockSecurityData.dataExports.map((export_) => (
+                      <tr key={export_.id} className="hover:bg-slate-700/30">
+                        <td className="px-6 py-4 text-sm text-slate-200">{export_.user}</td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{export_.type}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-900/50 text-purple-300 border border-purple-500/30">
+                            {export_.format}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{export_.recordCount.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {new Date(export_.timestamp).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-900/50 text-green-300 border border-green-500/30">
+                            {export_.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -2495,6 +2923,16 @@ export default function AdminPage() {
             >
               Analytics
             </button>
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'security'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Security
+            </button>
           </div>
         </div>
       </nav>
@@ -2512,6 +2950,7 @@ export default function AdminPage() {
         {activeTab === 'transactions' && renderTransactions()}
         {activeTab === 'monitoring' && renderSystemMonitoring()}
         {activeTab === 'analytics' && renderAnalytics()}
+        {activeTab === 'security' && renderSecurity()}
       </main>
     </div>
   );
