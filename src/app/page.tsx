@@ -609,14 +609,14 @@ export default function Home() {
       <div className="relative z-10">
         {/* Header */}
         <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-3 group cursor-pointer" prefetch={false}>
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <span className="text-xl font-bold">🔧</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
               ThankATech
             </span>
-          </div>
+          </Link>
           <div className="flex gap-4 items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
@@ -698,7 +698,7 @@ export default function Home() {
             🛠️ Meet Your Local Tech Heroes
           </h1>
           <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
-            Skilled technicians ready to help you. Browse profiles, read reviews, and connect instantly.
+            Skilled technicians ready to help you. Browse profiles and connect instantly.
           </p>
           
           {/* Search Input - Right above technician showcase */}
@@ -975,10 +975,13 @@ export default function Home() {
                     </div>
                   )}
                   {profile.experience && (
-                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
-                      <div className="flex items-center space-x-2">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm relative">
+                      <div className="flex items-center space-x-2 mb-1">
                         <span className="text-blue-600">⚡</span>
-                        <span className="text-xs text-gray-800 font-medium">{profile.experience}</span>
+                        <span className="text-xs text-gray-800 font-medium">
+                          {profile.experience ? profile.experience.replace(/[^\d]+/, '') + ' yr' : ''}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-1">Experience</span>
                       </div>
                     </div>
                   )}
@@ -1022,7 +1025,11 @@ export default function Home() {
                           {formatCategory(profile.category)}
                         </span>
                         {profile.experience && (
-                          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{profile.experience}</span>
+                          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                            {profile.experience && /\d+/.test(profile.experience)
+                              ? profile.experience.replace(/[^\d]+/, '') + ' yr Experience'
+                              : profile.experience}
+                          </span>
                         )}
                         {profile.certifications && (
                           <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">✓ Certified</span>
@@ -1213,39 +1220,30 @@ export default function Home() {
         </div>
         
         {/* Compact Category Grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 max-w-4xl mx-auto">
-          {/* Show All Categories Button */}
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`group p-3 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
-              selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg'
-                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-            }`}
-          >
-            <div className="text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
-              🔧
-            </div>
-            <div className="text-white text-xs font-medium text-center leading-tight">
-              All
-            </div>
-          </button>
-
-          {TECHNICIAN_CATEGORIES.slice(0, 11).map((category) => (
+  <div className="grid grid-cols-5 gap-4 w-full max-w-4xl mx-auto my-6">
+          {/* Build a 2x5 grid: All + 9 categories */}
+          {[
+            { id: 'all', icon: '🔧', name: 'All', isAll: true },
+            ...TECHNICIAN_CATEGORIES.slice(0, 9)
+          ].map((category, idx) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`group p-3 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+              className={`group px-8 py-4 w-full rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
                 selectedCategory === category.id
-                  ? 'bg-gradient-to-r from-blue-600/30 to-blue-800/30 border-blue-400/50 shadow-lg'
+                  ? category.id === 'all'
+                    ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600/30 to-blue-800/30 border-blue-400/50 shadow-lg'
                   : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
               }`}
             >
               <div className="text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
                 {category.icon}
               </div>
-              <div className="text-white text-xs font-medium text-center leading-tight">
-                {category.name.replace(' Technicians', '').replace(' (IT)', '').split(' ')[0]}
+              <div className="text-white text-xs font-medium text-center leading-tight whitespace-normal">
+                {category.id === 'all'
+                  ? 'All'
+                  : category.name.replace(' Technicians', '').replace(' (IT)', '')}
               </div>
             </button>
           ))}
