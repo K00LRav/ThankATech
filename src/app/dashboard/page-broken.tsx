@@ -550,9 +550,8 @@ export default function TechnicianDashboard() {
         {/* Main Content Area */}
         <div className="flex-1 p-6 overflow-auto">
           {activeTab === 'overview' && (
-
-
-        {/* Earnings Overview */}
+            <>
+              {/* Earnings Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
             <div className="flex items-center gap-3 mb-2">
@@ -859,6 +858,9 @@ export default function TechnicianDashboard() {
               ))
             )}
           </div>
+        </div>
+            </>
+          )}
         </div>
       </div>
       

@@ -90,12 +90,12 @@ export default function TechnicianProfile() {
           <p className="text-slate-300 mb-6">
             {error || `We couldn't find a technician with the username "${username}".`}
           </p>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200"
           >
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -536,9 +536,9 @@ export default function TechnicianProfile() {
             </div>
             <p className="text-slate-300 mb-4">Connecting customers with exceptional service providers</p>
             <div className="flex justify-center gap-6 text-sm text-slate-400">
-              <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="/contact" className="hover:text-white transition-colors">Contact Us</a>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
             </div>
             <div className="mt-6 pt-6 border-t border-white/10">
               <p className="text-slate-400 text-sm">

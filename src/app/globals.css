@@ -25,7 +25,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", Arial, Helvetica, sans-serif;
 }
 
 @keyframes fadeIn {
@@ -171,4 +171,15 @@ body {
 .trust-button-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+}
+
+/* Ensure emojis render properly across all browsers */
+.emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", monospace;
+  font-variant-emoji: emoji;
+}
+
+/* Force emoji rendering for all text */
+* {
+  font-variant-emoji: emoji;
 }

@@ -2,6 +2,7 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -166,18 +167,18 @@ export default function DebugProfile() {
         </div>
         
         <div className="text-center">
-          <a 
+          <Link 
             href="/dashboard" 
             className="inline-block bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors mr-4"
           >
             → Go to Dashboard
-          </a>
-          <a 
+          </Link>
+          <Link 
             href="/debug-transactions" 
             className="inline-block bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             → Check Transactions
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -47,11 +47,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta charSet="utf-8" />
         <meta name="theme-color" content="#2563EB" />
         <meta name="msapplication-TileColor" content="#2563EB" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{
+          fontFamily: `var(--font-geist-sans), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", sans-serif`
+        }}
       >
         {children}
         <SpeedInsights />

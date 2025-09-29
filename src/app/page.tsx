@@ -869,9 +869,9 @@ export default function Home() {
                     />
                   </div>
                   {/* Dynamic Rating - Compact size for better proportions */}
-                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
+                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
                     <div className="text-center">
-                      <div className="text-xs sm:text-sm font-black">{dynamicRating.toFixed(1)}</div>
+                      <div className="text-xs font-black">{dynamicRating.toFixed(1)}</div>
                       <div className="text-xs -mt-0.5">{getStarDisplay(dynamicRating)}</div>
                     </div>
                   </div>
@@ -1354,7 +1354,7 @@ export default function Home() {
           businessName: profiles[currentProfileIndex]?.businessName || '',
           category: profiles[currentProfileIndex]?.category || '',
         }}
-        client={{
+        customer={{
           id: currentUser?.id || '',
           name: currentUser?.name || currentUser?.displayName || '',
           email: currentUser?.email || '',

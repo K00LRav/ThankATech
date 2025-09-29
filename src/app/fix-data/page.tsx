@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 export default function FixDataPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -164,12 +165,12 @@ export default function FixDataPage() {
               
               {results.some(r => r.type === 'success' && r.message.includes('complete')) && (
                 <div className="mt-6 text-center">
-                  <a 
+                  <Link 
                     href="/dashboard" 
                     className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
                   >
                     → Go to Dashboard
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

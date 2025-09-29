@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
@@ -358,12 +359,12 @@ export default function AdminPage() {
           <p className="text-slate-300 mb-6">
             This admin panel requires authentication as k00lrav@gmail.com using Google Sign-In.
           </p>
-          <a
+          <Link
             href="/dashboard"
             className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200"
           >
             ← Back to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -577,12 +578,12 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-slate-300">Welcome, {user?.email}</span>
-              <a
+              <Link
                 href="/dashboard"
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
               >
                 Back to Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </div>

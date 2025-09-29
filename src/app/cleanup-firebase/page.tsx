@@ -224,12 +224,12 @@ export default function CleanupFirebasePage() {
                 >
                   → Go to Home Page
                 </Link>
-                <a 
+                <Link 
                   href="/debug-profile" 
                   className="inline-block bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
                 >
                   → Check Profile
-                </a>
+                </Link>
               </div>
             </div>
           )}
