@@ -863,11 +863,11 @@ export default function Home() {
                       }}
                     />
                   </div>
-                  {/* Dynamic Rating - Positioned to avoid overlap */}
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-sm font-bold shadow-xl border-2 border-white">
+                  {/* Dynamic Rating - Compact size for better proportions */}
+                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
                     <div className="text-center">
-                      <div className="text-sm sm:text-base font-black">{dynamicRating.toFixed(1)}</div>
-                      <div className="text-xs -mt-0.5">⭐⭐⭐</div>
+                      <div className="text-xs sm:text-sm font-black">{dynamicRating.toFixed(1)}</div>
+                      <div className="text-xs -mt-0.5">★★★</div>
                     </div>
                   </div>
                 </div>
@@ -1201,7 +1201,7 @@ export default function Home() {
                   </span>
                   <span className="text-gray-500">•</span>
                   <span className="flex items-center gap-1">
-                    <span className="text-emerald-400">💝</span>
+                    <span className="text-emerald-400">�</span>
                     <span className="text-white font-medium">{profile.totalTips || 0} tips</span>
                   </span>
                 </div>
