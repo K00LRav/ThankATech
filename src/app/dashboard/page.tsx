@@ -281,6 +281,64 @@ export default function ModernDashboard() {
 
                 setUserProfile(customerData);
                 userFound = true; // Using same flag to indicate user found
+              } else {
+                // Handle users without userType (legacy users)
+                console.log('🔍 User without userType detected, determining type from fields...');
+                
+                // If user has technician-specific fields, treat as technician
+                if (userData.businessName || userData.category || userData.subcategory) {
+                  console.log('🔧 Treating as technician based on business fields');
+                  const techData = { 
+                    id: userDoc.id, 
+                    ...userData,
+                    userType: 'technician',
+                    businessName: userData.businessName || '',
+                    category: userData.category || '',
+                    points: userData.points || 0,
+                    totalThankYous: userData.totalThankYous || 0,
+                    totalTips: userData.totalTips || 0,
+                    totalTipAmount: userData.totalTipAmount || 0
+                  } as UserProfile;
+
+                  setUserProfile(techData);
+                  userFound = true;
+                  
+                  // Update the user record to include userType
+                  try {
+                    await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
+                      userType: 'technician'
+                    });
+                    console.log('✅ Updated user record with userType: technician');
+                  } catch (updateError) {
+                    console.error('Error updating userType:', updateError);
+                  }
+                } else {
+                  // Default to customer for users without business fields
+                  console.log('👤 Treating as customer (default for non-business users)');
+                  let customerData = { 
+                    id: userDoc.id, 
+                    ...userData,
+                    userType: 'customer',
+                    favoriteCategories: userData.favoriteCategories || [],
+                    totalTipsSent: userData.totalTipsSent || 0,
+                    totalThankYousSent: userData.totalThankYousSent || 0,
+                    favoriteTechnicians: userData.favoriteTechnicians || [],
+                    totalSpent: userData.totalSpent || 0
+                  } as UserProfile;
+
+                  setUserProfile(customerData);
+                  userFound = true;
+                  
+                  // Update the user record to include userType
+                  try {
+                    await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
+                      userType: 'customer'
+                    });
+                    console.log('✅ Updated user record with userType: customer');
+                  } catch (updateError) {
+                    console.error('Error updating userType:', updateError);
+                  }
+                }
               }
             }
           }
@@ -390,6 +448,59 @@ export default function ModernDashboard() {
 
                   setUserProfile(customerData);
                   userFound = true;
+                } else {
+                  // Handle users without userType in fallback search
+                  console.log('🔍 Fallback: User without userType detected, determining type from fields...');
+                  
+                  // If user has technician-specific fields, treat as technician
+                  if (userData.businessName || userData.category || userData.subcategory) {
+                    console.log('🔧 Fallback: Treating as technician based on business fields');
+                    const techData = { 
+                      id: userDoc.id, 
+                      ...userData,
+                      userType: 'technician',
+                      businessName: userData.businessName || '',
+                      category: userData.category || ''
+                    } as UserProfile;
+                    setUserProfile(techData);
+                    userFound = true;
+                    
+                    // Update the user record to include userType
+                    try {
+                      await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
+                        userType: 'technician'
+                      });
+                      console.log('✅ Fallback: Updated user record with userType: technician');
+                    } catch (updateError) {
+                      console.error('Fallback: Error updating userType:', updateError);
+                    }
+                  } else {
+                    // Default to customer for users without business fields
+                    console.log('👤 Fallback: Treating as customer (default for non-business users)');
+                    let customerData = { 
+                      id: userDoc.id, 
+                      ...userData,
+                      userType: 'customer',
+                      favoriteCategories: userData.favoriteCategories || [],
+                      totalTipsSent: userData.totalTipsSent || 0,
+                      totalThankYousSent: userData.totalThankYousSent || 0,
+                      favoriteTechnicians: userData.favoriteTechnicians || [],
+                      totalSpent: userData.totalSpent || 0
+                    } as UserProfile;
+
+                    setUserProfile(customerData);
+                    userFound = true;
+                    
+                    // Update the user record to include userType
+                    try {
+                      await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
+                        userType: 'customer'
+                      });
+                      console.log('✅ Fallback: Updated user record with userType: customer');
+                    } catch (updateError) {
+                      console.error('Fallback: Error updating userType:', updateError);
+                    }
+                  }
                 }
               }
             }
@@ -516,6 +627,11 @@ export default function ModernDashboard() {
       setIsUpdatingProfile(false);
     }
   };
+
+  // Debug logging for userProfile
+  console.log('🔍 Dashboard Debug - userProfile:', userProfile);
+  console.log('🔍 Dashboard Debug - userProfile.userType:', userProfile?.userType);
+  console.log('🔍 Dashboard Debug - userProfile.userType === "customer":', userProfile?.userType === 'customer');
 
   const sidebarItems = userProfile?.userType === 'customer' ? [
     { id: 'overview', label: 'Overview', icon: 'home' },
@@ -1669,7 +1785,7 @@ export default function ModernDashboard() {
                 {userProfile?.name || user?.displayName || 'User'}
               </p>
               <p className="text-slate-400 text-sm truncate">
-                {userProfile?.businessName || 'Professional'}
+                {userProfile?.userType === 'customer' ? '👤 Customer' : '🔧 ' + (userProfile?.businessName || 'Technician')}
               </p>
             </div>
           </div>
@@ -1740,7 +1856,9 @@ export default function ModernDashboard() {
               </svg>
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-white capitalize">{activeTab}</h2>
+              <h2 className="text-xl font-semibold text-white capitalize">
+                {userProfile?.userType === 'customer' ? '👤 Customer Dashboard' : '🔧 Technician Dashboard'} - {activeTab}
+              </h2>
               <p className="text-slate-400 text-sm">
                 {activeTab === 'overview' && (userProfile?.userType === 'customer' ? 'Your activity overview' : 'Your performance overview')}
                 {activeTab === 'profile' && 'Manage your profile information'}
