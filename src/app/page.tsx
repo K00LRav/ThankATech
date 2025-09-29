@@ -620,14 +620,13 @@ export default function Home() {
           <div className="flex gap-4 items-center">
             {currentUser ? (
               <div className="flex items-center space-x-4">
-                {/* Dashboard/Profile Link - Route to dedicated pages */}
+                {/* Dashboard Link - All users can access dashboard */}
                 {currentUser && (
                   <Link
-                    href={currentUser.userType === 'technician' ? '/dashboard' : '/profile'}
+                    href="/dashboard"
                     className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl text-center"
-
                   >
-                    {currentUser.userType === 'technician' ? 'Dashboard' : 'Profile'}
+                    Dashboard
                   </Link>
                 )}
                 
@@ -642,17 +641,6 @@ export default function Home() {
                     />
                   )}
                   <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
-                  
-                  {/* Dashboard Button */}
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center space-x-2 px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <span className="text-blue-300 font-semibold text-sm">Dashboard</span>
-                  </Link>
                   
                   {/* Technician Balance Display */}
                   {currentUser?.userType === 'technician' && (
