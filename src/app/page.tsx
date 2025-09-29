@@ -100,6 +100,11 @@ export default function Home() {
     return Math.min(baseRating + engagementBonus, 5.0);
   };
 
+  // Generate star display - always show just 1 star for compact size
+  const getStarDisplay = (rating: number) => {
+    return '★'; // Always show single star for compact badge
+  };
+
   // Get dynamic rating for current profile
   const dynamicRating = profile.totalThankYous && profile.totalTips 
     ? calculateRating(profile.totalThankYous, profile.totalTips, profile.totalTips * 5)
@@ -864,10 +869,10 @@ export default function Home() {
                     />
                   </div>
                   {/* Dynamic Rating - Compact size for better proportions */}
-                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
+                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
                     <div className="text-center">
                       <div className="text-xs sm:text-sm font-black">{dynamicRating.toFixed(1)}</div>
-                      <div className="text-xs -mt-0.5">★★★</div>
+                      <div className="text-xs -mt-0.5">{getStarDisplay(dynamicRating)}</div>
                     </div>
                   </div>
                 </div>
