@@ -182,6 +182,40 @@ export default function AdminPage() {
   const [showTransactionDetails, setShowTransactionDetails] = useState<string | null>(null);
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
 
+  // System Monitoring State
+  const [systemStatus, setSystemStatus] = useState({
+    firebase: 'checking',
+    stripe: 'checking',
+    email: 'checking',
+    database: 'checking'
+  });
+  const [errorLogs, setErrorLogs] = useState([
+    {
+      id: '1',
+      timestamp: new Date().toISOString(),
+      level: 'error',
+      service: 'Stripe API',
+      message: 'Payment intent creation failed for customer cus_123',
+      details: 'Invalid payment method provided'
+    },
+    {
+      id: '2',
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      level: 'warning',
+      service: 'Firebase',
+      message: 'High read operations detected',
+      details: 'Query optimization recommended for tips collection'
+    },
+    {
+      id: '3',
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+      level: 'info',
+      service: 'Email Service',
+      message: 'Bulk email campaign completed',
+      details: '450 welcome emails sent successfully'
+    }
+  ]);
+
   // Email templates configuration
   const emailTemplates = {
     welcome: {
@@ -1779,6 +1813,219 @@ export default function AdminPage() {
     );
   };
 
+  const renderSystemMonitoring = () => {
+    const checkSystemHealth = async () => {
+      setSystemStatus({
+        firebase: 'checking',
+        stripe: 'checking',
+        email: 'checking',
+        database: 'checking'
+      });
+
+      // Mock health checks - replace with real API calls
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      setSystemStatus({
+        firebase: 'healthy',
+        stripe: 'healthy',
+        email: 'warning',
+        database: 'healthy'
+      });
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'healthy': return 'text-green-300 bg-green-900/50 border-green-500/30';
+        case 'warning': return 'text-yellow-300 bg-yellow-900/50 border-yellow-500/30';
+        case 'error': return 'text-red-300 bg-red-900/50 border-red-500/30';
+        case 'checking': return 'text-blue-300 bg-blue-900/50 border-blue-500/30';
+        default: return 'text-gray-300 bg-gray-900/50 border-gray-500/30';
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-200">System Health Monitoring</h2>
+          <button
+            onClick={checkSystemHealth}
+            className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200"
+          >
+            Refresh Status
+          </button>
+        </div>
+
+        {/* System Status Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-slate-300">Firebase</h3>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(systemStatus.firebase)}`}>
+                {systemStatus.firebase}
+              </span>
+            </div>
+            <div className="text-xs text-slate-400">
+              Database connections, authentication, storage
+            </div>
+          </div>
+
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-slate-300">Stripe API</h3>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(systemStatus.stripe)}`}>
+                {systemStatus.stripe}
+              </span>
+            </div>
+            <div className="text-xs text-slate-400">
+              Payment processing, webhooks, account management
+            </div>
+          </div>
+
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-slate-300">Email Service</h3>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(systemStatus.email)}`}>
+                {systemStatus.email}
+              </span>
+            </div>
+            <div className="text-xs text-slate-400">
+              SMTP connection, template delivery, bounce handling
+            </div>
+          </div>
+
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-slate-300">Database</h3>
+              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(systemStatus.database)}`}>
+                {systemStatus.database}
+              </span>
+            </div>
+            <div className="text-xs text-slate-400">
+              Query performance, storage usage, indexing
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-xl font-semibold text-slate-200 mb-4">Performance Metrics</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Average Response Time</span>
+                <span className="text-green-300 font-semibold">145ms</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Database Queries/sec</span>
+                <span className="text-blue-300 font-semibold">23</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Active Connections</span>
+                <span className="text-purple-300 font-semibold">342</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Memory Usage</span>
+                <span className="text-yellow-300 font-semibold">68%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Error Rate</span>
+                <span className="text-red-300 font-semibold">0.02%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-xl font-semibold text-slate-200 mb-4">API Health</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Stripe Webhooks</span>
+                <span className="text-green-300 font-semibold">✓ Active</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Firebase Functions</span>
+                <span className="text-green-300 font-semibold">✓ Healthy</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Email Delivery</span>
+                <span className="text-yellow-300 font-semibold">⚠ Degraded</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Authentication</span>
+                <span className="text-green-300 font-semibold">✓ Operational</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">CDN Status</span>
+                <span className="text-green-300 font-semibold">✓ Fast</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Error Logs */}
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-slate-200">Recent System Logs</h3>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 bg-red-600/20 text-red-300 border border-red-500/30 rounded text-sm hover:bg-red-600/30 transition-all duration-200">
+                Errors Only
+              </button>
+              <button className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200">
+                Export Logs
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {errorLogs.map((log) => (
+              <div key={log.id} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/30">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+                        log.level === 'error' 
+                          ? 'text-red-300 bg-red-900/50 border-red-500/30'
+                          : log.level === 'warning'
+                          ? 'text-yellow-300 bg-yellow-900/50 border-yellow-500/30'
+                          : 'text-blue-300 bg-blue-900/50 border-blue-500/30'
+                      }`}>
+                        {log.level.toUpperCase()}
+                      </span>
+                      <span className="text-sm text-slate-300 font-medium">{log.service}</span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-200 mb-1">{log.message}</div>
+                    <div className="text-xs text-slate-400">{log.details}</div>
+                  </div>
+                  <button className="px-3 py-1 bg-slate-600/20 text-slate-300 border border-slate-500/30 rounded text-xs hover:bg-slate-600/30 transition-all duration-200">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* System Actions */}
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4">System Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button className="px-4 py-2 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all duration-200">
+              Clear Error Logs
+            </button>
+            <button className="px-4 py-2 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-600/30 transition-all duration-200">
+              Restart Services
+            </button>
+            <button className="px-4 py-2 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-lg hover:bg-yellow-600/30 transition-all duration-200">
+              Generate Health Report
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -1864,6 +2111,16 @@ export default function AdminPage() {
             >
               Transactions
             </button>
+            <button
+              onClick={() => setActiveTab('monitoring')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'monitoring'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              System Health
+            </button>
           </div>
         </div>
       </nav>
@@ -1879,6 +2136,7 @@ export default function AdminPage() {
         )}
         {activeTab === 'email' && renderEmailTesting()}
         {activeTab === 'transactions' && renderTransactions()}
+        {activeTab === 'monitoring' && renderSystemMonitoring()}
       </main>
     </div>
   );
