@@ -863,11 +863,12 @@ export default function Home() {
                       }}
                     />
                   </div>
-                  {/* Dynamic Rating overlay */}
-                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg border-2 border-white">
-                    <span className="flex items-center justify-center">
-                      {dynamicRating.toFixed(1)}⭐
-                    </span>
+                  {/* Dynamic Rating - Made MUCH more prominent */}
+                  <div className="absolute -bottom-3 -right-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-sm sm:text-lg font-bold shadow-2xl border-3 border-white ring-2 ring-yellow-300/50">
+                    <div className="text-center">
+                      <div className="text-lg sm:text-xl font-black">{dynamicRating.toFixed(1)}</div>
+                      <div className="text-xs sm:text-sm -mt-1">⭐⭐⭐⭐⭐</div>
+                    </div>
                   </div>
                 </div>
 
@@ -875,6 +876,25 @@ export default function Home() {
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl font-bold text-white">{profile.name}</h2>
                   <p className="text-base sm:text-lg text-blue-200 font-semibold mt-1">{profile.businessName || profile.title}</p>
+                  
+                  {/* Recent Activity Social Proof */}
+                  <div className="flex flex-wrap gap-2 mt-2 mb-2">
+                    {(profile.totalThankYous && profile.totalThankYous > 0) && (
+                      <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs font-medium border border-green-400/30">
+                        🙏 Thanked {profile.totalThankYous} times
+                      </span>
+                    )}
+                    {(profile.totalTips && profile.totalTips > 0) && (
+                      <span className="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full text-xs font-medium border border-emerald-400/30">
+                        💝 {profile.totalTips} tips received
+                      </span>
+                    )}
+                    {profile.certifications && (
+                      <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-medium border border-blue-400/30">
+                        ✓ Licensed
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Only show distance if available */}
                   {profile.distance !== undefined && (
@@ -1148,29 +1168,39 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Bottom Section - Contained within card */}
-              <div className="mt-auto pt-3 border-t border-gray-200/50 space-y-3">
-                {/* Thank You and Tips Display - Clean and simple */}
-                <div className="flex items-center justify-center gap-3 flex-wrap">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full px-4 py-2 shadow-lg">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm">👍</span>
-                      <span className="text-sm font-bold">{profile.totalThankYous || 0}</span>
-                      <span className="text-sm opacity-90">thanks</span>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-4 py-2 shadow-lg">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm">💰</span>
-                      <span className="text-sm font-bold">{profile.totalTips || 0}</span>
-                      <span className="text-sm opacity-90">tips</span>
-                    </div>
-                  </div>
-                  {profile.certifications && (
-                    <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1.5 shadow-sm">
-                      <span className="text-sm font-medium">✓ Certified</span>
-                    </div>
-                  )}
+              {/* Bottom Section - Action Buttons Integrated */}
+              <div className="mt-auto pt-4 border-t border-white/20 space-y-4">
+                {/* Conversion-Focused Action Buttons - NOW INSIDE CARD! */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <button 
+                    onClick={handleThankYou}
+                    className="group flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-400 to-blue-500 backdrop-blur-sm rounded-xl hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-400/25 hover:-translate-y-1 flex-1"
+                  >
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">�</span>
+                    <span className="font-semibold text-white text-sm">Say Thank You</span>
+                  </button>
+                  <button 
+                    onClick={handleTip}
+                    className="group flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-600 backdrop-blur-sm rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1"
+                  >
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💝</span>
+                    <span className="font-semibold text-white text-sm">Send Tip</span>
+                  </button>
+                </div>
+                
+                {/* Stats Display - More subtle now */}
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-300">
+                  <span className="flex items-center gap-1">
+                    <span className="text-green-400">🙏</span>
+                    {profile.totalThankYous || 0} thanks
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-emerald-400">💝</span>
+                    {profile.totalTips || 0} tips
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="text-yellow-400">⭐ {dynamicRating.toFixed(1)}</span>
                 </div>
               </div>
             </div>
