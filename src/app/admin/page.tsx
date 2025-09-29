@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -143,21 +143,7 @@ export default function AdminPage() {
   const [isGeneratingUsernames, setIsGeneratingUsernames] = useState(false);
   const [operationResults, setOperationResults] = useState<string>('');
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
-        checkAdminAccess(user);
-      } else {
-        setIsAuthorized(false);
-        setLoading(false);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const checkAdminAccess = async (user: any) => {
+  const checkAdminAccess = useCallback(async (user: any) => {
     try {
       // Only k00lrav@gmail.com with Google authentication is admin
       const ADMIN_EMAIL = 'k00lrav@gmail.com';
@@ -194,7 +180,21 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      if (user) {
+        checkAdminAccess(user);
+      } else {
+        setIsAuthorized(false);
+        setLoading(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [checkAdminAccess]);
 
   const loadAdminData = async () => {
     try {

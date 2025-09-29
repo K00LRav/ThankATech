@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { findTechnicianByUsername } from '../../lib/firebase';
 import { TipModal } from '../../components/TipModal';
 import Footer from '../../components/Footer';
@@ -41,13 +42,7 @@ export default function TechnicianProfile() {
   const [error, setError] = useState<string | null>(null);
   const [showTipModal, setShowTipModal] = useState(false);
 
-  useEffect(() => {
-    if (username) {
-      loadTechnician();
-    }
-  }, [username]);
-
-  const loadTechnician = async () => {
+  const loadTechnician = useCallback(async () => {
     try {
       setLoading(true);
       const technicianData = await findTechnicianByUsername(username);
@@ -64,7 +59,13 @@ export default function TechnicianProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username]);
+
+  useEffect(() => {
+    if (username) {
+      loadTechnician();
+    }
+  }, [username, loadTechnician]);
 
   if (loading) {
     return (
@@ -146,9 +147,11 @@ export default function TechnicianProfile() {
               <div className="relative group">
                 <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white/40 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm shadow-2xl group-hover:scale-105 transition-transform duration-300">
                   {technician.image ? (
-                    <img
+                    <Image
                       src={technician.image}
                       alt={technician.name}
+                      width={160}
+                      height={160}
                       className="w-full h-full object-cover"
                     />
                   ) : (
