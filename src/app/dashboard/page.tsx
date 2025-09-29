@@ -628,11 +628,6 @@ export default function ModernDashboard() {
     }
   };
 
-  // Debug logging for userProfile
-  console.log('🔍 Dashboard Debug - userProfile:', userProfile);
-  console.log('🔍 Dashboard Debug - userProfile.userType:', userProfile?.userType);
-  console.log('🔍 Dashboard Debug - userProfile.userType === "customer":', userProfile?.userType === 'customer');
-
   const sidebarItems = userProfile?.userType === 'customer' ? [
     { id: 'overview', label: 'Overview', icon: 'home' },
     { id: 'tips', label: 'My Tips', icon: 'heart' },
@@ -1747,10 +1742,14 @@ export default function ModernDashboard() {
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">TT</span>
+            <div className={`w-8 h-8 ${userProfile?.userType === 'customer' ? 'bg-purple-500' : 'bg-blue-500'} rounded-lg flex items-center justify-center`}>
+              <span className="text-white font-bold text-sm">
+                {userProfile?.userType === 'customer' ? '👤' : '🔧'}
+              </span>
             </div>
-            <h1 className="text-white font-bold text-lg">Dashboard</h1>
+            <h1 className="text-white font-bold text-lg">
+              {userProfile?.userType === 'customer' ? 'Customer Dashboard' : 'Technician Dashboard'}
+            </h1>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
