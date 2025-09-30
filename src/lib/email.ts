@@ -169,9 +169,33 @@ export class EmailService {
         return true;
       }
 
-      // Brevo API Configuration (Recommended)
+      // Brevo Transactional Email API (Correct for sending emails)
       if (process.env.BREVO_API_KEY) {
-        console.log('📧 Sending email via Brevo API...');
+        console.log('📧 Sending email via Brevo Transactional API...');
+        console.log('🔍 Debug info:', {
+          hasApiKey: !!process.env.BREVO_API_KEY,
+          apiKeyPrefix: process.env.BREVO_API_KEY?.substring(0, 20) + '...',
+          to: emailData.to,
+          from: emailData.from || 'noreply@thankatech.com'
+        });
+
+        const emailPayload = {
+          sender: {
+            name: process.env.EMAIL_FROM_NAME || 'ThankATech',
+            email: emailData.from || process.env.EMAIL_FROM || 'noreply@thankatech.com'
+          },
+          to: [{ 
+            email: emailData.to,
+            name: emailData.to.split('@')[0] // Use email prefix as name
+          }],
+          subject: emailData.subject,
+          htmlContent: emailData.html,
+          // Add text content fallback
+          textContent: emailData.html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+        };
+
+        console.log('📤 Sending payload to Brevo API...');
+
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
           headers: {
@@ -179,26 +203,36 @@ export class EmailService {
             'api-key': process.env.BREVO_API_KEY,
             'content-type': 'application/json',
           },
-          body: JSON.stringify({
-            sender: {
-              name: 'ThankATech',
-              email: emailData.from || 'noreply@thankatech.com' // Use verified domain sender
-            },
-            to: [{ email: emailData.to }],
-            subject: emailData.subject,
-            htmlContent: emailData.html
-          }),
+          body: JSON.stringify(emailPayload),
         });
 
         const result = await response.json();
         
+        console.log(`📊 Brevo API Response:`, {
+          status: response.status,
+          statusText: response.statusText,
+          result: result
+        });
+        
         if (response.ok) {
           console.log('✅ Email sent successfully via Brevo API');
-          console.log(`Message ID: ${result.messageId}`);
+          console.log(`📨 Message ID: ${result.messageId}`);
           return true;
         } else {
-          console.error('❌ Brevo API Error:', result);
-          return false;
+          console.error('❌ Brevo API Error:', {
+            status: response.status,
+            error: result,
+            apiKeyUsed: process.env.BREVO_API_KEY?.substring(0, 20) + '...'
+          });
+          
+          // Provide specific error messages
+          if (response.status === 401) {
+            throw new Error('Brevo API authentication failed. Check your API key.');
+          } else if (response.status === 400) {
+            throw new Error(`Brevo API bad request: ${result.message || 'Invalid request data'}`);
+          } else {
+            throw new Error(`Brevo API error (${response.status}): ${result.message || 'Unknown error'}`);
+          }
         }
       }
 
