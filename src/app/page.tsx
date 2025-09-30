@@ -8,6 +8,8 @@ import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
 import { TipModal } from '../components/TipModal';
+import TokenSendModal from '../components/TokenSendModal';
+import TokenPurchaseModal from '../components/TokenPurchaseModal';
 import Footer from '../components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -71,6 +73,8 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showTipModal, setShowTipModal] = useState(false);
+  const [showTokenSendModal, setShowTokenSendModal] = useState(false);
+  const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
   const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
   const [allProfiles, setAllProfiles] = useState<Technician[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -461,34 +465,14 @@ export default function Home() {
     setTimeout(() => setIsFlipping(false), 600);
   }, [isFlipping, profiles.length]);
 
-  const handleThankYou = async () => {
+  const handleThankYou = () => {
     if (!currentUser) {
       setShowRegistration(true);
       return;
     }
 
-    try {
-      const currentTechnician = profiles[currentProfileIndex];
-      await sendThankYou(currentTechnician.id, currentUser.id, 'Thank you for your great service!');
-      
-      // Update the technician's stats locally
-      setProfiles(prev => prev.map((tech, index) => 
-        index === currentProfileIndex 
-          ? { 
-              ...tech, 
-              points: tech.points + 1,
-              totalThankYous: (tech.totalThankYous || 0) + 1
-            }
-          : tech
-      ));
-
-      setThankYouMessage('Thank you sent successfully! 👍');
-      setShowThankYou(true);
-      setTimeout(() => setShowThankYou(false), 3000);
-    } catch (error) {
-      console.error('Error sending thank you:', error);
-      setError('Failed to send thank you. Please try again.');
-    }
+    // Open the new token send modal
+    setShowTokenSendModal(true);
   };
 
   const handleTip = async () => {
@@ -659,6 +643,20 @@ export default function Home() {
                       <span className="text-green-300 font-semibold text-sm">
                         {earningsLoading ? '...' : formatCurrency(earnings.availableBalance)}
                       </span>
+                    </div>
+                  )}
+                  
+                  {/* Customer Token Balance & Buy Tokens Button */}
+                  {currentUser?.userType === 'customer' && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setShowTokenPurchaseModal(true)}
+                        className="flex items-center space-x-2 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-colors duration-200"
+                        title="Buy token packs to send appreciation"
+                      >
+                        <span className="text-purple-300">🪙</span>
+                        <span className="text-purple-300 font-semibold text-sm">Buy Tokens</span>
+                      </button>
                     </div>
                   )}
                   
@@ -1358,6 +1356,26 @@ export default function Home() {
           id: currentUser?.id || '',
           name: currentUser?.name || currentUser?.displayName || '',
           email: currentUser?.email || '',
+        }}
+      />
+
+      {/* Token Send Modal */}
+      <TokenSendModal
+        isOpen={showTokenSendModal}
+        onClose={() => setShowTokenSendModal(false)}
+        technicianId={profiles[currentProfileIndex]?.id || ''}
+        technicianName={profiles[currentProfileIndex]?.name || profiles[currentProfileIndex]?.businessName || ''}
+        userId={currentUser?.id || ''}
+      />
+
+      {/* Token Purchase Modal */}
+      <TokenPurchaseModal
+        isOpen={showTokenPurchaseModal}
+        onClose={() => setShowTokenPurchaseModal(false)}
+        userId={currentUser?.id || ''}
+        onPurchaseSuccess={(tokens) => {
+          console.log(`User purchased ${tokens} tokens`);
+          // Could show a success message or update UI here
         }}
       />
     </div>

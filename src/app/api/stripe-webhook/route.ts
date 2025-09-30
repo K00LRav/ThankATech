@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
         await handlePaymentFailed(event.data.object);
         break;
       
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object);
+        break;
+      
       case 'charge.dispute.created':
         await handleDispute(event.data.object);
         break;
@@ -162,6 +166,35 @@ async function handleInvoicePayment(invoice: any) {
     // Handle subscription or invoice payments
   } catch (error) {
     console.error('❌ Error processing invoice payment:', error);
+  }
+}
+
+async function handleCheckoutCompleted(session: any) {
+  console.log('✅ Checkout session completed:', session.id);
+  
+  try {
+    const { userId, tokenPackId, tokens, type } = session.metadata;
+    
+    // Handle token purchases
+    if (type === 'token_purchase' && userId && tokens) {
+      console.log(`🪙 Processing token purchase: ${tokens} tokens for user ${userId}`);
+      
+      // Import token functions
+      const { addTokensToBalance } = await import('@/lib/token-firebase');
+      
+      // Add tokens to user's balance
+      const tokensToAdd = parseInt(tokens);
+      const purchaseAmount = session.amount_total / 100; // Convert from cents to dollars
+      
+      await addTokensToBalance(userId, tokensToAdd, purchaseAmount);
+      
+      console.log(`✅ Added ${tokensToAdd} tokens to user ${userId} balance`);
+      
+      // TODO: Send purchase confirmation email
+    }
+    
+  } catch (error) {
+    console.error('❌ Error processing checkout completion:', error);
   }
 }
 
