@@ -35,7 +35,7 @@ export const EmailTemplates = {
           }
           
           <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">Questions? Reply to this email or visit our <a href="${process.env.NEXT_PUBLIC_BASE_URL}/contact" style="color: #60a5fa;">contact page</a>.</p>
+            <p style="font-size: 14px; opacity: 0.8;">Questions? Reply to this email or visit our <a href="${process.env.NEXT_PUBLIC_BASE_URL}/contact" style="color: #34d399; text-decoration: none;">contact page</a>.</p>
           </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ export const EmailTemplates = {
           <p style="margin-bottom: 24px;">We're sorry to see you go! If you ever want to rejoin the ThankATech community, you're always welcome back.</p>
           
           <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">If you didn't request this deletion, please contact us immediately at <a href="mailto:support@thankatech.com" style="color: #60a5fa;">support@thankatech.com</a>.</p>
+            <p style="font-size: 14px; opacity: 0.8;">If you didn't request this deletion, please contact us immediately at <a href="mailto:support@thankatech.com" style="color: #34d399; text-decoration: none;">support@thankatech.com</a>.</p>
           </div>
         </div>
       </div>
@@ -126,7 +126,7 @@ export const EmailTemplates = {
           <p style="margin-bottom: 24px; font-size: 14px;">If you didn't request this password reset, you can safely ignore this email.</p>
           
           <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">Need help? Contact us at <a href="mailto:support@thankatech.com" style="color: #60a5fa;">support@thankatech.com</a>.</p>
+            <p style="font-size: 14px; opacity: 0.8;">Need help? Contact us at <a href="mailto:support@thankatech.com" style="color: #34d399; text-decoration: none;">support@thankatech.com</a>.</p>
           </div>
         </div>
       </div>
@@ -169,8 +169,9 @@ export class EmailService {
         return true;
       }
 
-      // Brevo SMTP Configuration
+      // Brevo API Configuration (Recommended)
       if (process.env.BREVO_API_KEY) {
+        console.log('📧 Sending email via Brevo API...');
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
           headers: {
@@ -181,21 +182,24 @@ export class EmailService {
           body: JSON.stringify({
             sender: {
               name: 'ThankATech',
-              email: emailData.from || 'noreply@thankatech.com'
+              email: emailData.from || 'noreply@thankatech.com' // Use verified domain sender
             },
             to: [{ email: emailData.to }],
             subject: emailData.subject,
-            htmlContent: emailData.html,
-            // SMTP configuration for Brevo
-            smtpConfig: {
-              server: 'smtp-relay.brevo.com',
-              port: 587,
-              login: '982ce2001@smtp-brevo.com'
-            }
+            htmlContent: emailData.html
           }),
         });
 
-        return response.ok;
+        const result = await response.json();
+        
+        if (response.ok) {
+          console.log('✅ Email sent successfully via Brevo API');
+          console.log(`Message ID: ${result.messageId}`);
+          return true;
+        } else {
+          console.error('❌ Brevo API Error:', result);
+          return false;
+        }
       }
 
       // Fallback: Example with Resend:
