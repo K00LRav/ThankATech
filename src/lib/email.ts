@@ -283,8 +283,14 @@ export class EmailService {
       return false;
 
     } catch (error) {
-      console.error('Failed to send email:', error);
-      return false;
+      console.error('❌ Failed to send email:', error);
+      console.error('🔍 Environment check:', {
+        NODE_ENV: process.env.NODE_ENV,
+        hasBrevoKey: !!process.env.BREVO_API_KEY,
+        hasEmailFrom: !!process.env.EMAIL_FROM,
+        hasEmailFromName: !!process.env.EMAIL_FROM_NAME
+      });
+      throw error; // Re-throw to get better error messages in API responses
     }
   }
 
