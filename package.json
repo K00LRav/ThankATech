@@ -1,34 +1,34 @@
 {
-  "name": "thankatechsap",
-  "version": "1.12.2",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@stripe/react-stripe-js": "^4.0.2",
-    "@stripe/stripe-js": "^7.9.0",
-    "@vercel/analytics": "^1.5.0",
-    "@vercel/speed-insights": "^1.2.0",
-    "firebase": "^12.3.0",
-    "firebase-admin": "^13.5.0",
-    "next": "15.5.3",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-firebase-hooks": "^5.1.1",
-    "stripe": "^18.5.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^8",
-    "eslint-config-next": "15.5.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "name":  "thankatechsap",
+    "version":  "1.12.3",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "next lint"
+                },
+    "dependencies":  {
+                         "@stripe/react-stripe-js":  "^4.0.2",
+                         "@stripe/stripe-js":  "^7.9.0",
+                         "@vercel/analytics":  "^1.5.0",
+                         "@vercel/speed-insights":  "^1.2.0",
+                         "firebase":  "^12.3.0",
+                         "firebase-admin":  "^13.5.0",
+                         "next":  "15.5.3",
+                         "react":  "19.1.0",
+                         "react-dom":  "19.1.0",
+                         "react-firebase-hooks":  "^5.1.1",
+                         "stripe":  "^18.5.0"
+                     },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4",
+                            "@types/node":  "^20",
+                            "@types/react":  "^19",
+                            "@types/react-dom":  "^19",
+                            "eslint":  "^8",
+                            "eslint-config-next":  "15.5.3",
+                            "tailwindcss":  "^4",
+                            "typescript":  "^5"
+                        }
 }
