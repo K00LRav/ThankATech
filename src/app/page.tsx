@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
+import { getUserTokenBalance } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
@@ -465,14 +466,34 @@ export default function Home() {
     setTimeout(() => setIsFlipping(false), 600);
   }, [isFlipping, profiles.length]);
 
-  const handleThankYou = () => {
+  const handleThankYou = async () => {
     if (!currentUser) {
       setShowRegistration(true);
       return;
     }
 
-    // Open the new token send modal
-    setShowTokenSendModal(true);
+    try {
+      const currentTechnician = profiles[currentProfileIndex];
+      await sendThankYou(currentTechnician.id, currentUser.id, 'Thank you for your great service!');
+      
+      // Update the technician's stats locally
+      setProfiles(prev => prev.map((tech, index) => 
+        index === currentProfileIndex 
+          ? { 
+              ...tech, 
+              points: tech.points + 1,
+              totalThankYous: (tech.totalThankYous || 0) + 1
+            }
+          : tech
+      ));
+
+      setThankYouMessage('Thank you sent successfully! 👍');
+      setShowThankYou(true);
+      setTimeout(() => setShowThankYou(false), 3000);
+    } catch (error) {
+      console.error('Error sending thank you:', error);
+      setError('Failed to send thank you. Please try again.');
+    }
   };
 
   const handleTip = async () => {
@@ -481,10 +502,22 @@ export default function Home() {
       return;
     }
 
-
-
-    // Open the new Stripe-powered tip modal
-    setShowTipModal(true);
+    try {
+      // Check user's token balance
+      const tokenBalance = await getUserTokenBalance(currentUser.id);
+      
+      if (tokenBalance.tokens > 0) {
+        // User has tokens, open token send modal
+        setShowTokenSendModal(true);
+      } else {
+        // User has no tokens, open purchase modal
+        setShowTokenPurchaseModal(true);
+      }
+    } catch (error) {
+      console.error('Error checking token balance:', error);
+      // Fallback to purchase modal on error
+      setShowTokenPurchaseModal(true);
+    }
   };
 
   const handleRegistrationComplete = (user: any) => {
@@ -1189,10 +1222,10 @@ export default function Home() {
                   </button>
                   <button 
                     onClick={handleTip}
-                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 backdrop-blur-sm rounded-2xl hover:from-yellow-600 hover:to-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-yellow-500/25 hover:-translate-y-1 flex-1 font-semibold"
+                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 backdrop-blur-sm rounded-2xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
-                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">💝</span>
-                    <span className="text-white text-base">Send Tip</span>
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
+                    <span className="text-white text-base">Send Tokens</span>
                   </button>
                 </div>
                 
@@ -1236,10 +1269,10 @@ export default function Home() {
           </button>
           <button 
             onClick={handleTip}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-green-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-purple-500 to-purple-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">�</span>
-            <span className="font-semibold text-white text-sm lg:text-base">Send Tip</span>
+            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🪙</span>
+            <span className="font-semibold text-white text-sm lg:text-base">Send Tokens</span>
           </button>
         </div>
             </div>
