@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -281,8 +281,8 @@ export default function AdminPage() {
     }
   ]);
 
-  // Email templates configuration
-  const emailTemplates = {
+  // Email templates configuration (memoized to prevent unnecessary re-renders)
+  const emailTemplates = useMemo(() => ({
     welcome: {
       name: 'Welcome Email',
       description: 'Sent to new users after registration',
@@ -331,7 +331,7 @@ export default function AdminPage() {
       },
       category: 'internal'
     }
-  };
+  }), []);
 
   // Template management functions
   const loadTemplate = useCallback((templateId: string) => {
@@ -346,7 +346,7 @@ export default function AdminPage() {
   <p>This is a placeholder for the ${emailTemplates[templateId]?.name || 'template'} content.</p>
   <p>Variables available: ${emailTemplates[templateId]?.variables?.join(', ') || 'none'}</p>
 </div>`);
-  }, []);
+  }, [emailTemplates]);
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
@@ -385,7 +385,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [loadTemplate]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
