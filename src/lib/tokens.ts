@@ -74,34 +74,7 @@ export const TOKEN_PACKS: TokenPack[] = [
   }
 ];
 
-// Random thank you messages
-export const RANDOM_THANK_YOU_MESSAGES = [
-  "Your expertise made all the difference!",
-  "Thank you for your exceptional service!",
-  "Your professionalism is truly appreciated!",
-  "You exceeded our expectations!",
-  "Your attention to detail was amazing!",
-  "Thank you for going above and beyond!",
-  "Your skill and dedication shine through!",
-  "We're grateful for your excellent work!",
-  "Your expertise saved the day!",
-  "Thank you for your outstanding service!",
-  "Your work quality is exceptional!",
-  "We appreciate your professional approach!",
-  "Your problem-solving skills are impressive!",
-  "Thank you for your reliable service!",
-  "Your craftsmanship is top-notch!",
-  "We're thankful for your expertise!",
-  "Your work ethic is truly admirable!",
-  "Thank you for your timely completion!",
-  "Your attention to quality shows!",
-  "We appreciate your professional manner!",
-  "Your technical skills are outstanding!",
-  "Thank you for your careful work!",
-  "Your service exceeded expectations!",
-  "We're grateful for your dedication!",
-  "Your expertise is truly valued!"
-];
+// Token system for meaningful appreciation
 
 // Token sending limits
 export const TOKEN_LIMITS = {
@@ -122,9 +95,7 @@ export const formatPrice = (cents: number): string => {
   }).format(cents / 100);
 };
 
-export const getRandomThankYouMessage = (): string => {
-  return RANDOM_THANK_YOU_MESSAGES[Math.floor(Math.random() * RANDOM_THANK_YOU_MESSAGES.length)];
-};
+// Removed random message system - now using fixed meaningful messages
 
 export const calculateTokenValue = (tokens: number): number => {
   // Base value: 10¢ per token

@@ -18,7 +18,6 @@ import {
   UserTokenBalance, 
   TokenTransaction, 
   DailyThankYouLimit, 
-  getRandomThankYouMessage,
   TOKEN_LIMITS 
 } from './tokens';
 import EmailService from './email';
@@ -154,8 +153,7 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
 export async function sendTokens(
   fromUserId: string, 
   toTechnicianId: string, 
-  tokens: number, 
-  customMessage?: string
+  tokens: number
 ): Promise<{success: boolean, transactionId?: string, error?: string}> {
   if (!db) {
     console.warn('Firebase not configured. Mock tokens sent.');
@@ -186,8 +184,8 @@ export async function sendTokens(
       }
     }
 
-    // Get random message if no custom message provided
-    const message = customMessage || getRandomThankYouMessage();
+    // Use fixed meaningful message for token appreciation
+    const message = `Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here's ${tokens} tokens as a token of my appreciation.`;
     
     // Create transaction record
     const transaction: Omit<TokenTransaction, 'id'> = {
@@ -195,7 +193,7 @@ export async function sendTokens(
       toTechnicianId,
       tokens,
       message,
-      isRandomMessage: !customMessage,
+      isRandomMessage: false,
       timestamp: new Date(),
       type: 'thank_you'
     };

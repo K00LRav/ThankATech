@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { sendTokens, getUserTokenBalance } from '@/lib/token-firebase';
-import { formatTokens, RANDOM_THANK_YOU_MESSAGES } from '@/lib/tokens';
+import { formatTokens } from '@/lib/tokens';
 
 interface TokenSendModalProps {
   isOpen: boolean;
@@ -20,8 +20,6 @@ export default function TokenSendModal({
   userId 
 }: TokenSendModalProps) {
   const [tokens, setTokens] = useState(5);
-  const [customMessage, setCustomMessage] = useState('');
-  const [useRandomMessage, setUseRandomMessage] = useState(true);
   const [sending, setSending] = useState(false);
   const [userBalance, setUserBalance] = useState(0);
 
@@ -45,9 +43,7 @@ export default function TokenSendModal({
     setSending(true);
     
     try {
-      const messageToSend = useRandomMessage ? undefined : customMessage;
-      
-      const result = await sendTokens(userId, technicianId, tokens, messageToSend);
+      const result = await sendTokens(userId, technicianId, tokens);
       
       if (result.success) {
         // Show success message
@@ -64,11 +60,6 @@ export default function TokenSendModal({
     } finally {
       setSending(false);
     }
-  };
-
-  const getRandomPreview = () => {
-    const randomIndex = Math.floor(Math.random() * RANDOM_THANK_YOU_MESSAGES.length);
-    return RANDOM_THANK_YOU_MESSAGES[randomIndex];
   };
 
   if (!isOpen) return null;
@@ -115,49 +106,14 @@ export default function TokenSendModal({
           )}
         </div>
 
-        {/* Message Selection */}
+        {/* Message Info */}
         <div className="mb-6">
           <h3 className="font-semibold mb-3">Message:</h3>
-          
-          <label className={`block p-3 border rounded-lg mb-2 cursor-pointer ${
-            useRandomMessage ? 'border-green-500 bg-green-50' : 'border-gray-200'
-          }`}>
-            <input
-              type="radio"
-              name="messageType"
-              checked={useRandomMessage}
-              onChange={() => setUseRandomMessage(true)}
-              className="mr-2"
-            />
-            <span className="font-medium">Random Message</span>
-            <span className="text-sm text-gray-500 block ml-6 italic">
-              &quot;{getRandomPreview()}&quot;
-            </span>
-          </label>
-
-          <label className={`block p-3 border rounded-lg cursor-pointer ${
-            !useRandomMessage ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-          }`}>
-            <input
-              type="radio"
-              name="messageType"
-              checked={!useRandomMessage}
-              onChange={() => setUseRandomMessage(false)}
-              className="mr-2"
-            />
-            <span className="font-medium">Custom Message</span>
-          </label>
-
-          {!useRandomMessage && (
-            <textarea
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder="Write your personal thank you message..."
-              className="w-full mt-2 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
-              maxLength={300}
-            />
-          )}
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-sm text-gray-600 italic">
+              &quot;Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here&apos;s {tokens} tokens as a token of my appreciation.&quot;
+            </p>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -170,7 +126,7 @@ export default function TokenSendModal({
           </button>
           <button
             onClick={handleSend}
-            disabled={sending || userBalance < tokens || (!useRandomMessage && !customMessage.trim())}
+            disabled={sending || userBalance < tokens}
             className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {sending ? 'Sending...' : `Send ${formatTokens(tokens)}`}
