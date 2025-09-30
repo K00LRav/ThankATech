@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     // Test API key by getting account info
-    const response = await fetch('https://api.brevo.com/v3/account', {
+    const accountResponse = await fetch('https://api.brevo.com/v3/account', {
       method: 'GET',
       headers: {
         'accept': 'application/json',
@@ -20,31 +20,48 @@ export async function GET() {
       },
     });
 
-    const result = await response.json();
-    
-    console.log('📊 Brevo Account API Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      result: result
+    const accountResult = await accountResponse.json();
+
+    // Also get sender list to see verified domains
+    const sendersResponse = await fetch('https://api.brevo.com/v3/senders', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+      },
     });
 
-    if (response.ok) {
+    const sendersResult = await sendersResponse.json();
+    
+    console.log('📊 Brevo Account API Response:', {
+      status: accountResponse.status,
+      statusText: accountResponse.statusText,
+      result: accountResult
+    });
+
+    console.log('📧 Brevo Senders Response:', {
+      status: sendersResponse.status,
+      senders: sendersResult
+    });
+
+    if (accountResponse.ok) {
       return NextResponse.json({
         success: true,
         message: 'Brevo API key is valid',
         accountInfo: {
-          email: result.email,
-          firstName: result.firstName,
-          lastName: result.lastName,
-          companyName: result.companyName,
-          plan: result.plan
-        }
+          email: accountResult.email,
+          firstName: accountResult.firstName,
+          lastName: accountResult.lastName,
+          companyName: accountResult.companyName,
+          plan: accountResult.plan
+        },
+        verifiedSenders: sendersResponse.ok ? sendersResult.senders : 'Unable to fetch senders'
       });
     } else {
       return NextResponse.json({
         success: false,
-        error: `Brevo API error (${response.status}): ${result.message || 'Unknown error'}`,
-        details: result
+        error: `Brevo API error (${accountResponse.status}): ${accountResult.message || 'Unknown error'}`,
+        details: accountResult
       }, { status: 500 });
     }
 
@@ -79,11 +96,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Simple test email payload
+    // Simple test email payload - try different sender emails
     const emailPayload = {
       sender: {
         name: 'ThankATech Test',
-        email: 'noreply@thankatech.com'
+        email: process.env.EMAIL_FROM || 'noreply@brevo.com' // Fallback to Brevo's default
       },
       to: [{ 
         email: to,
