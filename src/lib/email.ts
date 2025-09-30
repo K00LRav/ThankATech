@@ -179,6 +179,7 @@ export class EmailService {
           from: emailData.from || 'noreply@thankatech.com'
         });
 
+        // For now, let's try a simple approach without templates first
         const emailPayload = {
           sender: {
             name: process.env.EMAIL_FROM_NAME || 'ThankATech',
