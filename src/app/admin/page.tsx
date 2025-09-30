@@ -163,7 +163,7 @@ export default function AdminPage() {
   const [templateSubject, setTemplateSubject] = useState<string>('');
   const [previewData, setPreviewData] = useState<any>({});
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
-  const [activeEmailTab, setActiveEmailTab] = useState<'testing' | 'templates'>('testing');
+
 
   // Advanced User Management states
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
@@ -1365,34 +1365,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Sub-navigation for Email tabs */}
-      <div className="border-b border-slate-700/50">
-        <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveEmailTab('testing')}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              activeEmailTab === 'testing'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-300 hover:text-white hover:border-slate-600'
-            }`}
-          >
-            Email Testing
-          </button>
-          <button
-            onClick={() => setActiveEmailTab('templates')}
-            className={`py-3 px-1 border-b-2 font-medium text-sm ${
-              activeEmailTab === 'templates'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-300 hover:text-white hover:border-slate-600'
-            }`}
-          >
-            Template Manager
-          </button>
-        </nav>
-      </div>
-
-      {/* Email Testing Tab Content */}
-      {activeEmailTab === 'testing' && (
+      {/* Email Testing Content */}
         <div className="space-y-6">
           {/* Simplified One-Click Email Testing */}
           <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
@@ -1566,128 +1539,8 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      )}
 
-      {/* Template Manager Tab Content */}
-      {activeEmailTab === 'templates' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Template List */}
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-slate-200 mb-4">📝 Email Templates</h3>
-              <div className="space-y-3">
-                {Object.entries(emailTemplates).map(([key, template]) => (
-                  <button
-                    key={key}
-                    onClick={() => loadTemplate(key)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
-                      selectedTemplate === key
-                        ? 'bg-blue-600/20 border-blue-500/30 text-blue-300'
-                        : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
-                    }`}
-                  >
-                    <div className="font-medium">{template.name}</div>
-                    <div className="text-sm opacity-75 mt-1">{template.description}</div>
-                    <div className="text-xs opacity-50 mt-1">
-                      Variables: {template.variables.join(', ')}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Template Editor */}
-            <div className="lg:col-span-2 bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-200">
-                  ✏️ Edit Template: {emailTemplates[selectedTemplate]?.name}
-                </h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={previewTemplate}
-                    className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200"
-                  >
-                    Preview
-                  </button>
-                  <button
-                    onClick={saveTemplate}
-                    className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Subject Line
-                  </label>
-                  <input
-                    type="text"
-                    value={templateSubject}
-                    onChange={(e) => setTemplateSubject(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    placeholder="Email subject line..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    HTML Content
-                  </label>
-                  <textarea
-                    value={templateContent}
-                    onChange={(e) => setTemplateContent(e.target.value)}
-                    rows={15}
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-mono text-sm"
-                    placeholder="HTML email template content..."
-                  />
-                </div>
-
-                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                  <h4 className="text-blue-300 font-medium mb-2">📋 Available Variables</h4>
-                  <div className="text-sm text-slate-300">
-                    {emailTemplates[selectedTemplate]?.variables.map((variable, index) => (
-                      <span key={variable}>
-                        <code className="bg-slate-700/50 px-2 py-1 rounded text-blue-300">
-                          {`{{${variable}}}`}
-                        </code>
-                        {index < emailTemplates[selectedTemplate].variables.length - 1 && ', '}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Template Categories */}
-          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-            <h3 className="text-lg font-semibold text-slate-200 mb-4">📂 Template Categories</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                <h4 className="text-green-300 font-medium mb-2">User Lifecycle</h4>
-                <div className="text-sm text-slate-300">
-                  Welcome emails, account confirmations, deletion notices
-                </div>
-              </div>
-              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                <h4 className="text-blue-300 font-medium mb-2">Notifications</h4>
-                <div className="text-sm text-slate-300">
-                  Thank you alerts, tip notifications, activity updates
-                </div>
-              </div>
-              <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                <h4 className="text-purple-300 font-medium mb-2">Internal & Security</h4>
-                <div className="text-sm text-slate-300">
-                  Contact forms, password resets, admin notifications
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 
