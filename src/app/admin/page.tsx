@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
 import { EmailTemplates } from '@/lib/email';
+import { getUserTokenBalance, addTokensToBalance, checkDailyPointsLimit } from '@/lib/token-firebase';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -177,6 +178,16 @@ export default function AdminPage() {
 
   // Transaction Management State
   const [transactionSearchQuery, setTransactionSearchQuery] = useState('');
+
+  // Token & Points Management States
+  const [tokenUserId, setTokenUserId] = useState('');
+  const [tokensToAdd, setTokensToAdd] = useState<number>(0);
+  const [pointsUserId, setPointsUserId] = useState('');
+  const [pointsToAdd, setPointsToAdd] = useState<number>(0);
+  const [tokenManagementResults, setTokenManagementResults] = useState('');
+  const [isProcessingTokens, setIsProcessingTokens] = useState(false);
+  const [userTokenBalances, setUserTokenBalances] = useState<{[key: string]: any}>({});
+  const [userPointsData, setUserPointsData] = useState<{[key: string]: any}>({});
   const [transactionDateFilter, setTransactionDateFilter] = useState('all');
   const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
   const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
@@ -396,6 +407,90 @@ export default function AdminPage() {
     setTemplateSubject(subject);
     setTemplateContent(actualTemplate.html);
   }, [emailTemplates]);
+
+  // Token & Points Management Functions
+  const handleAddTokens = async () => {
+    if (!tokenUserId || tokensToAdd <= 0) {
+      setTokenManagementResults('❌ Please enter a valid user ID and token amount');
+      return;
+    }
+
+    setIsProcessingTokens(true);
+    try {
+      await addTokensToBalance(tokenUserId, tokensToAdd, tokensToAdd * 0.1); // Assume $0.10 per token for admin grants
+      setTokenManagementResults(`✅ Successfully added ${tokensToAdd} tokens to user ${tokenUserId}`);
+      
+      // Refresh user's token balance
+      const balance = await getUserTokenBalance(tokenUserId);
+      setUserTokenBalances(prev => ({ ...prev, [tokenUserId]: balance }));
+      
+      // Reset form
+      setTokenUserId('');
+      setTokensToAdd(0);
+    } catch (error) {
+      console.error('Error adding tokens:', error);
+      setTokenManagementResults(`❌ Failed to add tokens: ${error.message}`);
+    }
+    setIsProcessingTokens(false);
+  };
+
+  const handleCheckUserBalance = async (userId: string) => {
+    if (!userId) return;
+    
+    try {
+      const balance = await getUserTokenBalance(userId);
+      const pointsData = await checkDailyPointsLimit(userId);
+      
+      setUserTokenBalances(prev => ({ ...prev, [userId]: balance }));
+      setUserPointsData(prev => ({ ...prev, [userId]: pointsData }));
+      
+      setTokenManagementResults(`✅ Retrieved data for user ${userId}:
+      Tokens: ${balance.tokens} (Total Purchased: ${balance.totalPurchased}, Total Spent: ${balance.totalSpent})
+      Daily Points: ${pointsData.pointsGiven}/5 used today (${pointsData.remainingPoints} remaining)`);
+    } catch (error) {
+      console.error('Error checking user balance:', error);
+      setTokenManagementResults(`❌ Failed to check balance: ${error.message}`);
+    }
+  };
+
+  const handleResetDailyPoints = async (userId: string) => {
+    if (!userId) return;
+    
+    try {
+      // Note: This would require a new function to reset daily points
+      // For now, just show what would happen
+      setTokenManagementResults(`⚠️ Daily points reset functionality would be implemented here for user ${userId}`);
+    } catch (error) {
+      setTokenManagementResults(`❌ Failed to reset daily points: ${error.message}`);
+    }
+  };
+
+  const findUserByEmail = async (email: string) => {
+    try {
+      // Check in users collection
+      const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+      const usersSnapshot = await getDocs(usersQuery);
+      
+      if (!usersSnapshot.empty) {
+        const userData = usersSnapshot.docs[0];
+        return { id: userData.id, ...userData.data(), type: 'user' };
+      }
+      
+      // Check in technicians collection  
+      const techQuery = query(collection(db, 'technicians'), where('email', '==', email));
+      const techSnapshot = await getDocs(techQuery);
+      
+      if (!techSnapshot.empty) {
+        const techData = techSnapshot.docs[0];
+        return { id: techData.id, ...techData.data(), type: 'technician' };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw error;
+    }
+  };
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
@@ -3254,6 +3349,197 @@ export default function AdminPage() {
     );
   };
 
+  const renderTokensAndPoints = () => {
+    return (
+      <div className="space-y-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+            </div>
+            Tokens & Points Management
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Add Tokens Section */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-slate-200">Add Tokens to User</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">User ID</label>
+                  <input
+                    type="text"
+                    value={tokenUserId}
+                    onChange={(e) => setTokenUserId(e.target.value)}
+                    placeholder="Enter user ID (Firebase UID)"
+                    className="w-full p-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Tokens to Add</label>
+                  <input
+                    type="number"
+                    value={tokensToAdd}
+                    onChange={(e) => setTokensToAdd(parseInt(e.target.value) || 0)}
+                    placeholder="Enter number of tokens"
+                    min="1"
+                    max="10000"
+                    className="w-full p-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={handleAddTokens}
+                  disabled={isProcessingTokens || !tokenUserId || tokensToAdd <= 0}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
+                >
+                  {isProcessingTokens ? 'Adding Tokens...' : `Add ${tokensToAdd} Tokens`}
+                </button>
+              </div>
+            </div>
+
+            {/* Check User Balance Section */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-slate-200">Check User Balance</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">User ID to Check</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={pointsUserId}
+                      onChange={(e) => setPointsUserId(e.target.value)}
+                      placeholder="Enter user ID"
+                      className="flex-1 p-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => handleCheckUserBalance(pointsUserId)}
+                      disabled={!pointsUserId}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200"
+                    >
+                      Check
+                    </button>
+                  </div>
+                </div>
+
+                {/* Display user balance if available */}
+                {userTokenBalances[pointsUserId] && (
+                  <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-600">
+                    <h4 className="font-medium text-slate-200 mb-2">Token Balance</h4>
+                    <div className="text-sm text-slate-300 space-y-1">
+                      <p>Current Tokens: <span className="text-green-400">{userTokenBalances[pointsUserId].tokens}</span></p>
+                      <p>Total Purchased: <span className="text-blue-400">{userTokenBalances[pointsUserId].totalPurchased}</span></p>
+                      <p>Total Spent: <span className="text-red-400">{userTokenBalances[pointsUserId].totalSpent}</span></p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Display daily points if available */}
+                {userPointsData[pointsUserId] && (
+                  <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-600">
+                    <h4 className="font-medium text-slate-200 mb-2">Daily Points Status</h4>
+                    <div className="text-sm text-slate-300 space-y-1">
+                      <p>Points Used Today: <span className="text-yellow-400">{userPointsData[pointsUserId].pointsGiven}/5</span></p>
+                      <p>Remaining Points: <span className="text-green-400">{userPointsData[pointsUserId].remainingPoints}</span></p>
+                      <p>Can Use Points: <span className={userPointsData[pointsUserId].canUsePoints ? 'text-green-400' : 'text-red-400'}>
+                        {userPointsData[pointsUserId].canUsePoints ? 'Yes' : 'No'}
+                      </span></p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Results Display */}
+          {tokenManagementResults && (
+            <div className="mt-6 p-4 bg-slate-800/50 rounded-lg border border-slate-600">
+              <h4 className="font-medium text-slate-200 mb-2">Results</h4>
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap">{tokenManagementResults}</pre>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4">Quick Actions</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={async () => {
+                try {
+                  const adminUser = await findUserByEmail('k00lrav@gmail.com');
+                  if (adminUser) {
+                    setTokenUserId(adminUser.id);
+                    setTokensToAdd(1000);
+                    setTokenManagementResults(`✅ Found admin user: ${adminUser.id} (${adminUser.type})`);
+                  } else {
+                    setTokenManagementResults('❌ Admin user not found in database');
+                  }
+                } catch (error) {
+                  setTokenManagementResults(`❌ Error finding admin user: ${error.message}`);
+                }
+              }}
+              className="p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-600/30 transition-all duration-200"
+            >
+              <div className="text-lg font-medium">Add 1000 Tokens to Admin</div>
+              <div className="text-sm text-blue-400">For testing purposes</div>
+            </button>
+            
+            <button
+              onClick={async () => {
+                try {
+                  const adminUser = await findUserByEmail('k00lrav@gmail.com');
+                  if (adminUser) {
+                    setPointsUserId(adminUser.id);
+                    await handleCheckUserBalance(adminUser.id);
+                  } else {
+                    setTokenManagementResults('❌ Admin user not found in database');
+                  }
+                } catch (error) {
+                  setTokenManagementResults(`❌ Error finding admin user: ${error.message}`);
+                }
+              }}
+              className="p-4 bg-green-600/20 border border-green-500/30 rounded-lg text-green-300 hover:bg-green-600/30 transition-all duration-200"
+            >
+              <div className="text-lg font-medium">Check Admin Balance</div>
+              <div className="text-sm text-green-400">View admin account status</div>
+            </button>
+            
+            <button
+              onClick={() => setTokenManagementResults('')}
+              className="p-4 bg-slate-600/20 border border-slate-500/30 rounded-lg text-slate-300 hover:bg-slate-600/30 transition-all duration-200"
+            >
+              <div className="text-lg font-medium">Clear Results</div>
+              <div className="text-sm text-slate-400">Reset the results display</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Admin Note */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-yellow-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 15.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h4 className="text-yellow-400 font-medium">Admin Notice</h4>
+              <p className="text-yellow-300 text-sm mt-1">
+                Use this interface to manage user tokens and points for testing and support purposes. 
+                All actions are logged and should be used responsibly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Main component return
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -3379,6 +3665,16 @@ export default function AdminPage() {
             >
               Notifications
             </button>
+            <button
+              onClick={() => setActiveTab('tokens')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'tokens'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-slate-300 hover:text-white hover:border-white/30'
+              }`}
+            >
+              Tokens & Points
+            </button>
           </div>
         </div>
       </nav>
@@ -3398,6 +3694,7 @@ export default function AdminPage() {
         {activeTab === 'analytics' && renderAnalytics()}
         {activeTab === 'security' && renderSecurity()}
         {activeTab === 'notifications' && renderNotifications()}
+        {activeTab === 'tokens' && renderTokensAndPoints()}
       </main>
     </div>
   );

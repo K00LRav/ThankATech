@@ -17,8 +17,10 @@ import app from './firebase';
 import { 
   UserTokenBalance, 
   TokenTransaction, 
-  DailyThankYouLimit, 
-  TOKEN_LIMITS 
+  DailyThankYouLimit,
+  DailyPointsLimit,
+  TOKEN_LIMITS,
+  POINTS_LIMITS 
 } from './tokens';
 import EmailService from './email';
 
@@ -29,6 +31,7 @@ const COLLECTIONS = {
   TOKEN_BALANCES: 'tokenBalances',
   TOKEN_TRANSACTIONS: 'tokenTransactions', 
   DAILY_LIMITS: 'dailyLimits',
+  DAILY_POINTS: 'dailyPoints',
   TECHNICIANS: 'technicians',
   USERS: 'users'
 };
@@ -148,6 +151,172 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
 }
 
 /**
+ * Check daily points limit (consolidated system)
+ */
+export async function checkDailyPointsLimit(userId: string): Promise<{canUsePoints: boolean, remainingPoints: number, pointsGiven: number}> {
+  if (!db) {
+    console.warn('Firebase not configured. Returning mock points limit check.');
+    return { canUsePoints: true, remainingPoints: 4, pointsGiven: 1 };
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const limitId = `${userId}_${today}`;
+    const limitRef = doc(db, COLLECTIONS.DAILY_POINTS, limitId);
+    const limitDoc = await getDoc(limitRef);
+    
+    if (limitDoc.exists()) {
+      const data = limitDoc.data() as DailyPointsLimit;
+      const remainingPoints = POINTS_LIMITS.DAILY_FREE_POINTS - data.pointsGiven;
+      return {
+        canUsePoints: remainingPoints > 0,
+        remainingPoints: Math.max(0, remainingPoints),
+        pointsGiven: data.pointsGiven
+      };
+    } else {
+      // First points usage of the day
+      return {
+        canUsePoints: true,
+        remainingPoints: POINTS_LIMITS.DAILY_FREE_POINTS - POINTS_LIMITS.POINTS_PER_THANK_YOU,
+        pointsGiven: 0
+      };
+    }
+  } catch (error) {
+    console.error('Error checking daily points limit:', error);
+    // Default to allowing points usage on error
+    return { canUsePoints: true, remainingPoints: 4, pointsGiven: 0 };
+  }
+}
+
+/**
+ * Update daily points usage tracking
+ */
+export async function updateDailyPointsUsage(userId: string, pointsToAdd: number): Promise<void> {
+  if (!db) {
+    console.warn('Firebase not configured. Mock points updated.');
+    return;
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const limitId = `${userId}_${today}`;
+    const limitRef = doc(db, COLLECTIONS.DAILY_POINTS, limitId);
+    const limitDoc = await getDoc(limitRef);
+    
+    if (limitDoc.exists()) {
+      await updateDoc(limitRef, {
+        pointsGiven: increment(pointsToAdd)
+      });
+    } else {
+      // Create new daily points record
+      const newLimit: DailyPointsLimit = {
+        userId,
+        date: today,
+        pointsGiven: pointsToAdd,
+        maxDailyPoints: POINTS_LIMITS.DAILY_FREE_POINTS
+      };
+      await setDoc(limitRef, newLimit);
+    }
+    
+    console.log(`✅ Updated daily points usage: +${pointsToAdd} for user ${userId}`);
+  } catch (error) {
+    console.error('Error updating daily points usage:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send free thank you with points (consolidated system)
+ */
+export async function sendFreeThankYou(
+  fromUserId: string, 
+  toTechnicianId: string
+): Promise<{success: boolean, transactionId?: string, error?: string, pointsRemaining?: number}> {
+  if (!db) {
+    console.warn('Firebase not configured. Mock thank you sent.');
+    return { success: true, transactionId: 'mock-thank-you-' + Date.now(), pointsRemaining: 4 };
+  }
+
+  try {
+    // Check if user has points remaining for the day
+    const pointsCheck = await checkDailyPointsLimit(fromUserId);
+    if (!pointsCheck.canUsePoints) {
+      return { 
+        success: false, 
+        error: `Daily free points limit reached (${POINTS_LIMITS.DAILY_FREE_POINTS} per day)`,
+        pointsRemaining: 0
+      };
+    }
+
+    // Use fixed meaningful message for appreciation
+    const message = `Thank you for your exceptional service! Your expertise and dedication truly make a difference.`;
+    
+    // Create transaction record
+    const transaction: Omit<TokenTransaction, 'id'> = {
+      fromUserId,
+      toTechnicianId,
+      tokens: 0, // Free thank you
+      message,
+      isRandomMessage: false,
+      timestamp: new Date(),
+      type: 'thank_you'
+    };
+    
+    const transactionRef = await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
+    
+    // Update user's daily points usage
+    await updateDailyPointsUsage(fromUserId, POINTS_LIMITS.POINTS_PER_THANK_YOU);
+    
+    // Award points to technician
+    const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
+    const techDoc = await getDoc(technicianRef);
+    if (techDoc.exists()) {
+      await updateDoc(technicianRef, {
+        points: increment(POINTS_LIMITS.POINTS_PER_THANK_YOU),
+        totalThankYous: increment(1)
+      });
+      
+      console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} point to technician ${toTechnicianId} (free thank you)`);
+    }
+
+    // Send email notification
+    try {
+      const techData = techDoc?.data();
+      const fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
+      const fromUserDoc = await getDoc(fromUserRef);
+      const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+      
+      if (techData?.email) {
+        const technicianName = techData.name || 'Technician';
+        const customerName = fromUserData.displayName || fromUserData.name || 'A customer';
+        
+        await EmailService.sendThankYouNotification(
+          techData.email,
+          technicianName,
+          customerName,
+          message
+        );
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send notification email:', emailError);
+      // Don't fail the transaction if email fails
+    }
+    
+    // Calculate remaining points for the day
+    const remainingPoints = pointsCheck.remainingPoints - POINTS_LIMITS.POINTS_PER_THANK_YOU;
+    
+    return { 
+      success: true, 
+      transactionId: transactionRef.id,
+      pointsRemaining: Math.max(0, remainingPoints)
+    };
+  } catch (error) {
+    console.error('Error sending free thank you:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Send tokens (new thank you system)
  */
 export async function sendTokens(
@@ -230,15 +399,18 @@ export async function sendTokens(
       }
     }
     
-    // Update technician points (keep existing point system for now)
+    // Update technician points (new consolidated system)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
     const techDoc = await getDoc(technicianRef);
     if (techDoc.exists()) {
-      const pointsToAdd = isFreeThankYou ? 10 : tokens; // Free = 10 points, tokens = 1:1
+      // New points system: 1 point per thank you, 2 points per token received
+      const pointsToAdd = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
       await updateDoc(technicianRef, {
         points: increment(pointsToAdd),
         totalThankYous: increment(1)
       });
+      
+      console.log(`✅ Awarded ${pointsToAdd} points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' tokens received'})`);
     }
 
     // Send email notification

@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
-import { getUserTokenBalance } from '../lib/token-firebase';
+import { getUserTokenBalance, sendFreeThankYou, checkDailyPointsLimit } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
@@ -474,20 +474,28 @@ export default function Home() {
 
     try {
       const currentTechnician = profiles[currentProfileIndex];
-      await sendThankYou(currentTechnician.id, currentUser.id, 'Thank you for your great service!');
       
-      // Update the technician's stats locally
+      // Use new consolidated points system
+      const result = await sendFreeThankYou(currentUser.id, currentTechnician.id);
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to send thank you. Please try again.');
+        return;
+      }
+      
+      // Update the technician's stats locally (new points system: 1 point per thank you)
       setProfiles(prev => prev.map((tech, index) => 
         index === currentProfileIndex 
           ? { 
               ...tech, 
-              points: tech.points + 1,
+              points: tech.points + 1, // 1 point per thank you in new system
               totalThankYous: (tech.totalThankYous || 0) + 1
             }
           : tech
       ));
 
-      setThankYouMessage('Thank you sent successfully! 👍');
+      const remainingPoints = result.pointsRemaining || 0;
+      setThankYouMessage(`Thank you sent successfully! 👍 ${remainingPoints > 0 ? `(${remainingPoints} points remaining today)` : '(Daily limit reached)'}`);
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 3000);
     } catch (error) {

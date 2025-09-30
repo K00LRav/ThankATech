@@ -40,6 +40,13 @@ export interface DailyThankYouLimit {
   maxFreeThankYous: number;
 }
 
+export interface DailyPointsLimit {
+  userId: string;
+  date: string; // YYYY-MM-DD
+  pointsGiven: number;
+  maxDailyPoints: number;
+}
+
 // Token pack configurations
 export const TOKEN_PACKS: TokenPack[] = [
   {
@@ -81,6 +88,13 @@ export const TOKEN_LIMITS = {
   MIN_TOKENS: 5,
   MAX_TOKENS: 50,
   FREE_DAILY_LIMIT: 3
+};
+
+// Points system limits
+export const POINTS_LIMITS = {
+  DAILY_FREE_POINTS: 5, // 5 points per day total
+  POINTS_PER_THANK_YOU: 1, // 1 point per thank you click
+  POINTS_PER_TOKEN: 2 // 2 points per token received
 };
 
 // Utility functions
