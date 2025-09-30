@@ -1394,124 +1394,177 @@ export default function AdminPage() {
       {/* Email Testing Tab Content */}
       {activeEmailTab === 'testing' && (
         <div className="space-y-6">
-          {/* Email Test Form */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-slate-200 mb-4">📧 Send Test Email</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Recipient Email
-              </label>
-              <input
-                type="email"
-                value={testEmailData.to}
-                onChange={(e) => setTestEmailData(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
-                placeholder="test@example.com"
-              />
-            </div>
+          {/* Simplified One-Click Email Testing */}
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50">
+            <h3 className="text-lg font-semibold text-slate-200 mb-6">📧 One-Click Email Testing</h3>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Subject
-              </label>
-              <input
-                type="text"
-                value={testEmailData.subject}
-                onChange={(e) => setTestEmailData(prev => ({ ...prev, subject: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
-                placeholder="Email subject"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Message
-              </label>
-              <textarea
-                value={testEmailData.message}
-                onChange={(e) => setTestEmailData(prev => ({ ...prev, message: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
-                placeholder="Email message content"
-              />
-            </div>
-            
-            <button
-              onClick={testEmailDelivery}
-              disabled={isTestingEmail || !testEmailData.to}
-              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
-            >
-              {isTestingEmail ? 'Sending...' : '📤 Send Test Email'}
-            </button>
-          </div>
-        </div>
-        
-        {/* System Health Tests */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-          <h3 className="text-lg font-semibold text-white mb-4">🔧 System Health Tests</h3>
-          
-          <div className="space-y-3">
-            <button
-              onClick={testSMTPConnection}
-              disabled={isTestingEmail}
-              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-            >
-              {isTestingEmail ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Test SMTP Connection
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={sendBulkNotification}
-              disabled={isTestingEmail}
-              className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-2-2V10a2 2 0 012-2h8z" />
-              </svg>
-              Preview Bulk Notification
-            </button>
-            
-            <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
-              <h4 className="text-blue-300 font-medium mb-2">📊 Email Statistics</h4>
-              <div className="text-sm text-slate-300 space-y-1">
-                <div>Users with emails: {[...technicians, ...customers].filter(u => u.email).length}</div>
-                <div>Technicians: {technicians.filter(t => t.email).length}</div>
-                <div>Customers: {customers.filter(c => c.email).length}</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Template Selection & Sending */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Select Email Template
+                  </label>
+                  <select
+                    value={selectedTemplate || ''}
+                    onChange={(e) => {
+                      setSelectedTemplate(e.target.value);
+                      loadTemplate(e.target.value);
+                    }}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Choose a template...</option>
+                    {Object.entries(emailTemplates).map(([key, template]) => (
+                      <option key={key} value={key}>{template.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Send Test To
+                  </label>
+                  <input
+                    type="email"
+                    value={testEmailData.to}
+                    onChange={(e) => setTestEmailData(prev => ({ ...prev, to: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                    placeholder="your-email@example.com"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (selectedTemplate) {
+                        loadTemplate(selectedTemplate);
+                        setShowTemplatePreview(true);
+                      }
+                    }}
+                    disabled={!selectedTemplate}
+                    className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    👁️ Preview Template
+                  </button>
+                  
+                  <button
+                    onClick={async () => {
+                      if (selectedTemplate && testEmailData.to) {
+                        // Load template content
+                        loadTemplate(selectedTemplate);
+                        // Set subject from template
+                        setTestEmailData(prev => ({
+                          ...prev,
+                          subject: emailTemplates[selectedTemplate]?.name || 'Test Email',
+                          message: templateContent
+                        }));
+                        // Send email
+                        testEmailDelivery();
+                      }
+                    }}
+                    disabled={isTestingEmail || !selectedTemplate || !testEmailData.to}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    {isTestingEmail ? 'Sending...' : '� Send Now'}
+                  </button>
+                </div>
+
+                {selectedTemplate && (
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                    <h4 className="text-blue-300 font-medium mb-2">📋 Template Info</h4>
+                    <div className="text-sm text-slate-300">
+                      <p><strong>Name:</strong> {emailTemplates[selectedTemplate]?.name}</p>
+                      <p><strong>Description:</strong> {emailTemplates[selectedTemplate]?.description}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Live Preview */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Live Preview
+                  </label>
+                  <div className="bg-slate-700/50 border border-slate-600/50 rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-auto">
+                    {selectedTemplate && templateContent ? (
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: templateContent }}
+                        className="prose prose-invert prose-sm max-w-none"
+                      />
+                    ) : (
+                      <div className="text-slate-400 text-center py-8">
+                        Select a template to see live preview
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Test Results */}
-      {emailTestResults && (
-        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-          <h3 className="text-lg font-semibold text-white mb-4">📋 Email Test Results</h3>
-          <pre className="text-sm text-slate-300 whitespace-pre-wrap bg-black/20 p-4 rounded-lg overflow-auto max-h-64">
-            {emailTestResults}
-          </pre>
-          <button
-            onClick={() => setEmailTestResults('')}
-            className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            Clear Results
-          </button>
-        </div>
-      )}
+          
+          {/* System Health Tests */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+            <h3 className="text-lg font-semibold text-white mb-4">🔧 System Health Tests</h3>
+            
+            <div className="space-y-3">
+              <button
+                onClick={testSMTPConnection}
+                disabled={isTestingEmail}
+                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+              >
+                {isTestingEmail ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Test SMTP Connection
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={sendBulkNotification}
+                disabled={isTestingEmail}
+                className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-2-2V10a2 2 0 012-2h8z" />
+                </svg>
+                Preview Bulk Notification
+              </button>
+              
+              <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+                <h4 className="text-blue-300 font-medium mb-2">📊 Email Statistics</h4>
+                <div className="text-sm text-slate-300 space-y-1">
+                  <div>Users with emails: {[...technicians, ...customers].filter(u => u.email).length}</div>
+                  <div>Technicians: {technicians.filter(t => t.email).length}</div>
+                  <div>Customers: {customers.filter(c => c.email).length}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Test Results */}
+          {emailTestResults && (
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700/50 mt-6">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">📋 Email Test Results</h3>
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap bg-slate-700/50 p-4 rounded-lg overflow-auto max-h-64">
+                {emailTestResults}
+              </pre>
+              <button
+                onClick={() => setEmailTestResults('')}
+                className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Clear Results
+              </button>
+            </div>
+          )}
         </div>
       )}
 
