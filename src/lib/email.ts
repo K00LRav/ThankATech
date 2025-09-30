@@ -10,34 +10,87 @@ interface EmailData {
   from?: string;
 }
 
+// Email Header and Footer Components
+const EmailHeader = `
+  <div style="background: linear-gradient(135deg, #1e293b 0%, #1e40af 100%); padding: 32px 24px; text-align: center; border-radius: 16px 16px 0 0;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+      <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+        🔧
+      </div>
+      <h1 style="font-size: 32px; font-weight: bold; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; font-family: Arial, sans-serif;">
+        ThankATech
+      </h1>
+    </div>
+    <p style="color: #cbd5e1; font-size: 16px; margin: 0; font-family: Arial, sans-serif;">
+      Connecting skilled technicians with appreciative clients
+    </p>
+  </div>
+`;
+
+const EmailFooter = `
+  <div style="background: #0f172a; padding: 32px 24px; text-align: center; border-radius: 0 0 16px 16px; margin-top: 32px;">
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+        <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+          🔧
+        </div>
+        <span style="color: #60a5fa; font-weight: bold; font-size: 18px; font-family: Arial, sans-serif;">ThankATech</span>
+      </div>
+      
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 16px; font-family: Arial, sans-serif;">
+        Thank you for being part of the ThankATech community!
+      </p>
+      
+      <div style="margin-bottom: 20px;">
+        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://thankatech.com'}" style="color: #60a5fa; text-decoration: none; font-size: 14px; margin: 0 12px; font-family: Arial, sans-serif;">🏠 Home</a>
+        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://thankatech.com'}/dashboard" style="color: #60a5fa; text-decoration: none; font-size: 14px; margin: 0 12px; font-family: Arial, sans-serif;">📊 Dashboard</a>
+        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://thankatech.com'}/contact" style="color: #60a5fa; text-decoration: none; font-size: 14px; margin: 0 12px; font-family: Arial, sans-serif;">📧 Contact</a>
+      </div>
+      
+      <p style="color: #64748b; font-size: 12px; margin: 0; font-family: Arial, sans-serif;">
+        © ${new Date().getFullYear()} ThankATech. All rights reserved.<br>
+        Need help? Contact us at <a href="mailto:support@thankatech.com" style="color: #34d399; text-decoration: none;">support@thankatech.com</a>
+      </p>
+    </div>
+  </div>
+`;
+
 // Email templates
 export const EmailTemplates = {
   // Welcome email for new registrations
   welcome: (name: string, userType: 'customer' | 'technician') => ({
     subject: `Welcome to ThankATech, ${name}!`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1e293b 0%, #1e40af 100%); color: white; border-radius: 12px;">
-        <div style="padding: 40px 32px; text-align: center;">
-          <h1 style="color: #60a5fa; margin-bottom: 24px;">🔧 Welcome to ThankATech!</h1>
-          <p style="font-size: 18px; margin-bottom: 24px;">Hi ${name},</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 40px 32px; background: white;">
+          <h2 style="color: #1e293b; margin-bottom: 24px; font-size: 28px; text-align: center;">Welcome to ThankATech!</h2>
+          <p style="font-size: 18px; margin-bottom: 24px; color: #475569; text-align: center;">Hi ${name},</p>
           
           ${userType === 'technician' 
             ? `
-              <p style="margin-bottom: 16px;">Your technician profile is now live! Customers can now find and thank you for your excellent work.</p>
-              <p style="margin-bottom: 24px;">Start building your reputation and earning tips from satisfied customers.</p>
-              <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">View Your Dashboard</a>
+              <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #10b981;">
+                <p style="margin-bottom: 16px; color: #065f46;">Your technician profile is now live! Customers can now find and thank you for your excellent work.</p>
+                <p style="margin-bottom: 24px; color: #065f46;">Start building your reputation and earning tips from satisfied customers.</p>
+              </div>
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">🚀 View Your Dashboard</a>
+              </div>
             `
             : `
-              <p style="margin-bottom: 16px;">You can now thank technicians and show your appreciation for their great work!</p>
-              <p style="margin-bottom: 24px;">Discover skilled technicians in your area and support them with thanks and tips.</p>
-              <a href="${process.env.NEXT_PUBLIC_BASE_URL}" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Explore Technicians</a>
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #3b82f6;">
+                <p style="margin-bottom: 16px; color: #1e40af;">You can now thank technicians and show your appreciation for their great work!</p>
+                <p style="margin-bottom: 24px; color: #1e40af;">Discover skilled technicians in your area and support them with thanks and tips.</p>
+              </div>
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">🔍 Explore Technicians</a>
+              </div>
             `
           }
-          
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">Questions? Reply to this email or visit our <a href="${process.env.NEXT_PUBLIC_BASE_URL}/contact" style="color: #34d399; text-decoration: none;">contact page</a>.</p>
-          </div>
         </div>
+        
+        ${EmailFooter}
       </div>
     `
   }),
@@ -46,22 +99,37 @@ export const EmailTemplates = {
   thankYouReceived: (technicianName: string, customerName: string, message?: string) => ({
     subject: `You received a thank you from ${customerName}! 👍`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1e293b 0%, #059669 100%); color: white; border-radius: 12px;">
-        <div style="padding: 40px 32px; text-align: center;">
-          <h1 style="color: #34d399; margin-bottom: 24px;">👍 You Got a Thank You!</h1>
-          <p style="font-size: 18px; margin-bottom: 16px;">Hi ${technicianName},</p>
-          <p style="margin-bottom: 24px;"><strong>${customerName}</strong> just thanked you for your excellent work!</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 40px 32px; background: white;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 36px;">
+              👍
+            </div>
+            <h2 style="color: #1e293b; margin-bottom: 16px; font-size: 28px;">You Got a Thank You!</h2>
+          </div>
+          
+          <p style="font-size: 18px; margin-bottom: 16px; color: #475569; text-align: center;">Hi ${technicianName},</p>
+          
+          <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; border-left: 4px solid #10b981;">
+            <p style="margin-bottom: 8px; color: #065f46; font-size: 18px;"><strong>${customerName}</strong> just thanked you for your excellent work!</p>
+          </div>
           
           ${message ? `
-            <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; margin: 24px 0;">
-              <p style="font-style: italic; margin: 0;">"${message}"</p>
+            <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #64748b;">
+              <p style="color: #475569; font-style: italic; margin: 0; font-size: 16px; text-align: center;">"${message}"</p>
             </div>
           ` : ''}
           
-          <p style="margin-bottom: 24px;">Keep up the great work! Every thank you builds your reputation.</p>
+          <p style="margin: 24px 0; color: #475569; text-align: center;">Keep up the great work! Every thank you builds your reputation and helps you stand out to potential clients.</p>
           
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">View Dashboard</a>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">📊 View Dashboard</a>
+          </div>
         </div>
+        
+        ${EmailFooter}
       </div>
     `
   }),
@@ -70,22 +138,39 @@ export const EmailTemplates = {
   tipReceived: (technicianName: string, customerName: string, amount: number, message?: string) => ({
     subject: `You received a $${amount} tip from ${customerName}! 💰`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1e293b 0%, #f59e0b 100%); color: white; border-radius: 12px;">
-        <div style="padding: 40px 32px; text-align: center;">
-          <h1 style="color: #fbbf24; margin-bottom: 24px;">💰 You Received a Tip!</h1>
-          <p style="font-size: 18px; margin-bottom: 16px;">Hi ${technicianName},</p>
-          <p style="margin-bottom: 24px;"><strong>${customerName}</strong> just sent you a <strong>$${amount} tip</strong>!</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 40px 32px; background: white;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 36px;">
+              💰
+            </div>
+            <h2 style="color: #1e293b; margin-bottom: 16px; font-size: 28px;">You Received a Tip!</h2>
+          </div>
+          
+          <p style="font-size: 18px; margin-bottom: 16px; color: #475569; text-align: center;">Hi ${technicianName},</p>
+          
+          <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; border-left: 4px solid #f59e0b;">
+            <p style="margin-bottom: 8px; color: #92400e; font-size: 20px;"><strong>${customerName}</strong> just sent you a <strong style="color: #d97706;">$${amount} tip</strong>! 🎉</p>
+          </div>
           
           ${message ? `
-            <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; margin: 24px 0;">
-              <p style="font-style: italic; margin: 0;">"${message}"</p>
+            <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #64748b;">
+              <p style="color: #475569; font-style: italic; margin: 0; font-size: 16px; text-align: center;">"${message}"</p>
             </div>
           ` : ''}
           
-          <p style="margin-bottom: 24px;">The tip will be processed and added to your earnings. You can request a payout anytime from your dashboard.</p>
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #1e40af; text-align: center;">💳 The tip will be processed and added to your earnings. You can request a payout anytime from your dashboard.</p>
+          </div>
           
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">View Earnings</a>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">💰 View Earnings</a>
+          </div>
         </div>
+        
+        ${EmailFooter}
       </div>
     `
   }),
@@ -94,18 +179,32 @@ export const EmailTemplates = {
   accountDeleted: (name: string) => ({
     subject: 'Your ThankATech account has been deleted',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #374151; color: white; border-radius: 12px;">
-        <div style="padding: 40px 32px; text-align: center;">
-          <h1 style="color: #ef4444; margin-bottom: 24px;">Account Deleted</h1>
-          <p style="font-size: 18px; margin-bottom: 16px;">Hi ${name},</p>
-          <p style="margin-bottom: 24px;">Your ThankATech account has been successfully deleted as requested.</p>
-          <p style="margin-bottom: 16px;">All your personal data has been removed from our system.</p>
-          <p style="margin-bottom: 24px;">We're sorry to see you go! If you ever want to rejoin the ThankATech community, you're always welcome back.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 40px 32px; background: white;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 36px;">
+              🗑️
+            </div>
+            <h2 style="color: #dc2626; margin-bottom: 16px; font-size: 28px;">Account Deleted</h2>
+          </div>
           
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">If you didn't request this deletion, please contact us immediately at <a href="mailto:support@thankatech.com" style="color: #34d399; text-decoration: none;">support@thankatech.com</a>.</p>
+          <p style="font-size: 18px; margin-bottom: 24px; color: #475569; text-align: center;">Hi ${name},</p>
+          
+          <div style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #ef4444;">
+            <p style="margin-bottom: 16px; color: #991b1b; text-align: center;">Your ThankATech account has been successfully deleted as requested.</p>
+            <p style="margin-bottom: 0; color: #991b1b; text-align: center;">All your personal data has been removed from our system.</p>
+          </div>
+          
+          <p style="margin: 24px 0; color: #475569; text-align: center;">We're sorry to see you go! If you ever want to rejoin the ThankATech community, you're always welcome back.</p>
+          
+          <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; text-align: center; font-size: 14px;">⚠️ If you didn't request this deletion, please contact us immediately at <a href="mailto:support@thankatech.com" style="color: #d97706; text-decoration: none; font-weight: 600;">support@thankatech.com</a>.</p>
           </div>
         </div>
+        
+        ${EmailFooter}
       </div>
     `
   }),
@@ -114,21 +213,34 @@ export const EmailTemplates = {
   passwordReset: (name: string, resetLink: string) => ({
     subject: 'Reset your ThankATech password',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1e293b 0%, #1e40af 100%); color: white; border-radius: 12px;">
-        <div style="padding: 40px 32px; text-align: center;">
-          <h1 style="color: #60a5fa; margin-bottom: 24px;">🔒 Reset Your Password</h1>
-          <p style="font-size: 18px; margin-bottom: 16px;">Hi ${name},</p>
-          <p style="margin-bottom: 24px;">We received a request to reset your ThankATech password.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 40px 32px; background: white;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 36px;">
+              🔒
+            </div>
+            <h2 style="color: #1e293b; margin-bottom: 16px; font-size: 28px;">Reset Your Password</h2>
+          </div>
           
-          <a href="${resetLink}" style="display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 24px 0;">Reset Password</a>
+          <p style="font-size: 18px; margin-bottom: 24px; color: #475569; text-align: center;">Hi ${name},</p>
           
-          <p style="margin-bottom: 16px; font-size: 14px;">This link will expire in 1 hour for security reasons.</p>
-          <p style="margin-bottom: 24px; font-size: 14px;">If you didn't request this password reset, you can safely ignore this email.</p>
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #1e40af;">We received a request to reset your ThankATech password.</p>
+          </div>
           
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="font-size: 14px; opacity: 0.8;">Need help? Contact us at <a href="mailto:support@thankatech.com" style="color: #34d399; text-decoration: none;">support@thankatech.com</a>.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">🔑 Reset Password</a>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #ef4444;">
+            <p style="margin-bottom: 12px; color: #991b1b; text-align: center; font-size: 14px;">⏰ This link will expire in 1 hour for security reasons.</p>
+            <p style="margin: 0; color: #991b1b; text-align: center; font-size: 14px;">If you didn't request this password reset, you can safely ignore this email.</p>
           </div>
         </div>
+        
+        ${EmailFooter}
       </div>
     `
   }),
@@ -137,20 +249,39 @@ export const EmailTemplates = {
   contactFormSubmission: (name: string, email: string, subject: string, message: string, userType: string) => ({
     subject: `New Contact Form Submission: ${subject}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #374151; color: white; padding: 32px; border-radius: 12px;">
-        <h1 style="color: #60a5fa; margin-bottom: 24px;">New Contact Form Submission</h1>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        ${EmailHeader}
         
-        <div style="background: rgba(255,255,255,0.05); padding: 24px; border-radius: 8px; margin-bottom: 24px;">
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>User Type:</strong> ${userType}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
+        <div style="padding: 40px 32px; background: white;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 36px;">
+              📧
+            </div>
+            <h2 style="color: #1e293b; margin-bottom: 16px; font-size: 28px;">New Contact Form Submission</h2>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #3b82f6;">
+            <div style="display: grid; gap: 12px;">
+              <p style="margin: 0; color: #1e40af;"><strong>👤 Name:</strong> ${name}</p>
+              <p style="margin: 0; color: #1e40af;"><strong>📧 Email:</strong> <a href="mailto:${email}" style="color: #1d4ed8; text-decoration: none;">${email}</a></p>
+              <p style="margin: 0; color: #1e40af;"><strong>🏷️ User Type:</strong> ${userType}</p>
+              <p style="margin: 0; color: #1e40af;"><strong>📋 Subject:</strong> ${subject}</p>
+            </div>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #64748b;">
+            <p style="margin: 0 0 12px 0; color: #1e293b; font-weight: 600;">💬 Message:</p>
+            <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <p style="white-space: pre-wrap; margin: 0; color: #475569; line-height: 1.6;">${message}</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="mailto:${email}?subject=Re: ${subject}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">📬 Reply to ${name}</a>
+          </div>
         </div>
         
-        <div style="background: rgba(255,255,255,0.05); padding: 24px; border-radius: 8px;">
-          <p><strong>Message:</strong></p>
-          <p style="white-space: pre-wrap; margin-top: 12px;">${message}</p>
-        </div>
+        ${EmailFooter}
       </div>
     `
   })
@@ -174,12 +305,13 @@ export class EmailService {
         console.log('📧 Sending email via Brevo Transactional API...');
         console.log('🔍 Debug info:', {
           hasApiKey: !!process.env.BREVO_API_KEY,
-          apiKeyPrefix: process.env.BREVO_API_KEY?.substring(0, 20) + '...',
+          apiKeyPrefix: process.env.BREVO_API_KEY?.substring(0, 25) + '...',
           to: emailData.to,
-          from: emailData.from || 'noreply@thankatech.com'
+          from: emailData.from || process.env.EMAIL_FROM || 'noreply@thankatech.com',
+          fromName: process.env.EMAIL_FROM_NAME || 'ThankATech'
         });
 
-        // For now, let's try a simple approach without templates first
+        // Use the exact same payload structure that works in test endpoint
         const emailPayload = {
           sender: {
             name: process.env.EMAIL_FROM_NAME || 'ThankATech',
@@ -191,7 +323,6 @@ export class EmailService {
           }],
           subject: emailData.subject,
           htmlContent: emailData.html,
-          // Add text content fallback
           textContent: emailData.html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
         };
 

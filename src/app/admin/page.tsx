@@ -611,18 +611,16 @@ export default function AdminPage() {
       
       setEmailTestResults(prev => prev + `📧 Sending test email to: ${testEmailData.to}\n`);
       
-      // Call the contact API endpoint to test email functionality
-      const response = await fetch('/api/contact', {
+      // Call the dedicated admin email test API
+      const response = await fetch('/api/test-admin-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'ThankATech Admin',
-          email: testEmailData.to,
+          to: testEmailData.to,
           subject: testEmailData.subject,
-          message: testEmailData.message + '\n\n--- ADMIN TEST EMAIL ---',
-          isAdminTest: true
+          message: testEmailData.message + '\n\n--- ADMIN TEST EMAIL ---'
         }),
       });
       
@@ -649,17 +647,15 @@ export default function AdminPage() {
       setEmailTestResults(prev => prev + '🔗 Checking SMTP configuration...\n');
       
       // Test a simple email to admin email
-      const response = await fetch('/api/contact', {
+      const response = await fetch('/api/test-admin-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'System Health Check',
-          email: 'k00lrav@gmail.com',
+          to: 'k00lrav@gmail.com',
           subject: 'SMTP Health Check - ' + new Date().toISOString(),
-          message: 'This is an automated SMTP health check from the admin panel.',
-          isHealthCheck: true
+          message: 'This is an automated SMTP health check from the admin panel.'
         }),
       });
       

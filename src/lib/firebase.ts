@@ -5,6 +5,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, where, orderBy, limit, Firestore } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, Auth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
+import EmailService from './email';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -176,6 +177,16 @@ export async function registerTechnician(technicianData) {
 
     const docRef = await addDoc(collection(db, COLLECTIONS.TECHNICIANS), technicianProfile);
     
+    // Send welcome email to technician
+    try {
+      const technicianName = technicianData.name || 'Technician';
+      await EmailService.sendWelcomeEmail(technicianData.email, technicianName, 'technician');
+      console.log(`✅ Welcome email sent to technician ${technicianData.email}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send technician welcome email:', emailError);
+      // Don't fail registration if email fails
+    }
+    
     return { id: docRef.id, ...technicianProfile };
   } catch (error) {
     console.error('Error registering technician:', error);
@@ -228,6 +239,17 @@ export async function registerUser(userData) {
       // Store profile image if available from Google
       profileImage: userData.photoURL || null
     });
+    
+    // Send welcome email
+    try {
+      const userName = userData.displayName || userData.name || 'User';
+      const userType = userData.userType || 'customer';
+      await EmailService.sendWelcomeEmail(userData.email, userName, userType);
+      console.log(`✅ Welcome email sent to ${userData.email}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send welcome email:', emailError);
+      // Don't fail registration if email fails
+    }
     
     return { id: docRef.id, uniqueId, ...userData };
   } catch (error) {
@@ -411,6 +433,46 @@ export async function sendThankYou(technicianId, userId, message = '') {
       }
     }
 
+    // Send thank you notification email to technician
+    try {
+      // Get technician details
+      const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+      const techDoc = await getDoc(technicianRef);
+      
+      let customerName = 'A customer';
+      if (userId) {
+        try {
+          const userRef = doc(db, COLLECTIONS.USERS, userId);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            customerName = userData.displayName || userData.name || 'A customer';
+          }
+        } catch (error) {
+          console.warn('Could not fetch customer name:', error.message);
+        }
+      }
+      
+      if (techDoc.exists()) {
+        const techData = techDoc.data();
+        const technicianName = techData.name || 'Technician';
+        const technicianEmail = techData.email;
+        
+        if (technicianEmail) {
+          await EmailService.sendThankYouNotification(
+            technicianEmail,
+            technicianName,
+            customerName,
+            message
+          );
+          console.log(`✅ Thank you notification sent to ${technicianEmail}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send thank you notification email:', emailError);
+      // Don't fail the thank you if email fails
+    }
+
     return { success: true, pointsAwarded: 10 };
   } catch (error) {
     console.error('Error sending thank you:', error);
@@ -469,6 +531,47 @@ export async function sendTip(technicianId, userId, amount, message = '') {
         console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
       }
+    }
+
+    // Send tip notification email to technician
+    try {
+      // Get technician details
+      const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+      const techDoc = await getDoc(technicianRef);
+      
+      let customerName = 'A customer';
+      if (userId) {
+        try {
+          const userRef = doc(db, COLLECTIONS.USERS, userId);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            customerName = userData.displayName || userData.name || 'A customer';
+          }
+        } catch (error) {
+          console.warn('Could not fetch customer name:', error.message);
+        }
+      }
+      
+      if (techDoc.exists()) {
+        const techData = techDoc.data();
+        const technicianName = techData.name || 'Technician';
+        const technicianEmail = techData.email;
+        
+        if (technicianEmail) {
+          await EmailService.sendTipNotification(
+            technicianEmail,
+            technicianName,
+            customerName,
+            amount,
+            message
+          );
+          console.log(`✅ Tip notification sent to ${technicianEmail}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send tip notification email:', emailError);
+      // Don't fail the tip if email fails
     }
 
     return { success: true, pointsAwarded: points };
