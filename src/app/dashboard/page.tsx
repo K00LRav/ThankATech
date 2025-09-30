@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
+import { logger } from '@/lib/logger';
 import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, Auth } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
@@ -73,7 +74,7 @@ function FavoriteTechnicianCard({ technicianId, rank }: { technicianId: string, 
           setTechnician({ id: techDoc.id, ...techDoc.data() });
         }
       } catch (error) {
-        console.error('Error fetching technician:', error);
+        logger.error('Error fetching technician:', error);
       } finally {
         setLoading(false);
       }
@@ -96,13 +97,13 @@ function FavoriteTechnicianCard({ technicianId, rank }: { technicianId: string, 
     // Navigate to technician's profile page using their username
     if (technician.username) {
       const profileUrl = `/${technician.username}`;
-      console.log('🔍 Opening profile page:', profileUrl);
+      logger.debug('Opening profile page:', profileUrl);
       window.open(profileUrl, '_blank');
     } else {
       // Fallback to search if no username (for older data)
       const searchTerm = technician.name || technician.businessName || '';
       const mainPageUrl = `/?search=${encodeURIComponent(searchTerm)}`;
-      console.log('🔍 Opening main page with search (no username):', searchTerm);
+      logger.debug('Opening main page with search (no username):', searchTerm);
       window.open(mainPageUrl, '_blank');
     }
   };

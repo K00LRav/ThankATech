@@ -1,8 +1,16 @@
 // Admin utilities for managing usernames
+// Only available in development environment
 import { addUsernameToTechnician } from './firebase.js';
+
+// Check if we're in development
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Development utility to add usernames to existing technicians
 export async function setTechnicianUsername(technicianId, username) {
+  if (!isDevelopment) {
+    throw new Error('Admin utilities are only available in development environment');
+  }
+  
   try {
     const result = await addUsernameToTechnician(technicianId, username);
     console.log('✅ Username set successfully:', result);
@@ -15,6 +23,10 @@ export async function setTechnicianUsername(technicianId, username) {
 
 // Helper to find technician ID by name
 export async function findTechnicianIdByName(name) {
+  if (!isDevelopment) {
+    throw new Error('Admin utilities are only available in development environment');
+  }
+  
   const { db } = await import('./firebase.js');
   const { collection, query, where, getDocs } = await import('firebase/firestore');
   

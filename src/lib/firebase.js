@@ -1,6 +1,7 @@
 // Firebase configuration and services for ThankATech
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { logger } from './logger';
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, increment, query, where, orderBy, limit } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -35,7 +36,7 @@ if (isFirebaseConfigured) {
   googleProvider.addScope('email');
   googleProvider.addScope('profile');
 } else {
-  console.warn('Firebase not configured. Using mock data mode.');
+  logger.warn('Firebase not configured. Using mock data mode.');
   // Create mock objects that won't throw errors
   app = null;
   db = null;
@@ -83,7 +84,7 @@ function createUniqueIdFromEmail(email) {
  */
 export async function registerTechnician(technicianData) {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock data.');
+    logger.warn('Firebase not configured. Returning mock data.');
     return { id: 'mock-tech-' + Date.now(), ...technicianData, points: 0 };
   }
 
@@ -158,7 +159,7 @@ export async function registerTechnician(technicianData) {
     
     return { id: docRef.id, ...technicianProfile };
   } catch (error) {
-    console.error('Error registering technician:', error);
+    logger.error('Error registering technician:', error);
     throw error;
   }
 }
@@ -168,7 +169,7 @@ export async function registerTechnician(technicianData) {
  */
 export async function registerUser(userData) {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock user data.');
+    logger.warn('Firebase not configured. Returning mock user data.');
     return { id: 'mock-user-' + Date.now(), ...userData };
   }
 
@@ -208,17 +209,17 @@ export async function registerUser(userData) {
           userData.name,
           userData.userType || 'customer'
         ).catch(error => {
-          console.error('Failed to send welcome email:', error);
+          logger.error('Failed to send welcome email:', error);
           // Don't throw - email failure shouldn't fail registration
         });
       } catch (error) {
-        console.error('Error importing EmailService:', error);
+        logger.error('Error importing EmailService:', error);
       }
     }
     
     return newUser;
   } catch (error) {
-    console.error('Error registering user:', error);
+    logger.error('Error registering user:', error);
     throw error;
   }
 }
@@ -228,7 +229,7 @@ export async function registerUser(userData) {
  */
 export async function getRegisteredTechnicians() {
   if (!db) {
-    console.warn('Firebase not configured. Returning empty array.');
+    logger.warn('Firebase not configured. Returning empty array.');
     return [];
   }
 
@@ -253,7 +254,7 @@ export async function getRegisteredTechnicians() {
     
     return technicians;
   } catch (error) {
-    console.error('Error fetching technicians:', error);
+    logger.error('Error fetching technicians:', error);
     return [];
   }
 }
@@ -263,7 +264,7 @@ export async function getRegisteredTechnicians() {
  */
 export async function checkDailyThankYouLimit(technicianId, userId) {
   if (!db) {
-    console.warn('Firebase not configured. Mock limit check.');
+    logger.warn('Firebase not configured. Mock limit check.');
     return { canSend: true, remaining: 3 };
   }
 
@@ -293,7 +294,7 @@ export async function checkDailyThankYouLimit(technicianId, userId) {
       todayCount: todayCount
     };
   } catch (error) {
-    console.error('Error checking daily thank you limit:', error);
+    logger.error('Error checking daily thank you limit:', error);
     // In case of error, allow the thank you but log the issue
     return { canSend: true, remaining: 3, todayCount: 0 };
   }
@@ -304,7 +305,7 @@ export async function checkDailyThankYouLimit(technicianId, userId) {
  */
 export async function sendThankYou(technicianId, userId, message = '') {
   if (!db) {
-    console.warn('Firebase not configured. Mock thank you sent.');
+    logger.warn('Firebase not configured. Mock thank you sent.');
     return { success: true, pointsAwarded: 1 };
   }
 
@@ -386,7 +387,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
 
     return { success: true, pointsAwarded: 10 };
   } catch (error) {
-    console.error('Error sending thank you:', error);
+    logger.error('Error sending thank you:', error);
     throw error;
   }
 }
@@ -396,7 +397,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
  */
 export async function sendTip(technicianId, userId, amount, message = '') {
   if (!db) {
-    console.warn('Firebase not configured. Mock tip sent.');
+    logger.warn('Firebase not configured. Mock tip sent.');
     return { success: true, pointsAwarded: amount };
   }
 

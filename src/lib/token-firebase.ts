@@ -3,6 +3,7 @@
 // Token system Firebase functions
 // Separated from main firebase.ts to avoid @ts-nocheck issues
 
+import { logger } from './logger';
 import { 
   getFirestore, 
   collection, 
@@ -41,7 +42,7 @@ const COLLECTIONS = {
  */
 export async function getUserTokenBalance(userId: string): Promise<UserTokenBalance> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock token balance.');
+    logger.warn('Firebase not configured. Returning mock token balance.');
     return {
       userId,
       tokens: 100,
@@ -72,7 +73,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
       return initialBalance;
     }
   } catch (error) {
-    console.error('Error getting token balance:', error);
+    logger.error('Error getting token balance:', error);
     throw error;
   }
 }
@@ -82,7 +83,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
  */
 export async function addTokensToBalance(userId: string, tokensToAdd: number, purchaseAmount: number): Promise<void> {
   if (!db) {
-    console.warn('Firebase not configured. Mock tokens added.');
+    logger.warn('Firebase not configured. Mock tokens added.');
     return;
   }
 
@@ -107,9 +108,9 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
       });
     }
     
-    console.log(`✅ Added ${tokensToAdd} tokens to user ${userId}`);
+    logger.success(`Added ${tokensToAdd} tokens to user ${userId}`);
   } catch (error) {
-    console.error('Error adding tokens to balance:', error);
+    logger.error('Error adding tokens to balance:', error);
     throw error;
   }
 }
@@ -144,7 +145,7 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
       };
     }
   } catch (error) {
-    console.error('Error checking daily limit:', error);
+    logger.error('Error checking daily limit:', error);
     // Default to allowing free thank you on error
     return { canSendFree: true, remainingFree: 2 };
   }
@@ -218,9 +219,9 @@ export async function updateDailyPointsUsage(userId: string, pointsToAdd: number
       await setDoc(limitRef, newLimit);
     }
     
-    console.log(`✅ Updated daily points usage: +${pointsToAdd} for user ${userId}`);
+    logger.success(`Updated daily points usage: +${pointsToAdd} for user ${userId}`);
   } catch (error) {
-    console.error('Error updating daily points usage:', error);
+    logger.error('Error updating daily points usage:', error);
     throw error;
   }
 }
@@ -450,7 +451,7 @@ export async function sendTokens(
     
     return { success: true, transactionId: transactionRef.id };
   } catch (error) {
-    console.error('Error sending tokens:', error);
+    logger.error('Error sending tokens:', error);
     return { success: false, error: error.message };
   }
 }

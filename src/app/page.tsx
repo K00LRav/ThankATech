@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
+import { logger } from '../lib/logger';
 import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
 import { getUserTokenBalance, sendFreeThankYou, checkDailyPointsLimit } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
@@ -332,7 +333,7 @@ export default function Home() {
             });
           }
         } catch (error) {
-          console.error('Error loading user profile:', error);
+          logger.error('Error loading user profile:', error);
           // Still set basic user data from Firebase auth
           setCurrentUser({
             id: firebaseUser.uid,
@@ -442,7 +443,7 @@ export default function Home() {
           setError('No technician data available');
         }
       } catch (error) {
-        console.error('Failed to load technicians:', error);
+        logger.error('Failed to load technicians:', error);
         setError('Failed to load technician data');
       } finally {
         setLoading(false);
@@ -499,7 +500,7 @@ export default function Home() {
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 3000);
     } catch (error) {
-      console.error('Error sending thank you:', error);
+      logger.error('Error sending thank you:', error);
       setError('Failed to send thank you. Please try again.');
     }
   };
@@ -1415,7 +1416,7 @@ export default function Home() {
         onClose={() => setShowTokenPurchaseModal(false)}
         userId={currentUser?.id || ''}
         onPurchaseSuccess={(tokens) => {
-          console.log(`User purchased ${tokens} tokens`);
+          logger.info(`User purchased ${tokens} tokens`);
           // Could show a success message or update UI here
         }}
       />
