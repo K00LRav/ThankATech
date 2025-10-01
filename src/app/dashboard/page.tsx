@@ -1740,17 +1740,17 @@ export default function ModernDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
+      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/10 backdrop-blur-lg border-r border-white/20 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+        <div className="flex items-center justify-between h-20 px-6 border-b border-white/20">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">🔧</span>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-xl">🔧</span>
               </div>
               <div>
-                <h1 className="text-white font-bold text-xl">ThankATech</h1>
-                <p className="text-blue-300 text-xs font-medium">
-                  {userProfile?.userType === 'client' ? 'Client Portal' : 'Technician Portal'}
+                <h1 className="text-white font-bold text-2xl">ThankATech</h1>
+                <p className="text-blue-300 text-sm font-medium">
+                  {userProfile?.userType === 'client' ? 'Client Dashboard' : 'Technician Dashboard'}
                 </p>
               </div>
             </div>
@@ -1765,29 +1765,29 @@ export default function ModernDashboard() {
           </button>
         </div>
 
-        {/* User Profile Section */}
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
+        {/* User Profile Section - Cleaner design */}
+        <div className="p-6 border-b border-white/20 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+          <div className="flex items-center gap-4">
             {userProfile?.photoURL ? (
               <Image 
                 src={userProfile.photoURL} 
                 alt={userProfile.name}
-                width={48}
-                height={48}
-                className="w-12 h-12 rounded-full border-2 border-blue-400"
+                width={56}
+                height={56}
+                className="w-14 h-14 rounded-full border-2 border-blue-400 shadow-lg"
               />
             ) : (
-              <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-white font-medium truncate">
+              <p className="text-white font-semibold text-lg truncate">
                 {userProfile?.name || user?.displayName || 'User'}
               </p>
-              <p className="text-slate-400 text-sm truncate">
+              <p className="text-blue-300 text-sm font-medium truncate">
                 {userProfile?.userType === 'client' ? '� Client' : '🔧 ' + (userProfile?.businessName || 'Technician')}
               </p>
             </div>
