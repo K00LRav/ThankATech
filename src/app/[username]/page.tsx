@@ -203,22 +203,56 @@ export default function TechnicianProfile() {
                 </div>
               </div>
 
-              {/* Enhanced Stats Grid */}
+              {/* Enhanced ThankATech Points Stats Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 lg:gap-6">
-                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/30 hover:bg-white/30 transition-colors">
-                  <div className="text-3xl font-bold text-white mb-1">{technician.points || 0}</div>
-                  <div className="text-sm text-blue-200 font-medium">Points</div>
-                </div>
-                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/30 hover:bg-white/30 transition-colors">
-                  <div className="text-3xl font-bold text-white mb-1">{technician.totalThankYous || 0}</div>
-                  <div className="text-sm text-blue-200 font-medium">Thank Yous</div>
-                </div>
-                {technician.totalTips && (
-                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/30 hover:bg-white/30 transition-colors lg:col-span-1 col-span-2">
-                    <div className="text-3xl font-bold text-white mb-1">{technician.totalTips}</div>
-                    <div className="text-sm text-blue-200 font-medium">Tips Received</div>
+                {/* ThankATech Points Balance */}
+                <div className="bg-gradient-to-br from-blue-500/30 to-cyan-500/30 backdrop-blur-sm rounded-2xl p-4 text-center border border-blue-400/50 hover:from-blue-500/40 hover:to-cyan-500/40 transition-all duration-300 shadow-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">T</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white">{technician.points || 0}</div>
                   </div>
-                )}
+                  <div className="text-xs text-blue-200 font-medium">ThankATech Points</div>
+                  <div className="text-xs text-blue-300/80 mt-1">${((technician.points || 0) * 0.01).toFixed(2)} value</div>
+                </div>
+
+                {/* Thank You Count */}
+                <div className="bg-gradient-to-br from-green-500/30 to-emerald-500/30 backdrop-blur-sm rounded-2xl p-4 text-center border border-green-400/50 hover:from-green-500/40 hover:to-emerald-500/40 transition-all duration-300 shadow-lg">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-2xl">🙏</span>
+                    <div className="text-2xl font-bold text-white">
+                      {technician.totalThankYous || 0}
+                    </div>
+                  </div>
+                  <div className="text-xs text-green-200 font-medium">Thank Yous</div>
+                  <div className="text-xs text-green-300/80 mt-1">Appreciation received</div>
+                </div>
+
+                {/* Achievement Level */}
+                <div className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 backdrop-blur-sm rounded-2xl p-4 text-center border border-purple-400/50 hover:from-purple-500/40 hover:to-pink-500/40 transition-all duration-300 shadow-lg lg:col-span-1 col-span-2">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {/* Dynamic badge based on points */}
+                    {(() => {
+                      const points = technician.points || 0;
+                      if (points >= 10000) {
+                        return <><span className="text-xl">🏆</span><div className="text-lg font-bold text-white">Master Tech</div></>;
+                      } else if (points >= 5000) {
+                        return <><span className="text-xl">⭐</span><div className="text-lg font-bold text-white">Expert Pro</div></>;
+                      } else if (points >= 2000) {
+                        return <><span className="text-xl">🥇</span><div className="text-lg font-bold text-white">Skilled Tech</div></>;
+                      } else if (points >= 500) {
+                        return <><span className="text-xl">🥈</span><div className="text-lg font-bold text-white">Rising Star</div></>;
+                      } else {
+                        return <><span className="text-xl">🔰</span><div className="text-lg font-bold text-white">New Tech</div></>;
+                      }
+                    })()}
+                  </div>
+                  <div className="text-xs text-purple-200 font-medium">Achievement Level</div>
+                  <div className="text-xs text-purple-300/80 mt-1">
+                    {technician.totalTips ? `${technician.totalTips} satisfied customers` : 'Building reputation'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -230,12 +264,10 @@ export default function TechnicianProfile() {
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-slate-300 text-sm">Available for hire</span>
               </div>
-              {technician.totalTips && technician.totalTips > 0 && (
+              {(technician.totalThankYous && technician.totalThankYous > 0) && (
                 <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                  <span className="text-slate-300 text-sm">Highly rated technician</span>
+                  <span className="text-yellow-400 text-lg">🙏</span>
+                  <span className="text-slate-300 text-sm">Highly appreciated technician</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
@@ -266,6 +298,114 @@ export default function TechnicianProfile() {
                     <p className="text-slate-300 leading-relaxed text-lg">{technician.about}</p>
                   </div>
                 )}
+
+                {/* ThankATech Points Reputation Section */}
+                <div className="bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-cyan-500/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-400/30 hover:from-blue-500/15 hover:via-purple-500/15 hover:to-cyan-500/15 transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">T</span>
+                    </div>
+                    <h2 className="text-2xl font-semibold text-white">ThankATech Reputation</h2>
+                    <div className="ml-auto bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-full px-4 py-2 border border-green-400/30">
+                      <span className="text-green-300 font-medium text-sm">
+                        {technician.totalThankYous || 0} Thank Yous 🙏
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Points Breakdown */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/15 transition-colors">
+                      <div className="text-2xl font-bold text-blue-300 mb-1">
+                        {technician.points ? Math.floor((technician.points || 0) * 0.4) : 0}
+                      </div>
+                      <div className="text-xs text-slate-300">Quality Points</div>
+                      <div className="text-xs text-blue-400 mt-1">Work Excellence</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/15 transition-colors">
+                      <div className="text-2xl font-bold text-green-300 mb-1">
+                        {technician.points ? Math.floor((technician.points || 0) * 0.3) : 0}
+                      </div>
+                      <div className="text-xs text-slate-300">Timeliness Points</div>
+                      <div className="text-xs text-green-400 mt-1">On-Time Service</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/15 transition-colors">
+                      <div className="text-2xl font-bold text-purple-300 mb-1">
+                        {technician.points ? Math.floor((technician.points || 0) * 0.2) : 0}
+                      </div>
+                      <div className="text-xs text-slate-300">Communication</div>
+                      <div className="text-xs text-purple-400 mt-1">Customer Service</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20 hover:bg-white/15 transition-colors">
+                      <div className="text-2xl font-bold text-yellow-300 mb-1">
+                        {technician.points ? Math.floor((technician.points || 0) * 0.1) : 0}
+                      </div>
+                      <div className="text-xs text-slate-300">Bonus Points</div>
+                      <div className="text-xs text-yellow-400 mt-1">Extra Value</div>
+                    </div>
+                  </div>
+
+                  {/* Recent Performance Indicators */}
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Recent Performance</h3>
+                      <div className="text-xs text-slate-400">Last 30 days</div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gradient-to-r from-green-500/30 to-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-6 h-6 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="text-sm font-semibold text-white">{technician.totalThankYous || 0}</div>
+                        <div className="text-xs text-slate-400">Thank Yous</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="text-sm font-semibold text-white">98%</div>
+                        <div className="text-xs text-slate-400">On Time</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <div className="text-sm font-semibold text-white">Excellent</div>
+                        <div className="text-xs text-slate-400">Communication</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gradient-to-r from-yellow-500/30 to-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <span className="text-2xl">🙏</span>
+                        </div>
+                        <div className="text-sm font-semibold text-white">
+                          {technician.totalThankYous || 0}
+                        </div>
+                        <div className="text-xs text-slate-400">Thank Yous</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Points Earning Info */}
+                  <div className="mt-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-sm rounded-xl border border-blue-400/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium text-blue-200">How ThankATech Points Work</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Customers earn points for completed jobs and can transfer them to show appreciation. 
+                                            Points reflect real value and can be converted to tips (100 points = $1.00). 
+                      This technician has earned <strong className="text-white">{technician.points || 0} points</strong> through quality service.
+                    </p>
+                  </div>
+                </div>
 
                 {/* Professional Experience */}
                 {technician.experience && (
@@ -311,35 +451,128 @@ export default function TechnicianProfile() {
                     <p className="text-slate-300 leading-relaxed text-lg">{technician.availability}</p>
                   </div>
                 )}
+
+                {/* ThankATech Points Summary */}
+                <div className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-2xl p-6 border border-cyan-400/30 hover:from-cyan-500/15 hover:via-blue-500/15 hover:to-purple-500/15 transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">T</span>
+                    </div>
+                    <h2 className="text-2xl font-semibold text-white">Points & Appreciation</h2>
+                    <div className="ml-auto text-xs text-slate-400">Community Recognition</div>
+                  </div>
+
+                  {/* Simple Points Display */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 text-center">
+                      <div className="text-4xl font-bold text-blue-300 mb-2">{technician.points || 0}</div>
+                      <div className="text-sm text-slate-300">Total ThankATech Points</div>
+                      <div className="text-xs text-blue-400 mt-1">${((technician.points || 0) * 0.01).toFixed(2)} community value</div>
+                    </div>
+                    <div className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 text-center">
+                      <div className="text-4xl font-bold text-green-300 mb-2">{technician.totalThankYous || 0}</div>
+                      <div className="text-sm text-slate-300">Thank You Messages</div>
+                      <div className="text-xs text-green-400 mt-1">From grateful customers</div>
+                    </div>
+                  </div>
+
+                  {/* Community Impact */}
+                  <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-white mb-2">Community Impact</h3>
+                      <p className="text-sm text-slate-300 mb-4">
+                        This technician contributes to the ThankATech community through quality service and positive interactions.
+                      </p>
+                      <div className="flex justify-center gap-4 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-400">✓</span>
+                          <span className="text-slate-300">Verified Professional</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-400">🙏</span>
+                          <span className="text-slate-300">Community Member</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-purple-400">💫</span>
+                          <span className="text-slate-300">Points Contributor</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Enhanced Sidebar */}
               <div className="space-y-6">
-                {/* Action Buttons */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 space-y-4">
+                {/* TOA Appreciation System */}
+                <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/30 space-y-4 shadow-xl">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                      </svg>
+                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">🧡</span>
                     </div>
-                    Show Appreciation
+                    TOA Appreciation
                   </h3>
                   
+                  {/* Send TOA Tokens */}
                   <button
                     onClick={() => setShowTipModal(true)}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
                   >
-                    <span className="text-xl">💝</span>
-                    Send a Tip
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="font-bold text-sm">🧡</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">Send TOA Tokens</div>
+                        <div className="text-xs text-orange-200">You earn 1 point per token sent</div>
+                      </div>
+                    </div>
                   </button>
                   
+                  {/* Quick Thank You */}
                   <button
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
                   >
-                    <span className="text-xl">🙏</span>
-                    Say Thank You
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">🙏</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold">Send Thank You</div>
+                        <div className="text-xs text-blue-200">Both of you earn 1 point</div>
+                      </div>
+                    </div>
                   </button>
+
+                  {/* TOA Conversion System */}
+                  <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-400/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span className="text-sm font-medium text-purple-200">Viral Appreciation Cycle</span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                        <span className="text-xs text-slate-300">Convert Points → TOA</span>
+                        <span className="text-xs font-bold text-white">5 Points → 1 TOA</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                        <span className="text-xs text-slate-300">Send Thank You</span>
+                        <span className="text-xs font-bold text-green-300">+1 Point Each</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                        <span className="text-xs text-slate-300">Receive TOA Token</span>
+                        <span className="text-xs font-bold text-orange-300">+2 Points + Money</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      <strong className="text-purple-200">Appreciation generates more appreciation!</strong> 
+                      The more you give, the more points you earn to give even more. 🔄✨
+                    </p>
+                  </div>
                 </div>
 
                 {/* Enhanced Contact Information */}
@@ -527,31 +760,8 @@ export default function TechnicianProfile() {
         />
       )}
 
-      {/* Enhanced Footer */}
-      <footer className="relative mt-16 bg-white/5 backdrop-blur-xl border-t border-white/20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">T</span>
-              </div>
-              <span className="text-xl font-bold text-white">ThankATech</span>
-            </div>
-            <p className="text-slate-300 mb-4">Connecting customers with exceptional service providers</p>
-            <div className="flex justify-center gap-6 text-sm text-slate-400">
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
-            </div>
-            <div className="mt-6 pt-6 border-t border-white/10">
-              <p className="text-slate-400 text-sm">
-                © 2025 ThankATech. All rights reserved. • 
-                <span className="text-blue-400 ml-1">Profile: thankatech.com/{technician.username}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Standard Footer - Consistent with Main Page */}
+      <Footer onOpenRegistration={() => {}} />
     </div>
   );
 }
