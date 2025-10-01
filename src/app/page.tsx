@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { logger } from '../lib/logger';
 import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
-import { getUserTokenBalance, sendFreeThankYou, checkDailyPointsLimit } from '../lib/token-firebase';
+import { getUserTokenBalance, sendFreeThankYou } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
@@ -97,10 +97,10 @@ export default function Home() {
     rating: 5.0
   }) as any;
 
-  // Calculate dynamic rating based on thank yous and tips
-  const calculateRating = (thankYous: number, tips: number, tipAmount: number) => {
+  // Calculate dynamic rating based on thank yous and TOA
+  const calculateRating = (thankYous: number, tokens: number, tokenAmount: number) => {
     // Base algorithm: convert engagement to 1-5 star rating
-    const totalEngagement = thankYous + (tips * 2); // Tips count double
+    const totalEngagement = thankYous + (tokens * 2); // TOA count double
     const baseRating = 3.0; // Everyone starts at 3 stars
     const engagementBonus = Math.min(totalEngagement / 30, 2.0); // Max 2 extra stars
     return Math.min(baseRating + engagementBonus, 5.0);
@@ -128,11 +128,11 @@ export default function Home() {
     else if (totalThankYous >= 25) badges.push({ icon: '⭐', text: 'Rising Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if (totalThankYous >= 10) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
 
-    // Tip milestones
-    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond Earner', color: 'bg-blue-100 text-blue-800 border-blue-300' });
-    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
-    else if (totalTips >= 5) badges.push({ icon: '💰', text: 'Tip Earner', color: 'bg-green-100 text-green-800 border-green-300' });
+    // TOA milestones
+    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver TOA Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
+    else if (totalTips >= 5) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // Rating milestones
     if (dynamicRating >= 4.8) badges.push({ icon: '🌟', text: 'Excellence', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
@@ -476,7 +476,7 @@ export default function Home() {
     try {
       const currentTechnician = profiles[currentProfileIndex];
       
-      // Use new consolidated points system
+      // Use new consolidated ThankATech Points system
       const result = await sendFreeThankYou(currentUser.id, currentTechnician.id);
       
       if (!result.success) {
@@ -484,19 +484,19 @@ export default function Home() {
         return;
       }
       
-      // Update the technician's stats locally (new points system: 1 point per thank you)
+      // Update the technician's stats locally (new system: 1 ThankATech Point per thank you)
       setProfiles(prev => prev.map((tech, index) => 
         index === currentProfileIndex 
           ? { 
               ...tech, 
-              points: tech.points + 1, // 1 point per thank you in new system
+              points: tech.points + 1, // 1 ThankATech Point per thank you
               totalThankYous: (tech.totalThankYous || 0) + 1
             }
           : tech
       ));
 
-      const remainingPoints = result.pointsRemaining || 0;
-      setThankYouMessage(`Thank you sent successfully! 👍 ${remainingPoints > 0 ? `(${remainingPoints} points remaining today)` : '(Daily limit reached)'}`);
+      const remainingThanks = result.pointsRemaining || 0;
+      setThankYouMessage(`Thank you sent successfully! 👍 They earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 3000);
     } catch (error) {
@@ -854,7 +854,7 @@ export default function Home() {
                         title="Buy token packs to send appreciation"
                       >
                         <span className="text-purple-300">🪙</span>
-                        <span className="text-purple-300 font-semibold text-sm">Buy Tokens</span>
+                        <span className="text-purple-300 font-semibold text-sm">Buy TOA</span>
                       </button>
                     </div>
                   )}
@@ -1044,7 +1044,7 @@ export default function Home() {
                       💰 <span className="text-white">From $5</span>
                     </span>
                     <span className="text-sm text-gray-300 flex items-center gap-1">
-                      🪙 <span className="text-white">{profile.totalTips || 0} tips</span>
+                      🪙 <span className="text-white">{profile.totalTips || 0} TOA</span>
                     </span>
                   </div>
                   
@@ -1226,7 +1226,7 @@ export default function Home() {
                         <span className="font-bold text-yellow-600 text-sm">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} tips
+                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} TOA
                       </div>
                     </div>
 
@@ -1326,7 +1326,7 @@ export default function Home() {
                     className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
                     <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
-                    <span className="text-white text-base">Send Tokens</span>
+                    <span className="text-white text-base">Send TOA</span>
                   </button>
                 </div>
                 
@@ -1339,7 +1339,7 @@ export default function Home() {
                   <span className="text-gray-500">•</span>
                   <span className="flex items-center gap-1">
                     <span className="text-emerald-400">🪙</span>
-                    <span className="text-white font-medium">{profile.totalTips || 0} tips</span>
+                    <span className="text-white font-medium">{profile.totalTips || 0} TOA</span>
                   </span>
                 </div>
               </div>

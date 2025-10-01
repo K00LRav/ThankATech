@@ -47,6 +47,13 @@ export interface DailyPointsLimit {
   maxDailyPoints: number;
 }
 
+export interface DailyPerTechnicianLimit {
+  userId: string;
+  date: string; // YYYY-MM-DD
+  thankedTechnicians: string[]; // Array of technician IDs thanked today
+  maxDailyThanks: number;
+}
+
 // Token pack configurations
 export const TOKEN_PACKS: TokenPack[] = [
   {
@@ -90,11 +97,11 @@ export const TOKEN_LIMITS = {
   FREE_DAILY_LIMIT: 3
 };
 
-// Points system limits
+// ThankATech Points system limits
 export const POINTS_LIMITS = {
-  DAILY_FREE_POINTS: 5, // 5 points per day total
-  POINTS_PER_THANK_YOU: 1, // 1 point per thank you click
-  POINTS_PER_TOKEN: 2 // 2 points per token received
+  DAILY_THANK_YOU_LIMIT: 1, // 1 thank you per technician per day (NEW LIMIT)
+  POINTS_PER_THANK_YOU: 1, // 1 ThankATech Point per thank you click
+  POINTS_PER_TOKEN: 2 // 2 ThankATech Points per TOA received
 };
 
 // Utility functions

@@ -20,6 +20,7 @@ import {
   TokenTransaction, 
   DailyThankYouLimit,
   DailyPointsLimit,
+  DailyPerTechnicianLimit,
   TOKEN_LIMITS,
   POINTS_LIMITS 
 } from './tokens';
@@ -33,6 +34,7 @@ const COLLECTIONS = {
   TOKEN_TRANSACTIONS: 'tokenTransactions', 
   DAILY_LIMITS: 'dailyLimits',
   DAILY_POINTS: 'dailyPoints',
+  DAILY_PER_TECH_LIMITS: 'dailyPerTechLimits',
   TECHNICIANS: 'technicians',
   USERS: 'users'
 };
@@ -152,82 +154,102 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
 }
 
 /**
- * Check daily points limit (consolidated system)
+ * Check daily per-technician thank you limit (NEW SYSTEM)
  */
-export async function checkDailyPointsLimit(userId: string): Promise<{canUsePoints: boolean, remainingPoints: number, pointsGiven: number}> {
+export async function checkDailyPerTechnicianLimit(userId: string, technicianId: string): Promise<{
+  canThank: boolean, 
+  reason?: string,
+  alreadyThankedToday: boolean
+}> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock points limit check.');
-    return { canUsePoints: true, remainingPoints: 4, pointsGiven: 1 };
+    console.warn('Firebase not configured. Returning mock limit check.');
+    return { canThank: true, alreadyThankedToday: false };
   }
 
   try {
+    // Prevent self-thanking
+    if (userId === technicianId) {
+      return { 
+        canThank: false, 
+        reason: "You cannot thank yourself", 
+        alreadyThankedToday: false 
+      };
+    }
+
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const limitId = `${userId}_${today}`;
-    const limitRef = doc(db, COLLECTIONS.DAILY_POINTS, limitId);
+    const limitRef = doc(db, COLLECTIONS.DAILY_PER_TECH_LIMITS, limitId);
     const limitDoc = await getDoc(limitRef);
     
     if (limitDoc.exists()) {
-      const data = limitDoc.data() as DailyPointsLimit;
-      const remainingPoints = POINTS_LIMITS.DAILY_FREE_POINTS - data.pointsGiven;
-      return {
-        canUsePoints: remainingPoints > 0,
-        remainingPoints: Math.max(0, remainingPoints),
-        pointsGiven: data.pointsGiven
-      };
+      const data = limitDoc.data() as DailyPerTechnicianLimit;
+      const thankedTechnicians = data.thankedTechnicians || [];
+      
+      // Check if this specific technician was already thanked today
+      if (thankedTechnicians.includes(technicianId)) {
+        return { 
+          canThank: false, 
+          reason: "You've already thanked this technician today", 
+          alreadyThankedToday: true 
+        };
+      }
+
+      return { canThank: true, alreadyThankedToday: false };
     } else {
-      // First points usage of the day
-      return {
-        canUsePoints: true,
-        remainingPoints: POINTS_LIMITS.DAILY_FREE_POINTS - POINTS_LIMITS.POINTS_PER_THANK_YOU,
-        pointsGiven: 0
-      };
+      // First thank you of the day
+      return { canThank: true, alreadyThankedToday: false };
     }
   } catch (error) {
-    console.error('Error checking daily points limit:', error);
-    // Default to allowing points usage on error
-    return { canUsePoints: true, remainingPoints: 4, pointsGiven: 0 };
+    console.error('Error checking daily per-technician limit:', error);
+    // Default to allowing thank you on error
+    return { canThank: true, alreadyThankedToday: false };
   }
 }
 
 /**
- * Update daily points usage tracking
+ * Update daily per-technician thank you tracking
  */
-export async function updateDailyPointsUsage(userId: string, pointsToAdd: number): Promise<void> {
+export async function updateDailyPerTechnicianLimit(userId: string, technicianId: string): Promise<void> {
   if (!db) {
-    console.warn('Firebase not configured. Mock points updated.');
+    console.warn('Firebase not configured. Mock limit updated.');
     return;
   }
 
   try {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const limitId = `${userId}_${today}`;
-    const limitRef = doc(db, COLLECTIONS.DAILY_POINTS, limitId);
+    const limitRef = doc(db, COLLECTIONS.DAILY_PER_TECH_LIMITS, limitId);
     const limitDoc = await getDoc(limitRef);
     
     if (limitDoc.exists()) {
+      const data = limitDoc.data() as DailyPerTechnicianLimit;
+      const thankedTechnicians = [...(data.thankedTechnicians || []), technicianId];
+      
       await updateDoc(limitRef, {
-        pointsGiven: increment(pointsToAdd)
+        thankedTechnicians
       });
     } else {
-      // Create new daily points record
-      const newLimit: DailyPointsLimit = {
+      // Create new daily limit record
+      const newLimit: DailyPerTechnicianLimit = {
         userId,
         date: today,
-        pointsGiven: pointsToAdd,
-        maxDailyPoints: POINTS_LIMITS.DAILY_FREE_POINTS
+        thankedTechnicians: [technicianId],
+        maxDailyThanks: POINTS_LIMITS.DAILY_THANK_YOU_LIMIT
       };
       await setDoc(limitRef, newLimit);
     }
     
-    logger.success(`Updated daily points usage: +${pointsToAdd} for user ${userId}`);
+    logger.success(`Updated daily per-technician limit for user ${userId}`);
   } catch (error) {
-    logger.error('Error updating daily points usage:', error);
+    logger.error('Error updating daily per-technician limit:', error);
     throw error;
   }
 }
 
+
+
 /**
- * Send free thank you with points (consolidated system)
+ * Send free thank you with ThankATech Points (NEW SYSTEM)
  */
 export async function sendFreeThankYou(
   fromUserId: string, 
@@ -235,16 +257,16 @@ export async function sendFreeThankYou(
 ): Promise<{success: boolean, transactionId?: string, error?: string, pointsRemaining?: number}> {
   if (!db) {
     console.warn('Firebase not configured. Mock thank you sent.');
-    return { success: true, transactionId: 'mock-thank-you-' + Date.now(), pointsRemaining: 4 };
+    return { success: true, transactionId: 'mock-thank-you-' + Date.now(), pointsRemaining: 0 };
   }
 
   try {
-    // Check if user has points remaining for the day
-    const pointsCheck = await checkDailyPointsLimit(fromUserId);
-    if (!pointsCheck.canUsePoints) {
+    // Check per-technician daily limit and prevent self-thanking
+    const limitCheck = await checkDailyPerTechnicianLimit(fromUserId, toTechnicianId);
+    if (!limitCheck.canThank) {
       return { 
         success: false, 
-        error: `Daily free points limit reached (${POINTS_LIMITS.DAILY_FREE_POINTS} per day)`,
+        error: limitCheck.reason || 'Cannot thank this technician today',
         pointsRemaining: 0
       };
     }
@@ -265,10 +287,10 @@ export async function sendFreeThankYou(
     
     const transactionRef = await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
     
-    // Update user's daily points usage
-    await updateDailyPointsUsage(fromUserId, POINTS_LIMITS.POINTS_PER_THANK_YOU);
+    // Update user's daily per-technician limit tracking
+    await updateDailyPerTechnicianLimit(fromUserId, toTechnicianId);
     
-    // Award points to technician
+    // Award ThankATech Points to technician
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
     const techDoc = await getDoc(technicianRef);
     if (techDoc.exists()) {
@@ -277,7 +299,7 @@ export async function sendFreeThankYou(
         totalThankYous: increment(1)
       });
       
-      console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} point to technician ${toTechnicianId} (free thank you)`);
+      console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
     }
 
     // Send email notification
@@ -303,13 +325,13 @@ export async function sendFreeThankYou(
       // Don't fail the transaction if email fails
     }
     
-    // Calculate remaining points for the day
-    const remainingPoints = pointsCheck.remainingPoints - POINTS_LIMITS.POINTS_PER_THANK_YOU;
+    // With new per-technician system, no global daily points limit
+    // Each technician can only be thanked once per day
     
     return { 
       success: true, 
       transactionId: transactionRef.id,
-      pointsRemaining: Math.max(0, remainingPoints)
+      pointsRemaining: 0 // No longer tracking global daily points
     };
   } catch (error) {
     console.error('Error sending free thank you:', error);
@@ -400,18 +422,19 @@ export async function sendTokens(
       }
     }
     
-    // Update technician points (new consolidated system)
+    // Update technician ThankATech Points (new system)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
     const techDoc = await getDoc(technicianRef);
     if (techDoc.exists()) {
-      // New points system: 1 point per thank you, 2 points per token received
+      // New system: 1 ThankATech Point per thank you, 2 ThankATech Points per TOA received
       const pointsToAdd = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
       await updateDoc(technicianRef, {
         points: increment(pointsToAdd),
-        totalThankYous: increment(1)
+        totalThankYous: increment(1),
+        totalTips: increment(isFreeThankYou ? 0 : tokens) // Track TOA received
       });
       
-      console.log(`✅ Awarded ${pointsToAdd} points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' tokens received'})`);
+      console.log(`✅ Awarded ${pointsToAdd} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
     }
 
     // Send email notification

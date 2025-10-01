@@ -6,7 +6,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
 import { EmailTemplates } from '@/lib/email';
-import { getUserTokenBalance, addTokensToBalance, checkDailyPointsLimit } from '@/lib/token-firebase';
+import { getUserTokenBalance, addTokensToBalance, checkDailyPerTechnicianLimit } from '@/lib/token-firebase';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -441,14 +441,12 @@ export default function AdminPage() {
     
     try {
       const balance = await getUserTokenBalance(userId);
-      const pointsData = await checkDailyPointsLimit(userId);
       
       setUserTokenBalances(prev => ({ ...prev, [userId]: balance }));
-      setUserPointsData(prev => ({ ...prev, [userId]: pointsData }));
       
       setTokenManagementResults(`✅ Retrieved data for user ${userId}:
-      Tokens: ${balance.tokens} (Total Purchased: ${balance.totalPurchased}, Total Spent: ${balance.totalSpent})
-      Daily Points: ${pointsData.pointsGiven}/5 used today (${pointsData.remainingPoints} remaining)`);
+      TOA: ${balance.tokens} (Total Purchased: ${balance.totalPurchased}, Total Spent: ${balance.totalSpent})
+      New System: 1 thank you per technician per day (no global daily limits)`);
     } catch (error) {
       console.error('Error checking user balance:', error);
       setTokenManagementResults(`❌ Failed to check balance: ${error.message}`);
