@@ -12,7 +12,11 @@ import {
   setDoc, 
   updateDoc, 
   addDoc,
-  increment 
+  increment,
+  query,
+  where,
+  getDocs,
+  runTransaction 
 } from 'firebase/firestore';
 import app from './firebase';
 import { 
@@ -21,8 +25,10 @@ import {
   DailyThankYouLimit,
   DailyPointsLimit,
   DailyPerTechnicianLimit,
+  PointsConversion,
   TOKEN_LIMITS,
-  POINTS_LIMITS 
+  POINTS_LIMITS,
+  CONVERSION_SYSTEM 
 } from './tokens';
 import EmailService from './email';
 
@@ -290,7 +296,7 @@ export async function sendFreeThankYou(
     // Update user's daily per-technician limit tracking
     await updateDailyPerTechnicianLimit(fromUserId, toTechnicianId);
     
-    // Award ThankATech Points to technician
+    // Award ThankATech Points to both technician AND customer
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
     const techDoc = await getDoc(technicianRef);
     if (techDoc.exists()) {
@@ -301,6 +307,28 @@ export async function sendFreeThankYou(
       
       console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
     }
+
+    // 🆕 Award ThankATech Points to customer for being generous!
+    const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
+    const customerDoc = await getDoc(customerRef);
+    
+    if (customerDoc.exists()) {
+      await updateDoc(customerRef, {
+        points: increment(POINTS_LIMITS.POINTS_PER_THANK_YOU),
+        totalThankYousSent: increment(1)
+      });
+    } else {
+      // Create customer record if doesn't exist
+      await setDoc(customerRef, {
+        id: fromUserId,
+        points: POINTS_LIMITS.POINTS_PER_THANK_YOU,
+        totalThankYousSent: 1,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+    
+    console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to customer ${fromUserId} for sending thank you`);
 
     // Send email notification
     try {
@@ -437,6 +465,30 @@ export async function sendTokens(
       console.log(`✅ Awarded ${pointsToAdd} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
     }
 
+    // 🆕 Award ThankATech Points to customer for sending TOA (being generous!)
+    if (!isFreeThankYou) { // Only award points for actual TOA tokens sent
+      const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
+      const customerDoc = await getDoc(customerRef);
+      
+      if (customerDoc.exists()) {
+        await updateDoc(customerRef, {
+          points: increment(tokens), // 1 point per TOA sent!
+          totalTokensSent: increment(tokens)
+        });
+      } else {
+        // Create customer record if doesn't exist
+        await setDoc(customerRef, {
+          id: fromUserId,
+          points: tokens,
+          totalTokensSent: tokens,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA (being generous!)`);
+    }
+
     // Send email notification
     try {
       const techData = techDoc?.data();
@@ -478,3 +530,171 @@ export async function sendTokens(
     return { success: false, error: error.message };
   }
 }
+
+// 🔄 CLOSED-LOOP CONVERSION SYSTEM
+// Convert ThankATech Points to TOA tokens
+
+export const convertPointsToTOA = async (userId: string, pointsToConvert: number) => {
+  try {
+    // Validation
+    if (pointsToConvert < CONVERSION_SYSTEM.minimumConversion) {
+      return { 
+        success: false, 
+        error: `Minimum conversion is ${CONVERSION_SYSTEM.minimumConversion} points` 
+      };
+    }
+
+    if (pointsToConvert % CONVERSION_SYSTEM.pointsToTOARate !== 0) {
+      return { 
+        success: false, 
+        error: `Points must be divisible by ${CONVERSION_SYSTEM.pointsToTOARate}` 
+      };
+    }
+
+    // Check daily conversion limit
+    const today = new Date().toISOString().split('T')[0];
+    const conversionsQuery = query(
+      collection(db, 'pointsConversions'),
+      where('userId', '==', userId),
+      where('conversionDate', '==', today)
+    );
+    const dailyConversions = await getDocs(conversionsQuery);
+
+    const tokensAlreadyConverted = dailyConversions.docs.reduce((total, doc) => 
+      total + doc.data().tokensGenerated, 0);
+
+    const tokensToGenerate = Math.floor(pointsToConvert / CONVERSION_SYSTEM.pointsToTOARate);
+    
+    if (tokensAlreadyConverted + tokensToGenerate > CONVERSION_SYSTEM.maxDailyConversions) {
+      return { 
+        success: false, 
+        error: `Daily conversion limit: ${CONVERSION_SYSTEM.maxDailyConversions} TOA tokens` 
+      };
+    }
+
+    // Get user's current points balance (check both collections)
+    let userRef = doc(db, 'technicians', userId);
+    let userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      userRef = doc(db, 'users', userId);
+      userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        return { success: false, error: 'User not found' };
+      }
+    }
+
+    const userData = userDoc.data() as any;
+    const currentPoints = userData.points || 0;
+
+    if (currentPoints < pointsToConvert) {
+      return { 
+        success: false, 
+        error: `Insufficient points. You have ${currentPoints} points.`
+      };
+    }
+
+    // Perform the conversion in a transaction
+    await runTransaction(db, async (transaction) => {
+      // Deduct points
+      transaction.update(userRef, {
+        points: currentPoints - pointsToConvert,
+        updatedAt: new Date()
+      });
+
+      // Add TOA tokens
+      const tokenBalance = await getUserTokenBalance(userId);
+      const tokenDocRef = doc(db, 'userTokens', userId);
+      const tokenDoc = await getDoc(tokenDocRef);
+      
+      if (tokenDoc.exists()) {
+        transaction.update(tokenDocRef, {
+          tokens: (tokenBalance.tokens || 0) + tokensToGenerate,
+          totalPurchased: (tokenBalance.totalPurchased || 0) + tokensToGenerate,
+          lastUpdated: new Date()
+        });
+      } else {
+        transaction.set(tokenDocRef, {
+          userId,
+          tokens: tokensToGenerate,
+          totalPurchased: tokensToGenerate,
+          totalSpent: 0,
+          lastUpdated: new Date()
+        });
+      }
+
+      // Record the conversion
+      const conversionRef = doc(collection(db, 'pointsConversions'));
+      transaction.set(conversionRef, {
+        id: conversionRef.id,
+        userId,
+        pointsConverted: pointsToConvert,
+        tokensGenerated: tokensToGenerate,
+        conversionDate: today,
+        conversionRate: CONVERSION_SYSTEM.pointsToTOARate,
+        createdAt: new Date()
+      });
+    });
+
+    logger.info(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
+
+    return { 
+      success: true, 
+      tokensGenerated: tokensToGenerate,
+      newPointsBalance: currentPoints - pointsToConvert,
+      message: `🎉 Successfully converted ${pointsToConvert} points to ${tokensToGenerate} TOA tokens!`
+    };
+
+  } catch (error) {
+    logger.error('Error converting points to TOA:', error);
+    return { success: false, error: 'Conversion failed. Please try again.' };
+  }
+};
+
+// Check how many points user can convert today
+export const getConversionStatus = async (userId: string) => {
+  try {
+    // Get user's current points (check both collections)
+    let userRef = doc(db, 'technicians', userId);
+    let userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      userRef = doc(db, 'users', userId);
+      userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
+      }
+    }
+
+    const userData = userDoc.data() as any;
+    const availablePoints = userData.points || 0;
+
+    // Check today's conversions
+    const today = new Date().toISOString().split('T')[0];
+    const conversionsQuery = query(
+      collection(db, 'pointsConversions'),
+      where('userId', '==', userId),
+      where('conversionDate', '==', today)
+    );
+    const dailyConversions = await getDocs(conversionsQuery);
+
+    const tokensAlreadyConverted = dailyConversions.docs.reduce((total, doc) => 
+      total + doc.data().tokensGenerated, 0);
+
+    const remainingDailyLimit = CONVERSION_SYSTEM.maxDailyConversions - tokensAlreadyConverted;
+    const maxConvertableFromPoints = Math.floor(availablePoints / CONVERSION_SYSTEM.pointsToTOARate);
+    const canConvert = Math.min(maxConvertableFromPoints, remainingDailyLimit);
+
+    return {
+      availablePoints,
+      canConvert: Math.max(0, canConvert),
+      dailyLimit: CONVERSION_SYSTEM.maxDailyConversions,
+      usedToday: tokensAlreadyConverted,
+      conversionRate: CONVERSION_SYSTEM.pointsToTOARate
+    };
+
+  } catch (error) {
+    logger.error('Error getting conversion status:', error);
+    return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
+  }
+};

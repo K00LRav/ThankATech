@@ -496,9 +496,9 @@ export default function Home() {
       ));
 
       const remainingThanks = result.pointsRemaining || 0;
-      setThankYouMessage(`Thank you sent successfully! 👍 They earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
+      setThankYouMessage(`🎉 Thank you sent! You both earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
       setShowThankYou(true);
-      setTimeout(() => setShowThankYou(false), 3000);
+      setTimeout(() => setShowThankYou(false), 4000);
     } catch (error) {
       logger.error('Error sending thank you:', error);
       setError('Failed to send thank you. Please try again.');
@@ -845,9 +845,20 @@ export default function Home() {
                     </div>
                   )}
                   
-                  {/* Customer Token Balance & Buy Tokens Button */}
+                  {/* Customer Points & Token Balance Display */}
                   {currentUser?.userType === 'customer' && (
                     <div className="flex items-center space-x-2">
+                      {/* ThankATech Points Display */}
+                      <div 
+                        className="flex items-center space-x-2 px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg cursor-pointer hover:bg-blue-500/30 transition-colors duration-200"
+                        title="Your ThankATech Points - earn by sending thank yous and TOA tokens, convert to more TOA!"
+                      >
+                        <span className="text-blue-300">⚡</span>
+                        <span className="text-blue-300 font-semibold text-sm">
+                          {currentUser?.points || 0} Points
+                        </span>
+                      </div>
+                      
                       <button
                         onClick={() => setShowTokenPurchaseModal(true)}
                         className="flex items-center space-x-2 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-colors duration-200"

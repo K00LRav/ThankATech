@@ -54,6 +54,16 @@ export interface DailyPerTechnicianLimit {
   maxDailyThanks: number;
 }
 
+export interface PointsConversion {
+  id: string;
+  userId: string;
+  pointsConverted: number;
+  tokensGenerated: number;
+  conversionDate: string;
+  conversionRate: number;
+  createdAt: Date;
+}
+
 // Token pack configurations
 export const TOKEN_PACKS: TokenPack[] = [
   {
@@ -110,6 +120,22 @@ export const POINTS_LIMITS = {
   POINTS_PER_THANK_YOU: 1, // 1 ThankATech Point per thank you click
   POINTS_PER_TOKEN: 2 // 2 ThankATech Points per TOA received
 };
+
+// Closed-loop conversion system
+export const CONVERSION_SYSTEM = {
+  pointsToTOARate: 5, // 5 ThankATech Points = 1 TOA token
+  minimumConversion: 5, // Must have at least 5 points to convert
+  maxDailyConversions: 20, // Prevent abuse while encouraging engagement
+  conversionReward: 0.10, // $0.10 value per converted TOA (from platform fee pool)
+} as const;
+
+// Platform revenue model
+export const PAYOUT_MODEL = {
+  customerPaysPerTOA: 0.01,     // $0.01 per TOA token
+  technicianGetsPerTOA: 0.0085, // 85% goes to technician ($0.0085)
+  platformFeePerTOA: 0.0015,    // 15% platform fee ($0.0015)
+  conversionPoolPerTOA: 0.001,  // Part of platform fee funds conversions
+} as const;
 
 // Utility functions
 export const formatTokens = (tokens: number): string => {
