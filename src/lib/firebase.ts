@@ -191,7 +191,7 @@ export async function registerTechnician(technicianData) {
     try {
       const technicianName = technicianData.name || 'Technician';
       await EmailService.sendWelcomeEmail(technicianData.email, technicianName, 'technician');
-      console.log(`✅ Welcome email sent to technician ${technicianData.email}`);
+      // Welcome email sent to technician
     } catch (emailError) {
       console.error('❌ Failed to send technician welcome email:', emailError);
       // Don't fail registration if email fails
@@ -255,7 +255,7 @@ export async function registerUser(userData) {
       const userName = userData.displayName || userData.name || 'User';
       const userType = userData.userType || 'customer';
       await EmailService.sendWelcomeEmail(userData.email, userName, userType);
-      console.log(`✅ Welcome email sent to ${userData.email}`);
+      // Welcome email sent to user
     } catch (emailError) {
       console.error('❌ Failed to send welcome email:', emailError);
       // Don't fail registration if email fails
@@ -475,7 +475,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
             customerName,
             message
           );
-          console.log(`✅ Thank you notification sent to ${technicianEmail}`);
+          // Thank you notification sent to technician
         }
       }
     } catch (emailError) {
@@ -576,7 +576,7 @@ export async function sendTip(technicianId, userId, amount, message = '') {
             amount,
             message
           );
-          console.log(`✅ Tip notification sent to ${technicianEmail}`);
+          // Tip notification sent to technician
         }
       }
     } catch (emailError) {

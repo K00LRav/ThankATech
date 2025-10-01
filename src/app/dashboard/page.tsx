@@ -277,7 +277,7 @@ export default function ModernDashboard() {
                       favoriteTechnicians: favorites.map(f => f.technicianId)
                     };
 
-                    console.log(`✅ client totals: ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
+                    // Client totals calculated successfully
                 }
 
                 setUserProfile(clientData);
@@ -444,7 +444,7 @@ export default function ModernDashboard() {
                         favoriteTechnicians: favorites.map(f => f.technicianId)
                       };
 
-                      console.log(`✅ client totals (fallback): ${actualTipCount} tips sent, $${actualTotalSpent/100} spent, ${actualThankYous} thank yous, ${favorites.length} favorites`);
+                      // Client totals calculated (fallback)
                   }
 
                   setUserProfile(clientData);

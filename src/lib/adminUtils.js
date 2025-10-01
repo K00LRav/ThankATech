@@ -40,7 +40,7 @@ export async function findTechnicianIdByName(name) {
       querySnapshot.forEach((doc) => {
         techs.push({ id: doc.id, ...doc.data() });
       });
-      console.log(`Found ${techs.length} technician(s) named "${name}":`, techs);
+      // Found technicians by name
       return techs;
     } else {
       console.log(`No technicians found with name "${name}"`);
@@ -124,7 +124,7 @@ export async function generateUsernamesForAllTechnicians() {
           username: finalUsername
         });
         
-        console.log(`✅ ${technician.name} → ${finalUsername}`);
+        // Username assigned successfully
         results.push({ name: technician.name, username: finalUsername, status: 'success' });
         
         // Small delay to avoid rate limits
@@ -152,9 +152,5 @@ if (typeof window !== 'undefined') {
   window.setTechnicianUsername = setTechnicianUsername;
   window.findTechnicianIdByName = findTechnicianIdByName;
   window.generateUsernamesForAllTechnicians = generateUsernamesForAllTechnicians;
-  console.log('🔧 Admin utilities loaded.');
-  console.log('📋 Available functions:');
-  console.log('  - findTechnicianIdByName("name") - Find technician ID by name');
-  console.log('  - setTechnicianUsername(technicianId, username) - Set username for existing technician');
-  console.log('  - generateUsernamesForAllTechnicians() - Generate usernames for ALL existing technicians');
+  // Admin utilities loaded silently for security
 }

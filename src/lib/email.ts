@@ -291,25 +291,15 @@ export const EmailTemplates = {
 export class EmailService {
   private static async sendEmail(emailData: EmailData): Promise<boolean> {
     try {
-      // Check if we're in development mode
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email would be sent in production:');
-        console.log(`To: ${emailData.to}`);
-        console.log(`Subject: ${emailData.subject}`);
-        console.log('HTML content would be rendered here.');
+      // Check if we're in development mode - TEMPORARILY DISABLED FOR EMAIL TESTING
+      if (false && process.env.NODE_ENV === 'development') {
+        // Email would be sent in production (debug mode)
         return true;
       }
 
       // Brevo Transactional Email API (Correct for sending emails)
       if (process.env.BREVO_API_KEY) {
-        console.log('📧 Sending email via Brevo Transactional API...');
-        console.log('🔍 Debug info:', {
-          hasApiKey: !!process.env.BREVO_API_KEY,
-          apiKeyPrefix: process.env.BREVO_API_KEY?.substring(0, 25) + '...',
-          to: emailData.to,
-          from: emailData.from || process.env.EMAIL_FROM || 'noreply@thankatech.com',
-          fromName: process.env.EMAIL_FROM_NAME || 'ThankATech'
-        });
+        // Sending email via Brevo Transactional API
 
         // Use the exact same payload structure that works in test endpoint
         const emailPayload = {
@@ -340,15 +330,11 @@ export class EmailService {
 
         const result = await response.json();
         
-        console.log(`📊 Brevo API Response:`, {
-          status: response.status,
-          statusText: response.statusText,
-          result: result
-        });
+        // Email API response processed
         
         if (response.ok) {
-          console.log('✅ Email sent successfully via Brevo API');
-          console.log(`📨 Message ID: ${result.messageId}`);
+          // Email sent successfully via Brevo API
+          // Message sent with ID
           return true;
         } else {
           console.error('❌ Brevo API Error:', {
@@ -456,6 +442,11 @@ export class EmailService {
     const template = EmailTemplates.contactFormSubmission(formData.name, formData.email, formData.subject, formData.message, formData.userType);
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@thankatech.com';
     return this.sendEmail({ to: adminEmail, ...template });
+  }
+
+  // Public method for sending raw HTML emails (for testing)
+  static async sendRawEmail(to: string, subject: string, html: string): Promise<boolean> {
+    return this.sendEmail({ to, subject, html });
   }
 }
 
