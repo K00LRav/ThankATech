@@ -47,7 +47,7 @@ const formatCurrency = (amountInCents: number): string => {
   }).format(amountInCents / 100);
 };
 
-// Customer Tip History Component
+// Customer TOA History Component
 const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +62,7 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
         setTransactions(tips);
       } catch (err) {
         console.error('Error loading customer transactions:', err);
-        setError('Failed to load tip history');
+        setError('Failed to load TOA history');
       } finally {
         setLoading(false);
       }
@@ -74,10 +74,10 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
   if (loading) {
     return (
       <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <h2 className="text-xl font-bold text-white mb-6">Recent TOA Tokens</h2>
         <div className="text-center py-8">
           <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-blue-200">Loading tip history...</p>
+          <p className="text-blue-200">Loading TOA history...</p>
         </div>
       </div>
     );
@@ -86,14 +86,14 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
   if (error) {
     return (
       <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <h2 className="text-xl font-bold text-white mb-6">Recent TOA Tokens</h2>
         <div className="text-center py-8">
           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">Error Loading Tips</h3>
+          <h3 className="text-lg font-medium text-white mb-2">Error Loading TOA Tokens</h3>
           <p className="text-red-300 mb-4">{error}</p>
         </div>
       </div>
@@ -103,15 +103,15 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
   if (transactions.length === 0) {
     return (
       <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-        <h2 className="text-xl font-bold text-white mb-6">Recent Tips</h2>
+        <h2 className="text-xl font-bold text-white mb-6">Recent TOA Tokens</h2>
         <div className="text-center py-8">
           <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">No tips yet</h3>
-          <p className="text-blue-200 mb-4">When you tip technicians, your history will appear here.</p>
+          <h3 className="text-lg font-medium text-white mb-2">No TOA tokens sent yet</h3>
+          <p className="text-blue-200 mb-4">When you send TOA tokens to technicians, your history will appear here. <span className="text-green-400 font-semibold">You earn +1 Point per TOA sent!</span></p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
@@ -131,9 +131,12 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
   return (
     <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white">Recent Tips</h2>
+        <h2 className="text-xl font-bold text-white">Recent TOA Tokens</h2>
         <div className="text-right">
-          <p className="text-sm text-blue-200">Total Tipped</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm text-blue-200">Total Sent</span>
+            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">+{transactions.length} Points</span>
+          </div>
           <p className="text-lg font-bold text-white">{formatCurrency(totalTipped)}</p>
         </div>
       </div>
@@ -164,7 +167,7 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
         {transactions.length > 5 && (
           <div className="text-center pt-4">
             <p className="text-blue-200 text-sm">
-              Showing 5 of {transactions.length} tips
+              Showing 5 of {transactions.length} TOA tokens sent
             </p>
           </div>
         )}
@@ -493,6 +496,202 @@ Please complete your profile information below and click "Save Changes" to creat
             </div>
           </div>
 
+          {/* ThankATech Points Section */}
+          <div className="bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-pink-500/10 backdrop-blur rounded-xl p-6 border border-purple-500/20">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">ThankATech Points</h2>
+                  <p className="text-purple-200 text-sm">Your appreciation economy balance</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-white">125</p>
+                <p className="text-purple-200 text-sm">Points Available</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white/5 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-green-400">48</div>
+                <div className="text-sm text-green-200">From Thank Yous</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-400">77</div>
+                <div className="text-sm text-yellow-200">From TOA Tokens</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-blue-400">12</div>
+                <div className="text-sm text-blue-200">Converted to TOA</div>
+              </div>
+            </div>
+
+            <div className="bg-purple-500/20 rounded-lg p-4 border border-purple-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-200">Convert Points to TOA</h3>
+                  <p className="text-purple-300 text-sm">5 Points = 1 TOA Token • Max 20 conversions/day</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    defaultValue="1"
+                    className="w-16 px-2 py-1 bg-white/10 border border-purple-500/30 rounded text-white text-center text-sm"
+                  />
+                  <button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-200 text-sm">
+                    Convert
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Points Earning History */}
+          <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+            <h2 className="text-xl font-bold text-white mb-6">How You Earn Points</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-lg p-4 border border-green-500/20">
+                <h3 className="text-lg font-semibold text-green-400 mb-3">Sending Appreciation</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🙏</span>
+                      <span className="text-white">Send Thank Yous</span>
+                    </div>
+                    <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm font-medium">+1 Point</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🪙</span>
+                      <span className="text-white">Send TOA Tokens</span>
+                    </div>
+                    <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm font-medium">+1 Point</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg p-4 border border-yellow-500/20">
+                <h3 className="text-lg font-semibold text-yellow-400 mb-3">Receiving Appreciation</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">💝</span>
+                      <span className="text-white">Receive Thank Yous</span>
+                    </div>
+                    <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-sm font-medium">+1 Point</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🎁</span>
+                      <span className="text-white">Receive TOA Tokens</span>
+                    </div>
+                    <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-sm font-medium">+2 Points</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">🔄</span>
+                <h3 className="text-lg font-semibold text-blue-400">Your Points Activity</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-green-400">15</div>
+                  <div className="text-sm text-green-200">Thank Yous Sent</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-400">33</div>
+                  <div className="text-sm text-blue-200">Thank Yous Received</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-yellow-400">8</div>
+                  <div className="text-sm text-yellow-200">TOA Tokens Sent</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-400">22</div>
+                  <div className="text-sm text-purple-200">TOA Tokens Received</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Achievement Badges */}
+          <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+            <h2 className="text-xl font-bold text-white mb-6">Achievement Badges</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Rising Star Badge */}
+              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg p-4 border border-purple-500/30">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-purple-400 mb-2">Rising Star</h3>
+                  <p className="text-purple-200 text-sm mb-3">25+ ThankATech Points</p>
+                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium">
+                    ✓ Achieved
+                  </div>
+                </div>
+              </div>
+
+              {/* Community Star Badge */}
+              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg p-4 border border-blue-500/30">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">✨</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-400 mb-2">Community Star</h3>
+                  <p className="text-blue-200 text-sm mb-3">50+ ThankATech Points</p>
+                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium">
+                    ✓ Achieved
+                  </div>
+                </div>
+              </div>
+
+              {/* Point Master Badge */}
+              <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg p-4 border border-yellow-500/30">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">👑</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-yellow-400 mb-2">Point Master</h3>
+                  <p className="text-yellow-200 text-sm mb-3">100+ ThankATech Points</p>
+                  <div className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-medium">
+                    ✓ Achieved
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg p-4 border border-indigo-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">🏆</span>
+                <h3 className="text-lg font-semibold text-indigo-400">Next Achievement</h3>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-medium">Community Champion</p>
+                  <p className="text-indigo-200 text-sm">Reach 200+ ThankATech Points</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-white">75</p>
+                  <p className="text-indigo-200 text-sm">points to go</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="w-full bg-indigo-900/30 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full" style={{width: '62.5%'}}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Information */}
           <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
             <h2 className="text-xl font-bold text-white mb-6">Basic Information</h2>
@@ -687,7 +886,7 @@ Please complete your profile information below and click "Save Changes" to creat
                       </div>
                       <div>
                         <p className="text-white font-medium">Payment via Stripe</p>
-                        <p className="text-blue-200 text-sm">Secure payment processing for tips</p>
+                        <p className="text-blue-200 text-sm">Secure payment processing for TOA tokens</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -698,7 +897,7 @@ Please complete your profile information below and click "Save Changes" to creat
                 
                 <div className="text-center py-4">
                   <p className="text-blue-200 text-sm">
-                    Payment methods are securely managed through Stripe during the tip process.
+                    Payment methods are securely managed through Stripe when sending TOA tokens.
                   </p>
                 </div>
               </div>
@@ -719,7 +918,7 @@ Please complete your profile information below and click "Save Changes" to creat
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-white mb-2">No favorites yet</h3>
-                <p className="text-blue-200 mb-4">Save your favorite technicians for quick access and easy tipping.</p>
+                <p className="text-blue-200 mb-4">Save your favorite technicians for quick access and easy TOA token sending.</p>
                 <Link
                   href="/"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"
