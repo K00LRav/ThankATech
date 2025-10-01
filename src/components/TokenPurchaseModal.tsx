@@ -17,7 +17,7 @@ export default function TokenPurchaseModal({
   userId, 
   onPurchaseSuccess 
 }: TokenPurchaseModalProps) {
-  const [selectedPack, setSelectedPack] = useState(TOKEN_PACKS[1]); // Default to popular pack
+  const [selectedPack, setSelectedPack] = useState(TOKEN_PACKS[3]); // Default to bulk pack - amazing value!
   const [isProcessing, setPurchasing] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(0);
   
@@ -77,8 +77,8 @@ export default function TokenPurchaseModal({
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Purchase ThankATech Tokens</h2>
-              <p className="text-blue-100 mt-1">Send appreciation to your favorite technicians</p>
+              <h2 className="text-2xl font-bold">Purchase Tokens of Appreciation</h2>
+              <p className="text-blue-100 mt-1">Send meaningful appreciation to your favorite technicians</p>
             </div>
             <button 
               onClick={onClose}
@@ -129,7 +129,7 @@ export default function TokenPurchaseModal({
                     {formatPrice(pack.price)}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {formatPrice(Math.round(pack.pricePerToken))} per token
+                    {formatPrice(Math.round(pack.pricePerToken))} per TOA
                   </div>
                   
                   {pack.bestValue && (
@@ -144,19 +144,19 @@ export default function TokenPurchaseModal({
 
           {/* How It Works */}
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <h3 className="font-bold text-gray-800 mb-3">🎯 How ThankATech Tokens Work</h3>
+            <h3 className="font-bold text-gray-800 mb-3">🎯 How Tokens of Appreciation Work</h3>
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex items-start gap-2">
                 <span className="text-green-500">✅</span>
-                <span><strong>3 Free Thank Yous Daily</strong> - Send appreciation without tokens</span>
+                <span><strong>1 Free Thank You Per Technician Daily</strong> - Send appreciation without TOA</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-blue-500">🎁</span>
-                <span><strong>Send 5-50 Tokens</strong> - Show extra appreciation with custom amounts</span>
+                <span><strong>Send 5-50 TOA</strong> - Show extra appreciation with custom amounts</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-purple-500">💬</span>
-                <span><strong>Random Messages</strong> - We&apos;ll include a thoughtful thank you message</span>
+                <span><strong>Meaningful Messages</strong> - We&apos;ll include a thoughtful appreciation message</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-yellow-500">📧</span>
@@ -182,14 +182,14 @@ export default function TokenPurchaseModal({
               </>
             ) : (
               <>
-                🛒 Purchase {formatTokens(selectedPack.tokens)} for {formatPrice(selectedPack.price)}
+                🛒 Purchase {selectedPack.tokens} TOA for {formatPrice(selectedPack.price)}
               </>
             )}
           </button>
 
           {/* Security Notice */}
           <div className="text-center text-xs text-gray-500 mt-4">
-            🔒 Secure payment powered by Stripe • Your tokens never expire
+            🔒 Secure payment powered by Stripe • Your TOA never expire
           </div>
         </div>
       </div>

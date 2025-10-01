@@ -79,11 +79,18 @@ export const TOKEN_PACKS: TokenPack[] = [
     pricePerToken: 8.33 // 8.33¢ per token
   },
   {
+    id: 'bulk',
+    name: 'Bulk Pack',
+    tokens: 1000,
+    price: 1000, // $10.00
+    bestValue: true,
+    pricePerToken: 1 // 1¢ per token - Amazing value!
+  },
+  {
     id: 'premium',
     name: 'Premium Pack',
     tokens: 650,
     price: 5000, // $50.00
-    bestValue: true,
     pricePerToken: 7.69 // 7.69¢ per token
   }
 ];
