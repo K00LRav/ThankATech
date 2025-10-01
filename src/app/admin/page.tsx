@@ -547,7 +547,7 @@ export default function AdminPage() {
     return unsubscribe;
   }, [checkAdminAccess]);
 
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     try {
       // Load technicians
       const techniciansRef = collection(db, 'technicians');
@@ -601,7 +601,7 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error loading admin data:', error);
     }
-  };
+    }, []);
 
   const generateUsernamesForAllTechnicians = async () => {
     setIsGeneratingUsernames(true);
@@ -1467,13 +1467,13 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold text-slate-200">Customer Management</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => exportUserData('csv', 'customers')}
+              onClick={() => exportUserData('csv')}
               className="px-3 py-1 bg-green-600/20 text-green-300 border border-green-500/30 rounded text-sm hover:bg-green-600/30 transition-all duration-200"
             >
               Export CSV
             </button>
             <button
-              onClick={() => exportUserData('json', 'customers')}
+              onClick={() => exportUserData('json')}
               className="px-3 py-1 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded text-sm hover:bg-blue-600/30 transition-all duration-200"
             >
               Export JSON
@@ -1537,7 +1537,7 @@ export default function AdminPage() {
               <div>
                 <p className="text-sm font-medium text-slate-400">Thank You Sent</p>
                 <p className="text-2xl font-bold text-yellow-400">
-                  {customers.reduce((total, customer) => total + (customer.thanksSent || 0), 0)}
+                  {customers.reduce((total, customer) => total + ((customer as any).thanksSent || 0), 0)}
                 </p>
               </div>
               <div className="p-3 bg-yellow-500/20 rounded-lg">
@@ -1685,7 +1685,7 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-200">{customer.email || 'N/A'}</div>
-                      <div className="text-sm text-slate-400">{customer.phone || 'No phone'}</div>
+                      <div className="text-sm text-slate-400">{(customer as any).phone || 'No phone'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -1697,8 +1697,8 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-slate-200">{customer.thanksSent || 0} sent</div>
-                      <div className="text-sm text-slate-400">${((customer.totalSpent || 0) / 100).toFixed(2)} spent</div>
+                      <div className="text-sm text-slate-200">{(customer as any).thanksSent || 0} sent</div>
+                      <div className="text-sm text-slate-400">${(((customer as any).totalSpent || 0) / 100).toFixed(2)} spent</div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-300">
                       {customer.lastActivity !== 'N/A' ? new Date(customer.lastActivity).toLocaleDateString() : 'N/A'}
@@ -1741,7 +1741,7 @@ export default function AdminPage() {
                       <p className="text-xs text-slate-400">Last seen: {customer.lastActivity !== 'N/A' ? new Date(customer.lastActivity).toLocaleDateString() : 'Never'}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-slate-400">{customer.thanksSent || 0} thanks</span>
+                  <span className="text-xs text-slate-400">{(customer as any).thanksSent || 0} thanks</span>
                 </div>
               ))}
             </div>
@@ -1753,13 +1753,13 @@ export default function AdminPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-300">Average Thank Yous per Customer</span>
                 <span className="text-sm font-semibold text-blue-400">
-                  {customers.length > 0 ? (customers.reduce((total, c) => total + (c.thanksSent || 0), 0) / customers.length).toFixed(1) : '0'}
+                  {customers.length > 0 ? (customers.reduce((total, c) => total + ((c as any).thanksSent || 0), 0) / customers.length).toFixed(1) : '0'}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-300">Total Customer Spend</span>
                 <span className="text-sm font-semibold text-green-400">
-                  ${(customers.reduce((total, c) => total + (c.totalSpent || 0), 0) / 100).toFixed(2)}
+                  ${(customers.reduce((total, c) => total + ((c as any).totalSpent || 0), 0) / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -1977,9 +1977,9 @@ export default function AdminPage() {
       
       // Create transactions based on technician earnings and customer activity
       technicians.forEach((tech, techIndex) => {
-        const earnings = tech.totalEarnings || 0;
+        const earnings = (tech as any).totalEarnings || 0;
         const tips = tech.totalTips || 0;
-        const jobs = tech.completedJobs || 0;
+        const jobs = (tech as any).completedJobs || 0;
         
         if (jobs > 0 && earnings > 0) {
           // Create transactions for each completed job
@@ -2606,9 +2606,9 @@ export default function AdminPage() {
       
       // Calculate user metrics
       const totalUsers = allUsers.length;
-      const activeUsers = allUsers.filter(user => user.status === 'active' || !user.status).length;
+      const activeUsers = allUsers.filter(user => (user as any).status === 'active' || !(user as any).status).length;
       const newUsersThisMonth = allUsers.filter(user => {
-        if (!user.createdAt || user.createdAt === 'N/A') return false;
+        if (!user.createdAt || (user.createdAt as any) === 'N/A') return false;
         try {
           const userDate = new Date(user.createdAt);
           return !isNaN(userDate.getTime()) && 
@@ -2623,17 +2623,17 @@ export default function AdminPage() {
       const technicianStats = technicians.map(tech => ({
         id: tech.id,
         name: tech.name || tech.email || 'Unknown',
-        revenue: (tech.totalEarnings || 0) / 100, // Convert from cents
+        revenue: ((tech as any).totalEarnings || 0) / 100, // Convert from cents
         tips: (tech.totalTips || 0) / 100, // Convert from cents
-        jobs: tech.completedJobs || 0,
-        thankYous: tech.thanksReceived || 0
+        jobs: (tech as any).completedJobs || 0,
+        thankYous: (tech as any).thanksReceived || 0
       })).sort((a, b) => b.revenue - a.revenue);
 
       // Calculate customer metrics
       const customerStats = customers.map(customer => ({
         ...customer,
-        thanksSent: customer.thanksSent || 0,
-        totalSpent: (customer.totalSpent || 0) / 100, // Convert from cents
+        thanksSent: (customer as any).thanksSent || 0,
+        totalSpent: ((customer as any).totalSpent || 0) / 100, // Convert from cents
       }));
 
       // Calculate total revenue
@@ -2648,13 +2648,13 @@ export default function AdminPage() {
 
       // Calculate geographic distribution (mock for now, but structure for real data)
       const stateDistribution = allUsers.reduce((acc, user) => {
-        const state = user.state || user.location || 'Unknown';
+        const state = (user as any).state || (user as any).location || 'Unknown';
         if (!acc[state]) {
           acc[state] = { users: 0, revenue: 0 };
         }
         acc[state].users += 1;
         if (technicians.includes(user)) {
-          acc[state].revenue += (user.totalEarnings || 0) / 100;
+          acc[state].revenue += ((user as any).totalEarnings || 0) / 100;
         }
         return acc;
       }, {} as Record<string, { users: number; revenue: number }>);
