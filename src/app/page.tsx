@@ -805,13 +805,13 @@ export default function Home() {
 
 
         {/* Modern Glass Rolodex Card */}
-        <div id="rolodex-card" className={`card-container relative group ${isFlipping ? 'animate-pulse' : ''} flex justify-center`}>
-          {/* Glass morphism background layers for depth */}
-          <div className="absolute top-3 left-3 w-full max-w-md sm:max-w-2xl lg:max-w-4xl h-auto min-h-[20rem] sm:min-h-[24rem] bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:top-4 group-hover:left-4 border border-white/10 shadow-xl"></div>
-          <div className="absolute top-1.5 left-1.5 w-full max-w-md sm:max-w-2xl lg:max-w-4xl h-auto min-h-[20rem] sm:min-h-[24rem] bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 group-hover:top-2 group-hover:left-2 border border-white/15 shadow-2xl"></div>
+        <div id="rolodex-card" className={`card-container relative group ${isFlipping ? 'animate-pulse' : ''} flex justify-center w-full max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto`}>
+          {/* Glass morphism background layers for depth - Match main card exactly */}
+          <div className="absolute inset-0 translate-x-3 translate-y-3 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 group-hover:translate-x-4 group-hover:translate-y-4 border border-white/10 shadow-xl"></div>
+          <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 group-hover:translate-x-2 group-hover:translate-y-2 border border-white/15 shadow-2xl"></div>
           
           {/* Main Glass Card - More focused size */}
-          <div className="relative w-full max-w-md sm:max-w-2xl lg:max-w-4xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden">
+          <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden">
             {/* Category Badge - Top Right */}
             <div className="absolute top-4 right-4 z-10">
               <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
