@@ -63,7 +63,7 @@ export { db, auth, storage, googleProvider };
 // Collection names
 const COLLECTIONS = {
   TECHNICIANS: 'technicians',
-  USERS: 'users',
+  CLIENTS: 'clients',
   THANK_YOUS: 'thankYous',
   TIPS: 'tips',
   TOKEN_BALANCES: 'tokenBalances',
@@ -205,9 +205,9 @@ export async function registerTechnician(technicianData) {
 }
 
 /**
- * Register a new user in Firebase
+ * Register a new client in Firebase
  */
-export async function registerUser(userData) {
+export async function registerClient(userData) {
   if (!db) {
     console.warn('Firebase not configured. Returning mock user data.');
     return { id: 'mock-user-' + Date.now(), ...userData };
@@ -238,7 +238,7 @@ export async function registerUser(userData) {
       }
     }
     
-    const docRef = await addDoc(collection(db, COLLECTIONS.USERS), {
+    const docRef = await addDoc(collection(db, COLLECTIONS.CLIENTS), {
       ...userData,
       uniqueId: uniqueId,
       // Firebase Auth UID (if created)
@@ -433,12 +433,12 @@ export async function sendThankYou(technicianId, userId, message = '') {
     // Update user stats (with existence check)
     if (userId) {
       try {
-        const userRef = doc(db, COLLECTIONS.USERS, userId);
+        const userRef = doc(db, COLLECTIONS.CLIENTS, userId);
         await updateDoc(userRef, {
           totalThankYousSent: increment(1)
         });
       } catch (error) {
-        console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
+        console.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
       }
     }
@@ -452,7 +452,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
       let customerName = 'A customer';
       if (userId) {
         try {
-          const userRef = doc(db, COLLECTIONS.USERS, userId);
+          const userRef = doc(db, COLLECTIONS.CLIENTS, userId);
           const userDoc = await getDoc(userRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -533,12 +533,12 @@ export async function sendTip(technicianId, userId, amount, message = '') {
     // Update user stats (with existence check)
     if (userId) {
       try {
-        const userRef = doc(db, COLLECTIONS.USERS, userId);
+        const userRef = doc(db, COLLECTIONS.CLIENTS, userId);
         await updateDoc(userRef, {
           totalTipsSent: increment(amount)
         });
       } catch (error) {
-        console.warn(`User document ${userId} not found in users collection, skipping user stats update:`, error.message);
+        console.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
       }
     }
@@ -552,7 +552,7 @@ export async function sendTip(technicianId, userId, amount, message = '') {
       let customerName = 'A customer';
       if (userId) {
         try {
-          const userRef = doc(db, COLLECTIONS.USERS, userId);
+          const userRef = doc(db, COLLECTIONS.CLIENTS, userId);
           const userDoc = await getDoc(userRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -694,21 +694,21 @@ export async function claimBusiness(technicianId, claimData) {
 }
 
 /**
- * Get user from either users or technicians collection by ID
+ * Get user from either clients or technicians collection by ID
  */
-export async function getUserById(userId) {
+export async function getClientById(userId) {
   if (!db) {
     console.warn('Firebase not configured.');
     return null;
   }
 
   try {
-    // First check users collection
-    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    // First check clients collection
+    const userRef = doc(db, COLLECTIONS.CLIENTS, userId);
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
-      return { id: userSnap.id, ...userSnap.data(), collection: 'users' };
+      return { id: userSnap.id, ...userSnap.data(), collection: 'clients' };
     }
 
     // Then check technicians collection
@@ -729,12 +729,12 @@ export async function getUserById(userId) {
 /**
  * Check if user exists in database by email
  */
-export async function getUserByEmail(email) {
+export async function getClientByEmail(email) {
   if (!db) return null;
   
   try {
-    // Check in users collection
-    const usersQuery = query(collection(db, COLLECTIONS.USERS), where('email', '==', email));
+    // Check in clients collection
+    const usersQuery = query(collection(db, COLLECTIONS.CLIENTS), where('email', '==', email));
     const usersSnapshot = await getDocs(usersQuery);
     
     if (!usersSnapshot.empty) {
@@ -795,7 +795,7 @@ export const authHelpers = {
         
         // Link Google account to existing user if not already linked
         if (existingUser.uid !== user.uid) {
-          const collectionName = existingUser.userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.USERS;
+          const collectionName = existingUser.userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.CLIENTS;
           await updateDoc(doc(db, collectionName, existingUser.id), {
             uid: user.uid,
             photoURL: user.photoURL // Update photo from Google
@@ -826,9 +826,9 @@ export const authHelpers = {
           };
         }
         
-        const legacyUser = await getUserByEmail(user.email);
+        const legacyUser = await getClientByEmail(user.email);
         if (legacyUser && !legacyUser.uniqueId) {
-          await updateDoc(doc(db, COLLECTIONS.USERS, legacyUser.id), {
+          await updateDoc(doc(db, COLLECTIONS.CLIENTS, legacyUser.id), {
             uniqueId: uniqueId,
             uid: user.uid,
             photoURL: user.photoURL
@@ -866,7 +866,7 @@ export const authHelpers = {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // Add user data to Firestore
-      await registerUser({
+      await registerClient({
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         ...additionalData
@@ -885,7 +885,7 @@ export const authHelpers = {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // Get the full user profile from our database
-      const userProfile = await getUserByEmail(email);
+      const userProfile = await getClientByEmail(email);
       
       if (userProfile) {
         return userProfile;
@@ -919,7 +919,7 @@ export const authHelpers = {
 };
 
 /**
- * Migration helper: Move technician from users collection to technicians collection
+ * Migration helper: Move technician from clients collection to technicians collection
  */
 export async function migrateTechnicianProfile(userId) {
   if (!db) {
@@ -928,7 +928,7 @@ export async function migrateTechnicianProfile(userId) {
   }
 
   try {
-    // Get user from users collection
+    // Get user from clients collection
     const userDoc = await getDoc(doc(db, 'users', userId));
     
     if (!userDoc.exists()) {
@@ -1017,15 +1017,15 @@ export async function deleteUserProfile(userId, userType = 'customer') {
       // getRegisteredTechnicians() fetches from this collection
       await deleteDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
       
-      // Also check and delete from users collection if exists (for dual registrations)
+      // Also check and delete from clients collection if exists (for dual registrations)
       try {
-        await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
+        await deleteDoc(doc(db, COLLECTIONS.CLIENTS, userId));
       } catch (userError) {
         // User document may not exist, which is fine
       }
     } else {
-      // Delete from users collection
-      await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
+      // Delete from clients collection
+      await deleteDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     }
     
     // TODO: Future enhancements for production:
@@ -1068,10 +1068,10 @@ export async function recordTransaction(transactionData) {
     // Find customer if provided
     let customerUniqueId = null;
     if (transactionData.customerId) {
-      const customer = await getUser(transactionData.customerId);
+      const customer = await getClient(transactionData.customerId);
       customerUniqueId = customer?.uniqueId;
     } else if (transactionData.customerEmail) {
-      const customer = await getUserByEmail(transactionData.customerEmail);
+      const customer = await getClientByEmail(transactionData.customerEmail);
       customerUniqueId = customer?.uniqueId;
     }
     
@@ -1128,8 +1128,8 @@ export async function getTechnician(technicianId) {
       return techData;
     }
     
-    // Try users collection as fallback
-    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
+    // Try clients collection as fallback
+    const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
     if (userDoc.exists()) {
       const userData = userDoc.data();
       if (userData.userType === 'technician') {
@@ -1150,12 +1150,12 @@ export async function getTechnician(technicianId) {
  * @param {string} userId - User ID
  * @returns {Promise<Object|null>} User data or null
  */
-export async function getUser(userId) {
+export async function getClient(userId) {
   if (!db || !userId) return null;
   
   try {
     
-    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+    const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (userDoc.exists()) {
       const userData = { id: userDoc.id, ...userDoc.data() };
       return userData;
@@ -1197,9 +1197,9 @@ export async function findUserByUniqueId(uniqueId) {
       return techData;
     }
     
-    // Search in users collection
+    // Search in clients collection
     const userQuery = query(
-      collection(db, COLLECTIONS.USERS),
+      collection(db, COLLECTIONS.CLIENTS),
       where('uniqueId', '==', uniqueId),
       limit(1)
     );
@@ -1252,9 +1252,9 @@ export async function findTechnicianByEmail(email) {
       return techData;
     }
     
-    // Search in users collection for technician userType
+    // Search in clients collection for technician userType
     const userQuery = query(
-      collection(db, COLLECTIONS.USERS),
+      collection(db, COLLECTIONS.CLIENTS),
       where('email', '==', email),
       where('userType', '==', 'technician'),
       limit(1)
@@ -1428,8 +1428,8 @@ export async function getTechnicianEarnings(technicianId) {
       technicianData = techDoc.data();
       actualTechnicianId = techDoc.id;
     } else {
-      // Try users collection as document ID
-      const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
+      // Try clients collection as document ID
+      const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
       if (userDoc.exists()) {
         technicianData = userDoc.data();
         actualTechnicianId = userDoc.id;
@@ -1449,9 +1449,9 @@ export async function getTechnicianEarnings(technicianId) {
           technicianData = doc.data();
           actualTechnicianId = doc.id;
         } else {
-          // Search users collection by authUid
+          // Search clients collection by authUid
           const userQuery = query(
-            collection(db, COLLECTIONS.USERS),
+            collection(db, COLLECTIONS.CLIENTS),
             where('authUid', '==', technicianId),
             where('userType', '==', 'technician'),
             limit(1)
@@ -1483,9 +1483,9 @@ export async function getTechnicianEarnings(technicianId) {
                   technicianData = doc.data();
                   actualTechnicianId = doc.id;
                 } else {
-                  // Search users collection by email
+                  // Search clients collection by email
                   const emailUserQuery = query(
-                    collection(db, COLLECTIONS.USERS),
+                    collection(db, COLLECTIONS.CLIENTS),
                     where('email', '==', currentUser.email),
                     where('userType', '==', 'technician'),
                     limit(1)
@@ -1680,7 +1680,7 @@ export async function isUsernameTaken(username: string): Promise<boolean> {
     const techSnapshot = await getDocs(techQuery);
     
     const userQuery = query(
-      collection(db, COLLECTIONS.USERS),
+      collection(db, COLLECTIONS.CLIENTS),
       where('username', '==', normalizedUsername)
     );
     const userSnapshot = await getDocs(userQuery);
@@ -1995,7 +1995,7 @@ export async function sendTokens(
     // Send email notification
     try {
       const techData = techDoc?.data();
-      const fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
+      const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
       const fromUserDoc = await getDoc(fromUserRef);
       const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
       

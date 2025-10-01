@@ -2,7 +2,7 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from 'react';
-import { auth, db, registerUser, deleteUserProfile, authHelpers, getClientTransactions } from '@/lib/firebase';
+import { auth, db, registerClient, deleteUserProfile, authHelpers, getClientTransactions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';

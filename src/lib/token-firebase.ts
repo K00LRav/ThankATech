@@ -28,7 +28,8 @@ import {
   PointsConversion,
   TOKEN_LIMITS,
   POINTS_LIMITS,
-  CONVERSION_SYSTEM 
+  CONVERSION_SYSTEM,
+  PAYOUT_MODEL 
 } from './tokens';
 import EmailService from './email';
 
@@ -405,9 +406,17 @@ export async function sendTokens(
     }
 
     // Use fixed meaningful message for token appreciation
-    const message = `Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here's ${tokens} tokens as a token of my appreciation.`;
+    const message = isFreeThankYou 
+      ? `Thank you for your exceptional service! Your expertise and dedication truly make a difference.`
+      : `Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here's ${tokens} TOA tokens as a token of my appreciation.`;
     
-    // Create transaction record
+    // Calculate TOA business model values
+    const dollarValue = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.customerPaysPerTOA;
+    const technicianPayout = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.technicianGetsPerTOA;
+    const platformFee = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.platformFeePerTOA;
+    const pointsAwarded = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
+    
+    // Create transaction record with TOA business model tracking
     const transaction: Omit<TokenTransaction, 'id'> = {
       fromUserId,
       toTechnicianId,
@@ -415,7 +424,11 @@ export async function sendTokens(
       message,
       isRandomMessage: false,
       timestamp: new Date(),
-      type: 'thank_you'
+      type: isFreeThankYou ? 'thank_you' : 'toa',
+      dollarValue,
+      technicianPayout,
+      platformFee,
+      pointsAwarded
     };
     
     const transactionRef = await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
@@ -450,44 +463,68 @@ export async function sendTokens(
       }
     }
     
-    // Update technician ThankATech Points (new system)
+    // Update technician ThankATech Points and TOA tracking (new system)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId);
     const techDoc = await getDoc(technicianRef);
     if (techDoc.exists()) {
-      // New system: 1 ThankATech Point per thank you, 2 ThankATech Points per TOA received
-      const pointsToAdd = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
-      await updateDoc(technicianRef, {
-        points: increment(pointsToAdd),
+      // New TOA business model updates
+      const updateData: any = {
+        points: increment(pointsAwarded),
         totalThankYous: increment(1),
-        totalTips: increment(isFreeThankYou ? 0 : tokens) // Track TOA received
-      });
+        totalTips: increment(isFreeThankYou ? 0 : tokens), // Track TOA received
+        lastAppreciationDate: new Date()
+      };
       
-      console.log(`✅ Awarded ${pointsToAdd} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
-    }
-
-    // 🆕 Award ThankATech Points to customer for sending TOA (being generous!)
-    if (!isFreeThankYou) { // Only award points for actual TOA tokens sent
-      const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
-      const customerDoc = await getDoc(customerRef);
-      
-      if (customerDoc.exists()) {
-        await updateDoc(customerRef, {
-          points: increment(tokens), // 1 point per TOA sent!
-          totalTokensSent: increment(tokens)
-        });
-      } else {
-        // Create customer record if doesn't exist
-        await setDoc(customerRef, {
-          id: fromUserId,
-          points: tokens,
-          totalTokensSent: tokens,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+      // Add TOA-specific tracking for paid transactions
+      if (!isFreeThankYou) {
+        updateData.totalToaReceived = increment(tokens);
+        updateData.totalToaValue = increment(dollarValue);
+        updateData.totalEarnings = increment(technicianPayout); // Track 85% payout
       }
       
-      console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA (being generous!)`);
+      await updateDoc(technicianRef, updateData);
+      
+      console.log(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
     }
+
+    // Award ThankATech Points to customer (TOA business model)
+    const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
+    const customerDoc = await getDoc(customerRef);
+    
+    if (customerDoc.exists()) {
+      const updateData: any = {
+        points: increment(POINTS_LIMITS.POINTS_PER_THANK_YOU), // 1 point for sending thank you
+        totalThankYousSent: increment(1),
+        lastAppreciationDate: new Date()
+      };
+      
+      // Add TOA-specific tracking for paid transactions
+      if (!isFreeThankYou) {
+        updateData.points = increment(tokens); // 1 point per TOA sent (overrides thank you points)
+        updateData.totalToaSent = increment(tokens);
+        updateData.totalSpent = increment(dollarValue);
+        updateData.totalTokensSent = increment(tokens);
+      }
+      
+      await updateDoc(customerRef, updateData);
+    } else {
+      // Create customer record if doesn't exist
+      const initialData: any = {
+        id: fromUserId,
+        points: isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : tokens,
+        totalThankYousSent: 1,
+        totalToaSent: isFreeThankYou ? 0 : tokens,
+        totalSpent: isFreeThankYou ? 0 : dollarValue,
+        totalTokensSent: isFreeThankYou ? 0 : tokens,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastAppreciationDate: new Date()
+      };
+      
+      await setDoc(customerRef, initialData);
+    }
+    
+    console.log(`✅ Awarded ${isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : tokens} ThankATech Points to customer ${fromUserId} for ${isFreeThankYou ? 'sending thank you' : 'sending ' + tokens + ' TOA tokens'}`);
 
     // Send email notification
     try {

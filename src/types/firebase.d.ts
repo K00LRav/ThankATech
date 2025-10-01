@@ -12,7 +12,7 @@ declare module '@/lib/firebase' {
   
   // Export all the functions with proper types
   export function registerTechnician(technicianData: any): Promise<any>;
-  export function registerUser(userData: any): Promise<any>;
+  export function registerClient(userData: any): Promise<any>;
   export function fetchTechnicians(): Promise<any[]>;
   export function sendThankYou(technicianId: string, userId: string, message?: string): Promise<any>;
   export function sendTip(technicianId: string, userId: string, amount: number, message?: string): Promise<any>;
@@ -23,8 +23,8 @@ declare module '@/lib/firebase' {
   export function getClientTransactions(clientId: string, clientEmail: string): Promise<any[]>;
   export function recordTransaction(transactionData: any): Promise<any>;
   export function getTechnician(technicianId: string): Promise<any>;
-  export function getUser(userId: string): Promise<any>;
-  export function getUserByEmail(email: string): Promise<any>;
+  export function getClient(userId: string): Promise<any>;
+  export function getClientByEmail(email: string): Promise<any>;
   export function findTechnicianByEmail(email: string): Promise<any>;
   export const authHelpers: any;
   export const COLLECTIONS: any;

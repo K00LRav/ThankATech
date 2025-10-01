@@ -29,7 +29,12 @@ export interface TokenTransaction {
   message: string;
   isRandomMessage: boolean;
   timestamp: Date;
-  type: 'thank_you' | 'appreciation';
+  type: 'thank_you' | 'appreciation' | 'toa';
+  // TOA Business Model fields
+  dollarValue?: number; // Total dollar value (tokens * customerPaysPerTOA)
+  technicianPayout?: number; // 85% payout to technician
+  platformFee?: number; // 15% platform fee
+  pointsAwarded?: number; // ThankATech Points awarded
 }
 
 export interface DailyThankYouLimit {

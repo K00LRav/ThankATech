@@ -3,14 +3,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
 import { logger } from '@/lib/logger';
-import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, Auth } from 'firebase/auth';
+import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getClient } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import Image from 'next/image';
 import PayoutModal from '@/components/PayoutModal';
+import ConversionWidget from '@/components/ConversionWidget';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
-import '@/lib/adminUtils'; // Load admin utilities for development
+import '@/lib/adminUtils';
+
+// Modern Dashboard with Improved UX
+// Key improvements:
+// 1. Simplified navigation (3 main sections instead of 8+ tabs)
+// 2. Hero section with primary actions prominently displayed
+// 3. Better visual hierarchy and spacing
+// 4. Responsive design with mobile-first approach
+// 5. Progressive disclosure - show important info first
+// 6. Action-oriented design with clear CTAs
 
 interface UserProfile {
   id: string;
@@ -23,120 +33,76 @@ interface UserProfile {
   category?: string;
   title?: string;
   photoURL?: string;
+  
+  // TOA Business Model - ThankATech Points System
   points?: number;
+  toaBalance?: number;
+  totalPointsEarned?: number;
+  totalPointsSpent?: number;
+  
+  // Thank You System
   totalThankYous?: number;
-  totalTips?: number;
-  totalTipAmount?: number;
-  phone?: string;
-  businessAddress?: string;
+  totalThankYousSent?: number;
+  
+  // TOA Token System
+  totalToaReceived?: number;
+  totalToaSent?: number;
+  totalToaValue?: number;
+  
+  // Conversion System
+  dailyConversions?: number;
+  lastConversionDate?: string;
+  totalConversions?: number;
+  
+  // Profile data
+  location?: string;
+  bio?: string;
   website?: string;
-  about?: string;
-  // Technician-specific fields
-  experience?: string;
-  certifications?: string;
+  phone?: string;
+  availabilityStatus?: 'available' | 'busy' | 'offline';
+  hourlyRate?: number | string; // Can be number or string like "$75-$110"
+  completedJobs?: number;
+  responseTime?: number;
+  specialties?: string[] | string;
+  certifications?: string[] | string;
+  experience?: number | string; // Can be number or string like "15 years"
+  profileViews?: number;
+  favoriteTechnicians?: string[];
+  
+  // Additional technician-specific fields
+  businessAddress?: string;
   businessPhone?: string;
   businessEmail?: string;
   serviceArea?: string;
-  hourlyRate?: string;
   availability?: string;
-  // client-specific fields
-  favoriteCategories?: string[];
-  totalTipsSent?: number;
-  totalThankYousSent?: number;
-  favoriteTechnicians?: string[];
-  totalSpent?: number;
-  createdAt?: number;
+  about?: string;
+  
+  // Legacy fields
+  totalTips?: number;
+  totalTipAmount?: number;
 }
 
 interface Transaction {
   id: string;
   amount: number;
+  clientId?: string;
   clientName?: string;
+  technicianId?: string;
   technicianName?: string;
   date: string;
-  time?: string;
-  createdAt?: string | Date;
-  status: 'completed' | 'pending';
-  platformFee: number;
+  timestamp?: any;
+  status: 'completed' | 'pending' | 'cancelled';
+  type?: 'tip' | 'toa' | 'thankyou';
+  message?: string;
+  dollarValue?: number;
   technicianPayout?: number;
-}
-
-// Component to display a favorite technician card
-function FavoriteTechnicianCard({ technicianId, rank }: { technicianId: string, rank: number }) {
-  const [technician, setTechnician] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTechnician = async () => {
-      try {
-        const techDoc = await getDoc(doc(db as Firestore, 'technicians', technicianId));
-        if (techDoc.exists()) {
-          setTechnician({ id: techDoc.id, ...techDoc.data() });
-        }
-      } catch (error) {
-        logger.error('Error fetching technician:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTechnician();
-  }, [technicianId]);
-
-  if (loading) {
-    return (
-      <div className="bg-white/5 backdrop-blur-lg rounded-lg p-4 border border-white/10 animate-pulse">
-        <div className="h-12 bg-white/10 rounded"></div>
-      </div>
-    );
-  }
-
-  if (!technician) return null;
-
-  const handleTechnicianClick = () => {
-    // Navigate to technician's profile page using their username
-    if (technician.username) {
-      const profileUrl = `/${technician.username}`;
-      logger.debug('Opening profile page:', profileUrl);
-      window.open(profileUrl, '_blank');
-    } else {
-      // Fallback to search if no username (for older data)
-      const searchTerm = technician.name || technician.businessName || '';
-      const mainPageUrl = `/?search=${encodeURIComponent(searchTerm)}`;
-      logger.debug('Opening main page with search (no username):', searchTerm);
-      window.open(mainPageUrl, '_blank');
-    }
-  };
-
-  return (
-    <div 
-      className="bg-white/5 backdrop-blur-lg rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
-      onClick={handleTechnicianClick}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-10 h-10 bg-yellow-500/20 rounded-full">
-          <span className="text-yellow-400 font-bold">#{rank}</span>
-        </div>
-        <div className="flex-1">
-          <h4 className="font-semibold text-white group-hover:text-blue-300 transition-colors">{technician.name}</h4>
-          <p className="text-slate-300 text-sm">{technician.businessName || technician.category || 'Service Provider'}</p>
-        </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              <span className="text-yellow-400 text-sm font-medium">Favorite</span>
-            </div>
-            <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  platformFee?: number;
+  pointsAwarded?: number;
+  conversionId?: string;
+  originalCurrency?: string;
+  exchangeRate?: number;
+  fees?: number;
+  taxes?: number;
 }
 
 export default function ModernDashboard() {
@@ -144,1785 +110,1212 @@ export default function ModernDashboard() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showPayoutModal, setShowPayoutModal] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [profileFormData, setProfileFormData] = useState({
-    name: '',
-    businessName: '',
-    phone: '',
-    website: '',
-    businessAddress: '',
-    about: '',
-    category: '',
-    experience: '',
-    certifications: '',
-    businessPhone: '',
-    businessEmail: '',
-    serviceArea: '',
-    hourlyRate: '',
-    availability: ''
-  });
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [error, setError] = useState('');
   
-  const { earnings: realEarnings, loading: earningsLoading } = useTechnicianEarnings(userProfile?.id || null);
+  // Simplified navigation - only 3 main views
+  const [activeView, setActiveView] = useState<'overview' | 'activity' | 'settings'>('overview');
+  
+  // Modal states
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [showConversionWidget, setShowConversionWidget] = useState(false);
+  
+  // Profile editing states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  
+  const { earnings, loading: earningsLoading } = useTechnicianEarnings(user?.uid);
 
-  // Load user and technician profile
+  // Auth state management - using same system as main page
   useEffect(() => {
-    if (!(auth as Auth)) {
-      setIsLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth as Auth, async (firebaseUser) => {
+    const unsubscribe = authHelpers.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        setUser(firebaseUser);
-        
+        // User is signed in, get their complete profile data
         try {
-          let userFound = false;
-          
-          // First, try to fetch technician profile from technicians collection
-          const techDoc = await getDoc(doc(db as Firestore, 'technicians', firebaseUser.uid));
-          
-          if (techDoc.exists()) {
-            const techData = { id: techDoc.id, ...techDoc.data(), userType: 'technician' } as UserProfile;
-            setUserProfile(techData);
-            userFound = true;
-          }
-          
-          // If not found in technicians collection, check users collection
-          if (!userFound) {
-            const userDoc = await getDoc(doc(db as Firestore, 'users', firebaseUser.uid));
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              
-              // Accept both technicians and customers from users collection
-              if (userData.userType === 'technician') {
-                const techData = { 
-                  id: userDoc.id, 
-                  ...userData,
-                  businessName: userData.businessName || '',
-                  category: userData.category || '',
-                  points: userData.points || 0,
-                  totalThankYous: userData.totalThankYous || 0,
-                  totalTips: userData.totalTips || 0,
-                  totalTipAmount: userData.totalTipAmount || 0
-                } as UserProfile;
-
-                setUserProfile(techData);
-                userFound = true;
-              } else if (userData.userType === 'client') {
-                let clientData = { 
-                  id: userDoc.id, 
-                  ...userData,
-                  favoriteCategories: userData.favoriteCategories || [],
-                  totalTipsSent: userData.totalTipsSent || 0,
-                  totalThankYousSent: userData.totalThankYousSent || 0,
-                  favoriteTechnicians: userData.favoriteTechnicians || [],
-                  totalSpent: userData.totalSpent || 0
-                } as UserProfile;
-
-                // Always calculate tip counts from actual transactions for customers
-                if (userData.userType === 'client') {
-                    console.log('� Calculating client totals from transaction history...');
-                    
-                    // Count tips sent (each transaction = 1 tip sent)
-                    const tipsQuery = query(
-                      collection(db as Firestore, 'tips'),
-                      where('clientId', '==', userDoc.id)
-                    );
-                    const tipsSnapshot = await getDocs(tipsQuery);
-                    
-                    // Count thank yous sent
-                    const thankYousQuery = query(
-                      collection(db as Firestore, 'thank_yous'),
-                      where('userId', '==', userDoc.id)
-                    );
-                    const thankYousSnapshot = await getDocs(thankYousQuery);
-
-                    // Calculate from actual transaction data
-                    const actualTipCount = tipsSnapshot.size; // Each transaction = 1 tip
-                    let actualTotalSpent = 0;
-                    const technicianTipCounts = new Map(); // Track tips per technician
-                    
-                    tipsSnapshot.forEach((doc) => {
-                      const tip = doc.data();
-                      actualTotalSpent += tip.amount || 0;
-                      
-                      // Count tips per technician for favorites
-                      const techId = tip.technicianId;
-                      if (techId) {
-                        technicianTipCounts.set(techId, (technicianTipCounts.get(techId) || 0) + 1);
-                      }
-                    });
-                    
-                    // Calculate favorites (technicians tipped most often)
-                    const favorites = Array.from(technicianTipCounts.entries())
-                      .sort((a, b) => b[1] - a[1]) // Sort by tip count descending
-                      .slice(0, 5) // Top 5 favorites
-                      .map(([techId, count]) => ({ technicianId: techId, tipCount: count }));
-                    
-                    const actualThankYous = thankYousSnapshot.size;
-
-                    // Always use calculated values for customers
-                    clientData = {
-                      ...clientData,
-                      totalTipsSent: actualTipCount,
-                      totalSpent: actualTotalSpent / 100, // Convert from cents to dollars
-                      totalThankYousSent: actualThankYous,
-                      favoriteTechnicians: favorites.map(f => f.technicianId)
-                    };
-
-                    // Client totals calculated successfully
-                }
-
-                setUserProfile(clientData);
-                userFound = true; // Using same flag to indicate user found
-              } else {
-                // Handle users without userType (legacy users)
-                console.log('🔍 User without userType detected, determining type from fields...');
-                
-                // If user has technician-specific fields, treat as technician
-                if (userData.businessName || userData.category || userData.subcategory) {
-                  console.log('🔧 Treating as technician based on business fields');
-                  const techData = { 
-                    id: userDoc.id, 
-                    ...userData,
-                    userType: 'technician',
-                    businessName: userData.businessName || '',
-                    category: userData.category || '',
-                    points: userData.points || 0,
-                    totalThankYous: userData.totalThankYous || 0,
-                    totalTips: userData.totalTips || 0,
-                    totalTipAmount: userData.totalTipAmount || 0
-                  } as UserProfile;
-
-                  setUserProfile(techData);
-                  userFound = true;
-                  
-                  // Update the user record to include userType
-                  try {
-                    await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                      userType: 'technician'
-                    });
-                    console.log('✅ Updated user record with userType: technician');
-                  } catch (updateError) {
-                    console.error('Error updating userType:', updateError);
-                  }
-                } else {
-                  // Default to client for users without business fields
-                  console.log('👤 Treating as client (default for non-business users)');
-                  let clientData = { 
-                    id: userDoc.id, 
-                    ...userData,
-                    userType: 'client',
-                    favoriteCategories: userData.favoriteCategories || [],
-                    totalTipsSent: userData.totalTipsSent || 0,
-                    totalThankYousSent: userData.totalThankYousSent || 0,
-                    favoriteTechnicians: userData.favoriteTechnicians || [],
-                    totalSpent: userData.totalSpent || 0
-                  } as UserProfile;
-
-                  setUserProfile(clientData);
-                  userFound = true;
-                  
-                  // Update the user record to include userType
-                  try {
-                    await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                      userType: 'client'
-                    });
-                    console.log('✅ Updated user record with userType: client');
-                  } catch (updateError) {
-                    console.error('Error updating userType:', updateError);
-                  }
-                }
-              }
-            }
+          // Try to get user data from either technicians or users collection
+          let userData: any = await getTechnician(firebaseUser.uid);
+          if (!userData) {
+            userData = await getClient(firebaseUser.uid);
           }
 
-          // If still not found, search in both collections by email as fallback
-          if (!userFound && firebaseUser.email) {
+          if (userData) {
+            const completeUser = {
+              id: userData.id,
+              uid: firebaseUser.uid,
+              name: userData.name || userData.displayName || firebaseUser.displayName,
+              email: userData.email || firebaseUser.email,
+              displayName: userData.displayName || firebaseUser.displayName,
+              photoURL: userData.photoURL || firebaseUser.photoURL,
+              userType: userData.userType || 'client'
+            };
             
-            // Search technicians collection
-            const techQuery = query(
-              collection(db as Firestore, 'technicians'),
-              where('email', '==', firebaseUser.email),
-              limit(1)
-            );
-            const techSnapshot = await getDocs(techQuery);
+            setUser(completeUser);
+            await loadUserProfile(firebaseUser.uid, completeUser);
+          } else {
+            // Firebase user exists but no profile data, create basic user object
+            const basicUser = {
+              id: firebaseUser.uid,
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              userType: 'client'
+            };
             
-            if (!techSnapshot.empty) {
-              const techDoc = techSnapshot.docs[0];
-              const techData = { id: techDoc.id, ...techDoc.data(), userType: 'technician' } as UserProfile;
-              setUserProfile(techData);
-              userFound = true;
-            } else {
-              // Search users collection for both technicians and customers
-              const userQuery = query(
-                collection(db as Firestore, 'users'),
-                where('email', '==', firebaseUser.email),
-                limit(1)
-              );
-              const userSnapshot = await getDocs(userQuery);
-              
-              if (!userSnapshot.empty) {
-                const userDoc = userSnapshot.docs[0];
-                const userData = userDoc.data();
-                
-                if (userData.userType === 'technician') {
-                  const techData = { 
-                    id: userDoc.id, 
-                    ...userData,
-                    businessName: userData.businessName || '',
-                    category: userData.category || ''
-                  } as UserProfile;
-                  setUserProfile(techData);
-                  userFound = true;
-                } else if (userData.userType === 'client') {
-                  let clientData = { 
-                    id: userDoc.id, 
-                    ...userData,
-                    favoriteCategories: userData.favoriteCategories || [],
-                    totalTipsSent: userData.totalTipsSent || 0,
-                    totalThankYousSent: userData.totalThankYousSent || 0,
-                    favoriteTechnicians: userData.favoriteTechnicians || [],
-                    totalSpent: userData.totalSpent || 0
-                  } as UserProfile;
-
-                    // Always calculate tip counts from actual transactions for customers
-                  if (userData.userType === 'client') {
-                      console.log('� Calculating client totals from transaction history (fallback)...');
-                      
-                      // Count tips sent (each transaction = 1 tip sent)
-                      const tipsQuery = query(
-                        collection(db as Firestore, 'tips'),
-                        where('clientId', '==', userDoc.id)
-                      );
-                      const tipsSnapshot = await getDocs(tipsQuery);
-                      
-                      // Count thank yous sent
-                      const thankYousQuery = query(
-                        collection(db as Firestore, 'thank_yous'),
-                        where('userId', '==', userDoc.id)
-                      );
-                      const thankYousSnapshot = await getDocs(thankYousQuery);
-
-                      // Calculate from actual transaction data
-                      const actualTipCount = tipsSnapshot.size; // Each transaction = 1 tip
-                      let actualTotalSpent = 0;
-                      const technicianTipCounts = new Map(); // Track tips per technician
-                      
-                      tipsSnapshot.forEach((doc) => {
-                        const tip = doc.data();
-                        actualTotalSpent += tip.amount || 0;
-                        
-                        // Count tips per technician for favorites
-                        const techId = tip.technicianId;
-                        if (techId) {
-                          technicianTipCounts.set(techId, (technicianTipCounts.get(techId) || 0) + 1);
-                        }
-                      });
-                      
-                      // Calculate favorites (technicians tipped most often)
-                      const favorites = Array.from(technicianTipCounts.entries())
-                        .sort((a, b) => b[1] - a[1]) // Sort by tip count descending
-                        .slice(0, 5) // Top 5 favorites
-                        .map(([techId, count]) => ({ technicianId: techId, tipCount: count }));
-                      
-                      const actualThankYous = thankYousSnapshot.size;
-
-                      // Always use calculated values for customers
-                      clientData = {
-                        ...clientData,
-                        totalTipsSent: actualTipCount,
-                        totalSpent: actualTotalSpent / 100, // Convert from cents to dollars
-                        totalThankYousSent: actualThankYous,
-                        favoriteTechnicians: favorites.map(f => f.technicianId)
-                      };
-
-                      // Client totals calculated (fallback)
-                  }
-
-                  setUserProfile(clientData);
-                  userFound = true;
-                } else {
-                  // Handle users without userType in fallback search
-                  console.log('🔍 Fallback: User without userType detected, determining type from fields...');
-                  
-                  // If user has technician-specific fields, treat as technician
-                  if (userData.businessName || userData.category || userData.subcategory) {
-                    console.log('🔧 Fallback: Treating as technician based on business fields');
-                    const techData = { 
-                      id: userDoc.id, 
-                      ...userData,
-                      userType: 'technician',
-                      businessName: userData.businessName || '',
-                      category: userData.category || ''
-                    } as UserProfile;
-                    setUserProfile(techData);
-                    userFound = true;
-                    
-                    // Update the user record to include userType
-                    try {
-                      await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                        userType: 'technician'
-                      });
-                      console.log('✅ Fallback: Updated user record with userType: technician');
-                    } catch (updateError) {
-                      console.error('Fallback: Error updating userType:', updateError);
-                    }
-                  } else {
-                    // Default to client for users without business fields
-                    console.log('👤 Fallback: Treating as client (default for non-business users)');
-                    let clientData = { 
-                      id: userDoc.id, 
-                      ...userData,
-                      userType: 'client',
-                      favoriteCategories: userData.favoriteCategories || [],
-                      totalTipsSent: userData.totalTipsSent || 0,
-                      totalThankYousSent: userData.totalThankYousSent || 0,
-                      favoriteTechnicians: userData.favoriteTechnicians || [],
-                      totalSpent: userData.totalSpent || 0
-                    } as UserProfile;
-
-                    setUserProfile(clientData);
-                    userFound = true;
-                    
-                    // Update the user record to include userType
-                    try {
-                      await updateDoc(doc(db as Firestore, 'users', userDoc.id), {
-                        userType: 'client'
-                      });
-                      console.log('✅ Fallback: Updated user record with userType: client');
-                    } catch (updateError) {
-                      console.error('Fallback: Error updating userType:', updateError);
-                    }
-                  }
-                }
-              }
-            }
+            setUser(basicUser);
+            await loadUserProfile(firebaseUser.uid, basicUser);
           }
-          
-          // Debug logging and migration attempt
-          if (!userFound) {
-            // Try to migrate from users collection
-            try {
-              const migratedProfile = await migrateTechnicianProfile(firebaseUser.uid);
-              if (migratedProfile && 'name' in migratedProfile) {
-                const techProfile = migratedProfile as UserProfile;
-                setUserProfile(techProfile);
-                userFound = true;
-              }
-            } catch (migrationError) {
-              console.error('Error during migration:', migrationError);
-            }
-          }
-          
         } catch (error) {
-          console.error('Error loading technician profile:', error);
+          logger.error('Error loading user data:', error);
+          setError('Failed to load user data');
         }
       } else {
         setUser(null);
         setUserProfile(null);
+        setTransactions([]);
       }
-      
       setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Load transactions when user profile is available
-  useEffect(() => {
-    const loadTransactions = async () => {
-      if (userProfile) {
-        try {
-          let realTransactions = [];
-          
-          if (userProfile.userType === 'technician') {
-            realTransactions = await getTechnicianTransactions(
-              userProfile.id, 
-              userProfile.email, 
-              (userProfile as any).uniqueId
-            );
-          } else if (userProfile.userType === 'client') {
-            realTransactions = await getClientTransactions(
-              userProfile.id, 
-              userProfile.email
-            );
-          }
-          
-          setTransactions(realTransactions);
-        } catch (error) {
-          console.error('❌ Error loading transactions:', error);
-          setTransactions([]);
+  const loadUserProfile = async (userId: string, existingUserData?: any) => {
+    try {
+      // If we already have user data from auth, use it as base
+      if (existingUserData) {
+        const profileData = { 
+          ...existingUserData, 
+          id: userId,
+          userType: existingUserData.userType || 'client'
+        };
+        setUserProfile(profileData);
+        
+        // Load transactions after profile is loaded
+        await loadTransactions(userId, profileData);
+        return;
+      }
+
+      // Fallback to loading from Firestore (legacy logic)
+      let userData: UserProfile | null = null;
+      
+      // First, try to get user from users collection
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        userData = userDoc.data() as UserProfile;
+      }
+      
+      // If no userType is set, try to determine from technicians collection
+      if (userData && !userData.userType) {
+        const techDoc = await getDoc(doc(db, 'technicians', userId));
+        if (techDoc.exists()) {
+          // User exists in technicians collection, set as technician
+          userData.userType = 'technician';
+          // Update the users collection with correct userType
+          await updateDoc(doc(db, 'users', userId), { userType: 'technician' });
+          logger.info('Updated user type to technician for:', userId);
+        } else {
+          // Default to client if not found in technicians
+          userData.userType = 'client';
+          await updateDoc(doc(db, 'users', userId), { userType: 'client' });
+          logger.info('Updated user type to client for:', userId);
         }
       }
-    };
-
-    loadTransactions();
-  }, [userProfile]);
-
-  // Update form data when user profile changes
-  useEffect(() => {
-    if (userProfile) {
-      setProfileFormData({
-        name: userProfile.name || '',
-        businessName: userProfile.businessName || '',
-        phone: userProfile.phone || '',
-        website: userProfile.website || '',
-        businessAddress: userProfile.businessAddress || '',
-        about: userProfile.about || '',
-        category: userProfile.category || '',
-        experience: userProfile.experience || '',
-        certifications: userProfile.certifications || '',
-        businessPhone: userProfile.businessPhone || '',
-        businessEmail: userProfile.businessEmail || '',
-        serviceArea: userProfile.serviceArea || '',
-        hourlyRate: userProfile.hourlyRate || '',
-        availability: userProfile.availability || ''
-      });
-    }
-  }, [userProfile]);
-
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userProfile || !user) return;
-
-    setIsUpdatingProfile(true);
-    try {
-      // Determine which collection to update
-      const isInTechniciansCollection = await getDoc(doc(db as Firestore, 'technicians', user.uid));
-      const collectionName = isInTechniciansCollection.exists() ? 'technicians' : 'users';
       
-      // Update the profile in Firebase
-      await updateDoc(doc(db as Firestore, collectionName, user.uid), {
-        name: profileFormData.name,
-        businessName: profileFormData.businessName,
-        phone: profileFormData.phone,
-        website: profileFormData.website,
-        businessAddress: profileFormData.businessAddress,
-        about: profileFormData.about,
-        category: profileFormData.category,
-        updatedAt: new Date()
-      });
-
-      // Update local state
-      setUserProfile(prev => prev ? {
-        ...prev,
-        ...profileFormData
-      } : null);
-
-      setIsEditingProfile(false);
-      
-      // Show success message (you could add a toast notification here)
-      console.log('Profile updated successfully!');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // Show error message (you could add a toast notification here)
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  };
-
-  const sidebarItems = userProfile?.userType === 'client' ? [
-    { id: 'overview', label: 'Overview', icon: 'home' },
-    { id: 'tips', label: 'My Tips', icon: 'heart' },
-    { id: 'favorites', label: 'Favorites', icon: 'star' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
-  ] : [
-    { id: 'overview', label: 'Overview', icon: 'home' },
-    { id: 'profile', label: 'Profile', icon: 'user' },
-    { id: 'transactions', label: 'Transactions', icon: 'credit-card' },
-    { id: 'payouts', label: 'Payouts', icon: 'dollar-sign' },
-    { id: 'statistics', label: 'Statistics', icon: 'bar-chart' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
-  ];
-
-  const renderIcon = (iconName: string) => {
-    const iconClass = "w-5 h-5";
-    switch (iconName) {
-      case 'home':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
-      case 'user':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
-      case 'credit-card':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
-      case 'dollar-sign':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" /></svg>;
-      case 'bar-chart':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
-      case 'settings':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
-      case 'heart':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>;
-      case 'star':
-        return <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
-      default:
-        return <div className={iconClass}></div>;
-    }
-  };
-
-  const renderOverviewContent = () => (
-    <div className="space-y-6">
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {userProfile?.userType === 'client' ? (
-          <>
-            {/* Client Stats */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-red-400">
-                  {userProfile?.totalTipsSent || 0}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Tips Sent</h3>
-              <p className="text-slate-400 text-sm">Number of tips sent</p>
-            </div>
-
-            <div 
-              className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300 cursor-pointer"
-              onClick={() => setActiveTab('favorites')}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-yellow-400">
-                  {userProfile?.favoriteTechnicians?.length || 0}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Favorites</h3>
-              <p className="text-slate-300 text-sm">Saved technicians</p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-blue-400">
-                  {userProfile?.totalSpent ? formatCurrency(userProfile.totalSpent * 100) : '$0'}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Total Spent</h3>
-              <p className="text-slate-400 text-sm">On tips & services</p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-purple-400">
-                  {new Date(userProfile?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Member Since</h3>
-              <p className="text-slate-300 text-sm">Account created</p>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Technician Stats */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-green-400">
-                  {formatCurrency(realEarnings.totalEarnings * 100)}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Total Earnings</h3>
-              <p className="text-slate-300 text-sm">{realEarnings.tipCount || 0} tips received</p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-blue-400">
-                  {formatCurrency(realEarnings.availableBalance * 100)}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Available</h3>
-              <p className="text-slate-300 text-sm">Ready to withdraw</p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-purple-400">{userProfile?.totalThankYous || 0}</span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Thank Yous</h3>
-              <p className="text-slate-300 text-sm">Client appreciation</p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl hover:shadow-blue-500/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="text-2xl font-bold text-yellow-400">
-                  {formatCurrency(realEarnings.pendingBalance * 100)}
-                </span>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-1">Pending</h3>
-              <p className="text-slate-300 text-sm">Processing (2-3 days)</p>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Charts and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Earnings Chart Placeholder */}
-        <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            {userProfile?.userType === 'client' ? 'Spending Overview' : 'Earnings Overview'}
-          </h3>
-          <div className="h-64 bg-gradient-to-br from-slate-700/30 to-blue-900/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-slate-600/30">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <p className="text-slate-300">Chart visualization would go here</p>
-              <p className="text-slate-400 text-sm mt-1">Interactive earnings chart</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button
-              onClick={() => setShowPayoutModal(true)}
-              disabled={realEarnings.availableBalance < 1.00}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-            >
-              {realEarnings.availableBalance > 0
-                ? `Withdraw ${formatCurrency(realEarnings.availableBalance * 100)}`
-                : 'No funds available'
-              }
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('profile')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
-            >
-              Update Profile
-            </button>
-            
-            {userProfile?.userType === 'technician' && (
-              <Link
-                href="/"
-                className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors text-center"
-              >
-                View Public Profile
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Recent Tips</h3>
-            <button
-              onClick={() => setActiveTab('transactions')}
-              className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-            >
-              View All →
-            </button>
-          </div>
-        </div>
+      if (userData) {
+        const profileData = { ...userData, id: userId };
+        setUserProfile(profileData);
         
-        <div className="divide-y divide-white/10">
-          {transactions.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
-              <p className="text-slate-300">No tips received yet</p>
-              <p className="text-slate-400 text-sm mt-1">Your tip history will appear here</p>
-            </div>
-          ) : (
-            transactions.slice(0, 5).map((transaction) => (
-              <div key={transaction.id} className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">
-                      {userProfile?.userType === 'client' 
-                        ? (transaction.technicianName || 'Unknown Technician')
-                        : (transaction.clientName || 'Anonymous client')
-                      }
-                    </p>
-                    <p className="text-sm text-slate-400">{transaction.date}</p>
-                    <p className="text-xs text-slate-500">
-                      {transaction.time || (transaction.createdAt ? new Date(transaction.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString())}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-bold ${userProfile?.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
-                    {userProfile?.userType === 'client' ? '-' : '+'}
-                    {formatCurrency(userProfile?.userType === 'client' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
-                  </p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    transaction.status === 'completed' 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {transaction.status}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderProfileContent = () => (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Profile Management</h3>
-          {!isEditingProfile && (
-            <button
-              onClick={() => setIsEditingProfile(true)}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit Profile
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4 mb-6">
-          {userProfile?.photoURL ? (
-            <Image 
-              src={userProfile.photoURL} 
-              alt={userProfile.name}
-              width={80}
-              height={80}
-              className="w-20 h-20 rounded-full border-2 border-blue-400"
-            />
-          ) : (
-            <div className="w-20 h-20 bg-slate-600 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-          )}
-          <div>
-            <h4 className="text-xl font-bold text-white">{userProfile?.name || 'Your Name'}</h4>
-            <p className="text-slate-300">{userProfile?.businessName || 'Business Name'}</p>
-            <p className="text-slate-400 text-sm capitalize">{userProfile?.category || 'Category'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Editable Profile Form */}
-      {isEditingProfile ? (
-        <form onSubmit={handleProfileUpdate} className="space-y-6">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Edit Profile Information</h3>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditingProfile(false);
-                    // Reset form data to original values
-                    if (userProfile) {
-                      setProfileFormData({
-                        name: userProfile.name || '',
-                        businessName: userProfile.businessName || '',
-                        phone: userProfile.phone || '',
-                        website: userProfile.website || '',
-                        businessAddress: userProfile.businessAddress || '',
-                        about: userProfile.about || '',
-                        category: userProfile.category || '',
-                        experience: userProfile.experience || '',
-                        certifications: userProfile.certifications || '',
-                        businessPhone: userProfile.businessPhone || '',
-                        businessEmail: userProfile.businessEmail || '',
-                        serviceArea: userProfile.serviceArea || '',
-                        hourlyRate: userProfile.hourlyRate || '',
-                        availability: userProfile.availability || ''
-                      });
-                    }
-                  }}
-                  className="px-4 py-2 text-slate-400 hover:text-white border border-slate-600 hover:border-slate-500 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdatingProfile}
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  {isUpdatingProfile ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Save Changes
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    value={profileFormData.name}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Business Name</label>
-                  <input
-                    type="text"
-                    value={profileFormData.businessName}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, businessName: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Enter your business name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
-                  <select
-                    value={profileFormData.category}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                  >
-                    <option value="">Select a category</option>
-                    <option value="plumbing">Plumbing</option>
-                    <option value="electrical">Electrical</option>
-                    <option value="hvac">HVAC</option>
-                    <option value="carpentry">Carpentry</option>
-                    <option value="painting">Painting</option>
-                    <option value="roofing">Roofing</option>
-                    <option value="landscaping">Landscaping</option>
-                    <option value="cleaning">Cleaning</option>
-                    <option value="automotive">Automotive</option>
-                    <option value="telecommunications">Telecommunications</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={profileFormData.phone}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Website</label>
-                  <input
-                    type="url"
-                    value={profileFormData.website}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, website: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Business Address</label>
-                  <input
-                    type="text"
-                    value={profileFormData.businessAddress}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, businessAddress: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Enter your business address"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Business Phone</label>
-                  <input
-                    type="tel"
-                    value={profileFormData.businessPhone}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, businessPhone: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Business phone number"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Business Email</label>
-                  <input
-                    type="email"
-                    value={profileFormData.businessEmail}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, businessEmail: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="business@company.com"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Professional Details Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Years of Experience</label>
-                  <input
-                    type="text"
-                    value={profileFormData.experience}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, experience: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="e.g., 5 years"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Certifications/Licenses</label>
-                  <input
-                    type="text"
-                    value={profileFormData.certifications}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, certifications: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Licensed Master Plumber, EPA Certified"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Service Area</label>
-                  <input
-                    type="text"
-                    value={profileFormData.serviceArea}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, serviceArea: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="Atlanta Metro - 25 mile radius"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Hourly Rate</label>
-                  <input
-                    type="text"
-                    value={profileFormData.hourlyRate}
-                    onChange={(e) => setProfileFormData(prev => ({ ...prev, hourlyRate: e.target.value }))}
-                    className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                    placeholder="$50-$85/hour"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-slate-300 mb-2">Availability</label>
-              <input
-                type="text"
-                value={profileFormData.availability}
-                onChange={(e) => setProfileFormData(prev => ({ ...prev, availability: e.target.value }))}
-                className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                placeholder="Monday-Friday 8AM-6PM, Emergency calls 24/7"
-              />
-            </div>
-
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-slate-300 mb-2">About Your Business</label>
-              <textarea
-                value={profileFormData.about}
-                onChange={(e) => setProfileFormData(prev => ({ ...prev, about: e.target.value }))}
-                rows={4}
-                className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-                placeholder="Describe your business, services, and expertise..."
-              />
-            </div>
-          </div>
-        </form>
-      ) : (
-        /* Read-only Profile View */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h3 className="text-lg font-semibold text-white mb-4">Contact Information</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-slate-400">Email</label>
-                <p className="text-white">{userProfile?.email || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm text-slate-400">Phone</label>
-                <p className="text-white">{userProfile?.phone || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm text-slate-400">Website</label>
-                <p className="text-white break-all">{userProfile?.website || 'Not set'}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-4">Business Details</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm text-slate-400">Business Address</label>
-                <p className="text-white">{userProfile?.businessAddress || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm text-slate-400">About</label>
-                <p className="text-white text-sm">{userProfile?.about || 'No description provided'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderTransactionsContent = () => (
-    <div className="space-y-6">
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl">
-        <div className="p-6 border-b border-white/10 bg-gradient-to-r from-blue-900/20 to-slate-800/20">
-          <h3 className="text-lg font-semibold text-white">
-            {userProfile?.userType === 'client' ? 'Tips Sent' : 'Tips Received'}
-          </h3>
-        </div>
-        
-        <div className="divide-y divide-white/10">
-          {transactions.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
-              <p className="text-slate-300">No transactions yet</p>
-              <p className="text-slate-400 text-sm mt-1">Your transaction history will appear here</p>
-            </div>
-          ) : (
-            transactions.map((transaction) => (
-              <div key={transaction.id} className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">
-                      {userProfile?.userType === 'client' 
-                        ? (transaction.technicianName || 'Unknown Technician')
-                        : (transaction.clientName || 'Anonymous client')
-                      }
-                    </p>
-                    <p className="text-sm text-slate-400">{transaction.date}</p>
-                    <p className="text-xs text-slate-500">
-                      {transaction.time || (transaction.createdAt ? new Date(transaction.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString())}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-bold ${userProfile?.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
-                    {userProfile?.userType === 'client' ? '-' : '+'}
-                    {formatCurrency(userProfile?.userType === 'client' ? transaction.amount : (transaction.technicianPayout || (transaction.amount - transaction.platformFee)))}
-                  </p>
-                  <p className="text-sm text-slate-400">
-                    {userProfile?.userType === 'client' 
-                      ? `Total: ${formatCurrency(transaction.amount)} (includes $0.99 fee)`
-                      : `${formatCurrency(transaction.amount)} - ${formatCurrency(transaction.platformFee)} fee`
-                    }
-                  </p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    transaction.status === 'completed' 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {transaction.status}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPayoutsContent = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-          <h3 className="text-lg font-semibold text-white mb-2">Available Balance</h3>
-          <p className="text-3xl font-bold text-green-400">
-            {formatCurrency(realEarnings.availableBalance * 100)}
-          </p>
-          <button
-            onClick={() => setShowPayoutModal(true)}
-            disabled={realEarnings.availableBalance < 1.00}
-            className="w-full mt-4 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            Withdraw Now
-          </button>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-          <h3 className="text-lg font-semibold text-white mb-2">Pending</h3>
-          <p className="text-3xl font-bold text-yellow-400">
-            {formatCurrency(realEarnings.pendingBalance * 100)}
-          </p>
-          <p className="text-slate-300 text-sm mt-2">Processing in 2-3 days</p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-          <h3 className="text-lg font-semibold text-white mb-2">Total Paid Out</h3>
-          <p className="text-3xl font-bold text-blue-400">$0.00</p>
-          <p className="text-slate-400 text-sm mt-2">All-time payouts</p>
-        </div>
-      </div>
-
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl">
-        <div className="p-6 border-b border-white/10">
-          <h3 className="text-lg font-semibold text-white">Payout History</h3>
-        </div>
-        
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <p className="text-slate-300">No payouts yet</p>
-          <p className="text-slate-400 text-sm mt-1">Your payout history will appear here</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const handleDeleteProfile = async () => {
-    if (deleteConfirmationText !== 'DELETE') {
-      alert('Please type "DELETE" to confirm account deletion.');
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      // Delete user document from Firestore
-      if (userProfile?.id) {
-        await updateDoc(doc(db as Firestore, userProfile.userType === 'client' ? 'users' : 'technicians', userProfile.id), {
-          deleted: true,
-          deletedAt: Date.now()
-        });
+        // Load transactions after profile is loaded
+        await loadTransactions(userId, profileData);
+      } else {
+        // Try migrating technician profile if user doesn't exist in users collection
+        const migratedProfile = await migrateTechnicianProfile(userId);
+        if (migratedProfile) {
+          const profileData = { ...migratedProfile, id: userId, userType: 'technician' as const };
+          setUserProfile(profileData);
+          await loadTransactions(userId, profileData);
+        }
       }
-
-      // Sign out and redirect
-      await signOut(auth);
-      window.location.href = '/';
     } catch (error) {
-      console.error('Error deleting profile:', error);
-      alert('Error deleting profile. Please try again.');
+      logger.error('Error loading user profile:', error);
+      setError('Failed to load profile');
+    }
+  };
+
+  const loadTransactions = async (userId: string, profile?: UserProfile) => {
+    try {
+      const currentProfile = profile || userProfile;
+      if (!currentProfile) return;
+      
+      let transactionData: Transaction[] = [];
+      
+      if (currentProfile.userType === 'technician') {
+        transactionData = await getTechnicianTransactions(userId, currentProfile.email, currentProfile.uniqueId);
+      } else {
+        transactionData = await getClientTransactions(userId, currentProfile.email);
+      }
+      
+      setTransactions(transactionData);
+    } catch (error) {
+      logger.error('Error loading transactions:', error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      logger.error('Sign out error:', error);
+    }
+  };
+
+  // Profile editing functions
+  const handleEditProfile = () => {
+    setEditedProfile({
+      name: userProfile?.name || '',
+      businessName: userProfile?.businessName || '',
+      category: userProfile?.category || '',
+      bio: userProfile?.bio || '',
+      location: userProfile?.location || '',
+      phone: userProfile?.phone || '',
+      website: userProfile?.website || '',
+    });
+    setIsEditingProfile(true);
+    setSaveMessage(null);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setEditedProfile({});
+    setSaveMessage(null);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!userProfile) return;
+    
+    setIsSaving(true);
+    setSaveMessage(null);
+    
+    try {
+      const updatedData = {
+        ...editedProfile,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Update users collection
+      await updateDoc(doc(db, 'users', userProfile.id), updatedData);
+      
+      // If user is a technician, also update technicians collection
+      if (userProfile.userType === 'technician') {
+        try {
+          await updateDoc(doc(db, 'technicians', userProfile.id), updatedData);
+          logger.info('Updated technician profile in technicians collection');
+        } catch (techError) {
+          // If technician document doesn't exist, this is okay
+          // The user might not have been migrated to technicians collection yet
+          logger.warn('Could not update technicians collection:', techError);
+        }
+      }
+      
+      // Update local state
+      setUserProfile({ ...userProfile, ...editedProfile });
+      setIsEditingProfile(false);
+      setSaveMessage('Profile updated successfully!');
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      logger.error('Error saving profile:', error);
+      setSaveMessage('Failed to save profile. Please try again.');
     } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirmation(false);
-      setDeleteConfirmationText('');
+      setIsSaving(false);
     }
   };
 
-  const renderSettingsContent = () => (
-    <div className="space-y-6">
-      {/* Account Settings */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Account Settings</h3>
-        </div>
-
-        <div className="space-y-4">
-          {/* Notifications */}
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="font-medium text-white mb-2">Notifications</h4>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Email notifications for new {userProfile?.userType === 'client' ? 'service updates' : 'tips received'}</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Marketing and promotional emails</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Privacy */}
-          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="font-medium text-white mb-2">Privacy</h4>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" defaultChecked />
-                <span className="text-slate-300">Make profile {userProfile?.userType === 'client' ? 'visible to technicians' : 'visible to clients'}</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="rounded bg-white/10 border-white/20 text-blue-500" />
-                <span className="text-slate-300">Allow analytics data collection</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div className="bg-red-500/10 backdrop-blur-lg rounded-xl p-6 border border-red-500/20 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-red-400">Danger Zone</h3>
-            <p className="text-slate-300 text-sm mt-1">Irreversible actions that will permanently affect your account</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20">
-            <h4 className="font-medium text-red-400 mb-2">Delete Account</h4>
-            <p className="text-slate-300 text-sm mb-4">
-              Permanently delete your account and all associated data. This action cannot be undone.
-              {userProfile?.userType === 'technician' && ' All your tips and earnings will be processed before deletion.'}
-            </p>
-            <button
-              onClick={() => setShowDeleteConfirmation(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              Delete Account
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirmation && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 max-w-md w-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.982 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-white">Confirm Account Deletion</h3>
-            </div>
-            <p className="text-slate-300 mb-4">
-              This will permanently delete your account and all associated data. This action cannot be undone.
-            </p>
-            <p className="text-slate-300 mb-4">
-              Type <span className="font-bold text-red-400">DELETE</span> to confirm:
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmationText}
-              onChange={(e) => setDeleteConfirmationText(e.target.value)}
-              className="w-full bg-white/10 backdrop-blur-lg text-white border border-white/20 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-400"
-              placeholder="Type DELETE here"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteConfirmation(false);
-                  setDeleteConfirmationText('');
-                }}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteProfile}
-                disabled={isDeleting || deleteConfirmationText !== 'DELETE'}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return renderOverviewContent();
-      case 'profile':
-        return renderProfileContent();
-      case 'transactions':
-        return renderTransactionsContent();
-      case 'payouts':
-        return renderPayoutsContent();
-      case 'statistics':
-        return (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Statistics</h3>
-            <p className="text-slate-300">Detailed analytics coming soon</p>
-          </div>
-        );
-      case 'tips':
-        return (
-          <div className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-red-500/20 rounded-lg">
-                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </div>
-                  <span className="text-2xl font-bold text-red-400">
-                    {userProfile?.totalTipsSent || 0}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-1">Tips Sent</h3>
-                <p className="text-slate-400 text-sm">Total tips given</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                  </div>
-                  <span className="text-2xl font-bold text-blue-400">
-                    {userProfile?.totalSpent ? formatCurrency(userProfile.totalSpent * 100) : '$0.00'}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-1">Total Spent</h3>
-                <p className="text-slate-400 text-sm">On tips & appreciation</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-green-500/20 rounded-lg">
-                    <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                    </svg>
-                  </div>
-                  <span className="text-2xl font-bold text-green-400">
-                    {userProfile?.totalThankYousSent || 0}
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-1">Thank Yous</h3>
-                <p className="text-slate-400 text-sm">Sent to technicians</p>
-              </div>
-            </div>
-
-            {/* Transaction History */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 shadow-2xl">
-              <div className="p-6 border-b border-white/10 bg-gradient-to-r from-red-900/20 to-slate-800/20">
-                <h3 className="text-lg font-semibold text-white">Tips & Thank Yous History</h3>
-              </div>
-              
-              <div className="divide-y divide-white/10">
-                {transactions.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-slate-300">No tips sent yet</p>
-                    <p className="text-slate-400 text-sm mt-1">Start appreciating technicians by browsing the home page</p>
-                    <Link
-                      href="/"
-                      className="inline-flex items-center gap-2 mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      Find Technicians
-                    </Link>
-                  </div>
-                ) : (
-                  transactions.map((transaction) => (
-                    <div key={transaction.id} className="p-6 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                          <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-medium text-white">Tip to {transaction.technicianName}</p>
-                          <p className="text-sm text-slate-400">{transaction.date}</p>
-                          <p className="text-xs text-slate-500">
-                            {transaction.time || (transaction.createdAt ? new Date(transaction.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString())}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-red-400">
-                          -{formatCurrency(transaction.amount)}
-                        </p>
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === 'completed' 
-                            ? 'bg-green-500/20 text-green-400' 
-                            : 'bg-yellow-500/20 text-yellow-400'
-                        }`}>
-                          {transaction.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 'favorites':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">Your Favorite Technicians</h3>
-                  <p className="text-slate-300 text-sm">Based on your tipping frequency</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {userProfile?.favoriteTechnicians && userProfile.favoriteTechnicians.length > 0 ? (
-                  userProfile.favoriteTechnicians.map((techId, index) => (
-                    <FavoriteTechnicianCard key={techId} technicianId={techId} rank={index + 1} />
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2">No Favorites Yet</h4>
-                    <p className="text-slate-300">Start tipping technicians to build your favorites list!</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 'settings':
-        return renderSettingsContent();
-      default:
-        return renderOverviewContent();
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setEditedProfile(prev => ({ ...prev, [field]: value }));
   };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-md mx-4">
-          <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Dashboard Access Required</h1>
-          <p className="text-slate-300 mb-6">Please sign in to access your dashboard.</p>
-          <Link 
-            href="/" 
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-          >
-            Go to Home & Sign In
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 max-w-md mx-4">
-          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.982 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Technician Profile Required</h1>
-          <p className="text-slate-300 mb-6">You need to register as a technician to use this dashboard.</p>
-          <Link 
-            href="/" 
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-          >
-            Register as Technician
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading dashboard...</div>
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-white text-center">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/10 backdrop-blur-lg border-r border-white/20 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
-        <div className="flex items-center justify-between h-20 px-6 border-b border-white/20">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">🔧</span>
-              </div>
-              <div>
-                <h1 className="text-white font-bold text-2xl">ThankATech</h1>
-                <p className="text-blue-300 text-sm font-medium">
-                  {userProfile?.userType === 'client' ? 'Client Dashboard' : 'Technician Dashboard'}
-                </p>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* User Profile Section - Cleaner design */}
-        <div className="p-6 border-b border-white/20 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
-          <div className="flex items-center gap-4">
-            {userProfile?.photoURL ? (
-              <Image 
-                src={userProfile.photoURL} 
-                alt={userProfile.name}
-                width={56}
-                height={56}
-                className="w-14 h-14 rounded-full border-2 border-blue-400 shadow-lg"
-              />
-            ) : (
-              <div className="w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold text-lg truncate">
-                {userProfile?.name || user?.displayName || 'User'}
-              </p>
-              <p className="text-blue-300 text-sm font-medium truncate">
-                {userProfile?.userType === 'client' ? '� Client' : '🔧 ' + (userProfile?.businessName || 'Technician')}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
-          <ul className="space-y-2">
-            {sidebarItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                    activeTab === item.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {renderIcon(item.icon)}
-                  {item.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Bottom section */}
-        <div className="p-4 border-t border-white/10 space-y-2">
+  if (!user || !userProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Access Denied</h2>
+          <p className="text-slate-300 mb-6">Please log in to access your dashboard.</p>
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Back to Home
+            Go to Home
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Modern Header Component - matches main page design
+  const DashboardHeader = () => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
+        <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-xl font-bold">🔧</span>
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
+            ThankATech
+          </span>
+        </Link>
+
+        <div className="flex gap-4 items-center">
+          {/* Points Badge */}
+          {userProfile.points && userProfile.points > 0 && (
+            <div className="bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-green-300 text-sm font-medium">{userProfile.points} Points</span>
+            </div>
+          )}
+
+          {/* User Profile Section */}
+          <div className="flex items-center space-x-3">
+            {userProfile.photoURL ? (
+              <Image 
+                src={userProfile.photoURL}
+                alt={userProfile.name}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full border-2 border-white/20"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
+                <span className="text-white text-sm font-medium">
+                  {userProfile.name?.charAt(0) || 'U'}
+                </span>
+              </div>
+            )}
+            <span className="text-gray-300">Welcome, {userProfile.name?.split(' ')[0] || 'User'}!</span>
+            <button
+              onClick={handleSignOut}
+              className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-200 rounded-lg text-sm hover:bg-red-500/30 transition-all duration-200"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+    </div>
+  );
+
+  // Simplified Navigation (only 3 main sections) - matches main page styling
+  const NavigationTabs = () => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="flex space-x-8 bg-black/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
+        {[
+          { id: 'overview', label: 'Dashboard', icon: '🏠' },
+          { id: 'activity', label: 'Activity', icon: '📊' },
+          { id: 'settings', label: 'Settings', icon: '⚙️' }
+        ].map((tab) => (
           <button
-            onClick={async () => {
-              try {
-                await signOut(auth);
-                window.location.href = '/';
-              } catch (error) {
-                console.error('Error signing out:', error);
-              }
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-colors"
+            key={tab.id}
+            onClick={() => setActiveView(tab.id as any)}
+            className={`flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+              activeView === tab.id
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
+            <span>{tab.icon}</span>
+            <span className="font-medium">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+
+  // Hero Section with Primary Actions
+  const HeroSection = () => (
+    <div className="bg-gradient-to-br from-blue-900/40 to-purple-900/40 backdrop-blur-xl rounded-2xl p-8 mb-8 border border-white/10">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {userProfile.userType === 'client' 
+              ? 'Ready to Show Appreciation?' 
+              : 'Your Technician Dashboard'
+            }
+          </h1>
+          <p className="text-slate-300 text-lg mb-4">
+            {userProfile.userType === 'client' 
+              ? 'Send TOA tokens to your favorite technicians and earn ThankATech Points!'
+              : 'Track your earnings, manage your profile, and grow your business'
+            }
+          </p>
+          
+          {/* Primary CTAs */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {userProfile.userType === 'client' ? (
+              <>
+                <Link
+                  href="/"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
+                >
+                  Find Technicians
+                </Link>
+                {userProfile.points && userProfile.points >= 5 && (
+                  <button
+                    onClick={() => setShowConversionWidget(!showConversionWidget)}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    Convert {userProfile.points} Points to TOA
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <Link
+                  href={`/${userProfile.username || userProfile.uniqueId}`}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
+                >
+                  View Public Profile
+                </Link>
+                {earnings && earnings.availableBalance > 0 && (
+                  <button
+                    onClick={() => setShowPayoutModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  >
+                    Request Payout
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Stats Cards */}
+        <div className="flex-shrink-0">
+          <div className="grid grid-cols-2 gap-4">
+            {userProfile.userType === 'client' ? (
+              <>
+                <QuickStatCard
+                  title="TOA Sent"
+                  value={userProfile.totalToaSent || 0}
+                  color="blue"
+                />
+                <QuickStatCard
+                  title="Points"
+                  value={userProfile.points || 0}
+                  color="green"
+                />
+              </>
+            ) : (
+              <>
+                <QuickStatCard
+                  title="TOA Received"
+                  value={userProfile.totalToaReceived || 0}
+                  color="purple"
+                />
+                <QuickStatCard
+                  title="Thank Yous"
+                  value={userProfile.totalThankYous || 0}
+                  color="red"
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Conversion Widget */}
+      {showConversionWidget && userProfile.points && userProfile.points >= 5 && (
+        <div className="mt-6 p-6 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Convert Points to TOA</h3>
+            <button
+              onClick={() => setShowConversionWidget(false)}
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          <ConversionWidget userId={userProfile.id} />
+        </div>
+      )}
+    </div>
+  );
+
+  // Quick Stat Card Component
+  const QuickStatCard = ({ title, value, color }: {
+    title: string;
+    value: string | number;
+    color: 'blue' | 'green' | 'purple' | 'red';
+  }) => {
+    const colorClasses = {
+      blue: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-300',
+      green: 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-300',
+      purple: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300',
+      red: 'from-red-500/20 to-red-600/10 border-red-500/30 text-red-300',
+    };
+
+    return (
+      <div className={`bg-gradient-to-br ${colorClasses[color]} backdrop-blur-lg rounded-xl p-4 border text-center`}>
+        <div className="text-2xl font-bold text-white">{value}</div>
+        <div className="text-sm font-medium">{title}</div>
+      </div>
+    );
+  };
+
+  // Main Stats Grid with Better Layout
+  const StatsGrid = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {userProfile.userType === 'client' ? (
+        <>
+          <StatCard
+            title="Total Spent"
+            value={userProfile.totalToaValue ? formatCurrency(userProfile.totalToaValue * 100) : '$0'}
+            icon="💰"
+            color="blue"
+            subtitle="On TOA tokens"
+          />
+          <StatCard
+            title="ThankATech Points"
+            value={userProfile.points || 0}
+            icon="⭐"
+            color="green"
+            subtitle={`${Math.floor((userProfile.points || 0) / 5)} TOA available`}
+            onClick={() => userProfile.points && userProfile.points >= 5 && setShowConversionWidget(true)}
+            clickable={!!(userProfile.points && userProfile.points >= 5)}
+          />
+          <StatCard
+            title="Thank Yous Sent"
+            value={userProfile.totalThankYousSent || 0}
+            icon="❤️"
+            color="red"
+            subtitle="Appreciation sent"
+          />
+          <StatCard
+            title="Favorites"
+            value={userProfile.favoriteTechnicians?.length || 0}
+            icon="🌟"
+            color="yellow"
+            subtitle="Saved technicians"
+            onClick={() => setActiveView('activity')}
+            clickable
+          />
+        </>
+      ) : (
+        <>
+          <StatCard
+            title="Total Earnings"
+            value={earnings ? formatCurrency(earnings.totalEarnings * 100) : '$0'}
+            icon="💰"
+            color="green"
+            subtitle="All time"
+          />
+          <StatCard
+            title="Available Payout"
+            value={earnings ? formatCurrency(earnings.availableBalance * 100) : '$0'}
+            icon="🏦"
+            color="blue"
+            subtitle="Ready to withdraw"
+            onClick={() => earnings && earnings.availableBalance > 0 && setShowPayoutModal(true)}
+            clickable={!!(earnings && earnings.availableBalance > 0)}
+          />
+          <StatCard
+            title="Thank Yous"
+            value={userProfile.totalThankYous || 0}
+            icon="❤️"
+            color="red"
+            subtitle="Received"
+          />
+          <StatCard
+            title="Profile Views"
+            value={userProfile.profileViews || 0}
+            icon="👁️"
+            color="purple"
+            subtitle="This month"
+          />
+        </>
+      )}
+    </div>
+  );
+
+  // Enhanced Stat Card Component
+  const StatCard = ({ title, value, icon, color, subtitle, clickable, onClick }: {
+    title: string;
+    value: string | number;
+    icon: string;
+    color: string;
+    subtitle: string;
+    clickable?: boolean;
+    onClick?: () => void;
+  }) => {
+    const colorClasses = {
+      blue: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-300',
+      green: 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-300',
+      yellow: 'from-yellow-500/20 to-yellow-600/10 border-yellow-500/30 text-yellow-300',
+      red: 'from-red-500/20 to-red-600/10 border-red-500/30 text-red-300',
+      purple: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300',
+    };
+
+    return (
+      <div
+        className={`bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} backdrop-blur-lg rounded-xl p-6 border transition-all duration-200 ${
+          clickable ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : ''
+        }`}
+        onClick={clickable ? onClick : undefined}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-2xl">{icon}</span>
+          {clickable && <span className="text-xs opacity-50">Click to view</span>}
+        </div>
+        <div className="text-2xl font-bold text-white mb-1">{value}</div>
+        <h3 className="font-semibold text-white/90 mb-1">{title}</h3>
+        <p className="text-sm opacity-75">{subtitle}</p>
+      </div>
+    );
+  };
+
+  // Recent Activity Section
+  const RecentActivity = () => (
+    <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+          <button
+            onClick={() => setActiveView('activity')}
+            className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+          >
+            View All →
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 lg:ml-0">
-        {/* Top Bar */}
-        <div className="bg-white/10 backdrop-blur-xl border-b border-white/20 h-16 flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-slate-400 hover:text-white"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div>
-              <h2 className="text-2xl font-bold text-white capitalize flex items-center gap-2">
-                {userProfile?.userType === 'client' ? '�' : '🔧'}
-                {activeTab}
-              </h2>
-              <p className="text-slate-400 text-sm">
-                {activeTab === 'overview' && (userProfile?.userType === 'client' ? 'Your spending and appreciation activity' : 'Your earnings and performance metrics')}
-                {activeTab === 'profile' && 'Manage your profile information'}
-                {activeTab === 'transactions' && 'View your transaction history'}
-                {activeTab === 'payouts' && 'Manage your earnings and payouts'}
-                {activeTab === 'statistics' && 'Detailed performance analytics'}
-                {activeTab === 'tips' && 'View your tip history and sent thank yous'}
-                {activeTab === 'favorites' && 'Your saved and favorite service providers'}
-                {activeTab === 'settings' && 'Account and notification settings'}
-              </p>
+      <div className="divide-y divide-white/10">
+        {transactions.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">📝</span>
             </div>
+            <p className="text-slate-300 mb-2">No activity yet</p>
+            <p className="text-slate-400 text-sm">Your recent TOA transactions will appear here</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="bg-white/10 backdrop-blur-lg text-white placeholder-slate-300 border border-white/20 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white/15"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+        ) : (
+          transactions.slice(0, 5).map((transaction) => (
+            <div key={transaction.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  transaction.type === 'toa' ? 'bg-blue-500/20' : 'bg-red-500/20'
+                }`}>
+                  <span className={transaction.type === 'toa' ? 'text-blue-400' : 'text-red-400'}>
+                    {transaction.type === 'toa' ? '💰' : '❤️'}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-white">
+                    {userProfile.userType === 'client' 
+                      ? `${transaction.type === 'toa' ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                      : `${transaction.type === 'toa' ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                    }
+                  </p>
+                  <p className="text-sm text-slate-400">{transaction.date}</p>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                {transaction.type === 'toa' && (
+                  <p className={`font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
+                    {userProfile.userType === 'client' ? '-' : '+'}
+                    {formatCurrency(transaction.amount * 100)}
+                  </p>
+                )}
+                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                  transaction.status === 'completed' 
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {transaction.status}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 1115 0z" />
-                </svg>
-              </div>
-              <span className="text-slate-300 text-sm font-medium">{user?.displayName || 'John Smith'}</span>
-            </div>
-          </div>
-        </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
 
-        {/* Main Content Area */}
-        <div className="flex-1 p-6 overflow-auto">
-          {renderContent()}
-        </div>
+  // Render different views based on activeView
+  const renderView = () => {
+    switch (activeView) {
+      case 'overview':
+        return (
+          <div className="space-y-6">
+            <HeroSection />
+            <StatsGrid />
+            <RecentActivity />
+          </div>
+        );
+      
+      case 'activity':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Activity History</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-sm">Filter:</span>
+                <select className="bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-white text-sm">
+                  <option value="all">All Activity</option>
+                  <option value="toa">TOA Tokens</option>
+                  <option value="thankyou">Thank Yous</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+              <div className="divide-y divide-white/10">
+                {transactions.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="w-20 h-20 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <span className="text-4xl">📊</span>
+                    </div>
+                    <p className="text-slate-300 text-lg mb-2">No activity yet</p>
+                    <p className="text-slate-400">Your transactions and interactions will appear here</p>
+                  </div>
+                ) : (
+                  transactions.map((transaction) => (
+                    <div key={transaction.id} className="p-6 hover:bg-white/5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            transaction.type === 'toa' ? 'bg-blue-500/20' : 'bg-red-500/20'
+                          }`}>
+                            <span className={`text-xl ${transaction.type === 'toa' ? 'text-blue-400' : 'text-red-400'}`}>
+                              {transaction.type === 'toa' ? '💰' : '❤️'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white">
+                              {userProfile.userType === 'client' 
+                                ? `${transaction.type === 'toa' ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                                : `${transaction.type === 'toa' ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                              }
+                            </p>
+                            <p className="text-slate-400">{transaction.date}</p>
+                            {transaction.message && (
+                              <p className="text-sm text-slate-300 mt-1 italic">"{transaction.message}"</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-right">
+                          {transaction.type === 'toa' && (
+                            <p className={`text-lg font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
+                              {userProfile.userType === 'client' ? '-' : '+'}
+                              {formatCurrency(transaction.amount * 100)}
+                            </p>
+                          )}
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            transaction.status === 'completed' 
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-yellow-500/20 text-yellow-400'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'settings':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
+              {!isEditingProfile ? (
+                <button
+                  onClick={handleEditProfile}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  ✏️ {userProfile.userType === 'technician' ? 'Edit Business Profile' : 'Edit Profile'}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {isSaving ? '💾 Saving...' : '💾 Save Changes'}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Save Message */}
+            {saveMessage && (
+              <div className={`p-4 rounded-lg border ${
+                saveMessage.includes('successfully') 
+                  ? 'bg-green-500/20 border-green-500/30 text-green-300'
+                  : 'bg-red-500/20 border-red-500/30 text-red-300'
+              }`}>
+                {saveMessage}
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Profile Information */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-lg font-semibold text-white">Profile Information</h3>
+                  {userProfile.userType === 'technician' && (
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
+                      Enhanced
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editedProfile.name || ''}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                        placeholder="Enter your name"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={userProfile.name}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                        readOnly
+                      />
+                    )}
+                  </div>
+                  
+                  {userProfile.userType === 'technician' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Business Name</label>
+                      {isEditingProfile ? (
+                        <input
+                          type="text"
+                          value={editedProfile.businessName || ''}
+                          onChange={(e) => handleInputChange('businessName', e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                          placeholder="Enter your business name"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={userProfile.businessName || 'Not set'}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                          readOnly
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Bio</label>
+                    {isEditingProfile ? (
+                      <textarea
+                        value={editedProfile.bio || ''}
+                        onChange={(e) => handleInputChange('bio', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                        placeholder="Tell people about yourself..."
+                        rows={3}
+                      />
+                    ) : (
+                      <textarea
+                        value={userProfile.bio || 'No bio set'}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                        readOnly
+                        rows={3}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Location</label>
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editedProfile.location || ''}
+                        onChange={(e) => handleInputChange('location', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                        placeholder="City, State"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={userProfile.location || 'Not set'}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                        readOnly
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
+                    {isEditingProfile ? (
+                      <input
+                        type="tel"
+                        value={editedProfile.phone || ''}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                        placeholder="(555) 123-4567"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={userProfile.phone || 'Not set'}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                        readOnly
+                      />
+                    )}
+                  </div>
+
+                  {userProfile.userType === 'technician' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Website</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="url"
+                            value={editedProfile.website || ''}
+                            onChange={(e) => handleInputChange('website', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="https://yourwebsite.com"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.website || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Service Area</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="text"
+                            value={editedProfile.serviceArea || ''}
+                            onChange={(e) => handleInputChange('serviceArea', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., Atlanta Metro - 25 mile radius"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.serviceArea || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Hourly Rate</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="text"
+                            value={editedProfile.hourlyRate || ''}
+                            onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., $75-$110"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.hourlyRate || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Years of Experience</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="text"
+                            value={editedProfile.experience || ''}
+                            onChange={(e) => handleInputChange('experience', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., 15 years"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.experience || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Certifications</label>
+                        {isEditingProfile ? (
+                          <textarea
+                            value={editedProfile.certifications || ''}
+                            onChange={(e) => handleInputChange('certifications', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., Licensed & Insured, EPA Certified, CompTIA A+"
+                            rows={2}
+                          />
+                        ) : (
+                          <textarea
+                            value={userProfile.certifications || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                            rows={2}
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Service Specialties</label>
+                        {isEditingProfile ? (
+                          <textarea
+                            value={editedProfile.specialties || ''}
+                            onChange={(e) => handleInputChange('specialties', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., Smart Home Systems, Panel Upgrades, LED Lighting"
+                            rows={2}
+                          />
+                        ) : (
+                          <textarea
+                            value={userProfile.specialties || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                            rows={2}
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Availability Schedule</label>
+                        {isEditingProfile ? (
+                          <textarea
+                            value={editedProfile.availability || ''}
+                            onChange={(e) => handleInputChange('availability', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="e.g., Monday-Friday 8AM-6PM, Weekend consultations available"
+                            rows={2}
+                          />
+                        ) : (
+                          <textarea
+                            value={userProfile.availability || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                            rows={2}
+                          />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Account Information & Actions */}
+              <div className="space-y-6">
+                {/* Account Info */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Account Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={userProfile.email}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                        readOnly
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Email cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">User Type</label>
+                      <input
+                        type="text"
+                        value={userProfile.userType}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white capitalize"
+                        readOnly
+                      />
+                      <p className="text-xs text-slate-400 mt-1">Account type cannot be changed</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Information - Technicians Only */}
+                {userProfile.userType === 'technician' && (
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">Business Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Address</label>
+                        {isEditingProfile ? (
+                          <textarea
+                            value={editedProfile.businessAddress || ''}
+                            onChange={(e) => handleInputChange('businessAddress', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="123 Business St, City, State ZIP"
+                            rows={2}
+                          />
+                        ) : (
+                          <textarea
+                            value={userProfile.businessAddress || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                            rows={2}
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Phone</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="tel"
+                            value={editedProfile.businessPhone || ''}
+                            onChange={(e) => handleInputChange('businessPhone', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="(555) 123-4567"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.businessPhone || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Email</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="email"
+                            value={editedProfile.businessEmail || ''}
+                            onChange={(e) => handleInputChange('businessEmail', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="business@example.com"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.businessEmail || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Professional Summary</label>
+                        {isEditingProfile ? (
+                          <textarea
+                            value={editedProfile.about || ''}
+                            onChange={(e) => handleInputChange('about', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="Describe your professional background and expertise..."
+                            rows={4}
+                          />
+                        ) : (
+                          <textarea
+                            value={userProfile.about || 'No professional summary set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                            rows={4}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Account Actions */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                  <div className="space-y-3">
+                    <Link
+                      href={`/${userProfile.username || userProfile.uniqueId}`}
+                      className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                    >
+                      👁️ View Public Profile
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    >
+                      🚪 Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 relative overflow-hidden">
+      {/* Animated background elements - matching main page */}
+      <div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      {/* Payout Modal */}
-      {showPayoutModal && (
+      <DashboardHeader />
+      <NavigationTabs />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {renderView()}
+      </main>
+
+      {/* Modals */}
+      {showPayoutModal && earnings && (
         <PayoutModal
           isOpen={showPayoutModal}
           onClose={() => setShowPayoutModal(false)}
-          availableBalance={realEarnings.availableBalance}
-          technicianId={user?.uid || ''}
-          onPayoutSuccess={(amount) => {
+          availableBalance={earnings.availableBalance}
+          technicianId={userProfile.id}
+          onPayoutSuccess={() => {
             setShowPayoutModal(false);
           }}
-        />
-      )}
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
         />
       )}
     </div>

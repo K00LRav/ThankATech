@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { registerUser } from '../lib/firebase';
+import { registerClient } from '../lib/firebase';
 
 interface UserRegistrationProps {
   onRegistrationComplete: (user: any) => void;
@@ -29,7 +29,7 @@ export default function UserRegistration({ onRegistrationComplete, onClose }: Us
     setError(null);
 
     try {
-      const user = await registerUser(formData);
+      const user = await registerClient(formData);
       onRegistrationComplete(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');

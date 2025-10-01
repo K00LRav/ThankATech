@@ -100,12 +100,12 @@ async function handlePaymentSuccess(paymentIntent: any) {
     if (type === 'tip') {
       
       // Import Firebase functions and calculate fees if missing
-      const { recordTransaction, getTechnician, getUser } = await import('@/lib/firebase');
+      const { recordTransaction, getTechnician, getClient } = await import('@/lib/firebase');
       const { calculatePlatformFee, calculateTechnicianPayout } = await import('@/lib/stripe');
       
       // Get technician and customer details
       const technician = await getTechnician(technicianId) as any;
-      const customer = customerId ? await getUser(customerId) as any : null;
+      const customer = customerId ? await getClient(customerId) as any : null;
       
       // Parse fees from metadata, or calculate if missing
       const parsedPlatformFee = parseInt(platformFee) || calculatePlatformFee(paymentIntent.amount);
