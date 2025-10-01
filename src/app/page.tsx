@@ -1044,7 +1044,7 @@ export default function Home() {
                       💰 <span className="text-white">From $5</span>
                     </span>
                     <span className="text-sm text-gray-300 flex items-center gap-1">
-                      � <span className="text-white">{profile.totalTips || 0} tips</span>
+                      🪙 <span className="text-white">{profile.totalTips || 0} tips</span>
                     </span>
                   </div>
                   
@@ -1318,12 +1318,12 @@ export default function Home() {
                     onClick={handleThankYou}
                     className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 backdrop-blur-sm rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
-                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">�</span>
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🙏</span>
                     <span className="text-white text-base">Say Thank You</span>
                   </button>
                   <button 
                     onClick={handleTip}
-                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 backdrop-blur-sm rounded-2xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 hover:-translate-y-1 flex-1 font-semibold"
+                    className="group flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
                     <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
                     <span className="text-white text-base">Send Tokens</span>
@@ -1338,7 +1338,7 @@ export default function Home() {
                   </span>
                   <span className="text-gray-500">•</span>
                   <span className="flex items-center gap-1">
-                    <span className="text-emerald-400">�</span>
+                    <span className="text-emerald-400">🪙</span>
                     <span className="text-white font-medium">{profile.totalTips || 0} tips</span>
                   </span>
                 </div>
@@ -1370,7 +1370,7 @@ export default function Home() {
           </button>
           <button 
             onClick={handleTip}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-purple-500 to-purple-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
+            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
             <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🪙</span>
             <span className="font-semibold text-white text-sm lg:text-base">Send Tokens</span>
