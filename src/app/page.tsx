@@ -134,12 +134,13 @@ export default function Home() {
     else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver TOA Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
     else if (totalTips >= 5) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
-    // Rating milestones
-    if (dynamicRating >= 4.8) badges.push({ icon: '🌟', text: 'Excellence', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (dynamicRating >= 4.5) badges.push({ icon: '✨', text: 'Outstanding', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    // ThankATech Points milestones
+    if ((profile.points || 0) >= 100) badges.push({ icon: '🌟', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if ((profile.points || 0) >= 50) badges.push({ icon: '✨', text: 'Community Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    else if ((profile.points || 0) >= 25) badges.push({ icon: '⚡', text: 'Rising Star', color: 'bg-purple-100 text-purple-800 border-purple-300' });
 
     // Experience badges (based on profile data)
-    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if (profile.experience?.includes('5+')) badges.push({ icon: '🔧', text: 'Expert', color: 'bg-blue-100 text-blue-800 border-blue-300' });
 
     // Certification badge
@@ -907,7 +908,7 @@ export default function Home() {
         {/* Hero Section - Showcase Technicians First */}
         <div className="text-center mb-8 px-4">
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-4">
-            🛠️ Meet Your Local Tech Heroes
+            🛠 Meet Your Local Tech Heroes
           </h1>
           <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
             Skilled technicians ready to help you. Browse profiles and connect instantly.
@@ -1011,11 +1012,11 @@ export default function Home() {
                       }}
                     />
                   </div>
-                  {/* Dynamic Rating - Compact size for better proportions */}
-                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
+                  {/* ThankATech Points Display - Shows community appreciation */}
+                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs font-bold shadow-lg border border-white">
                     <div className="text-center">
-                      <div className="text-xs font-black">{dynamicRating.toFixed(1)}</div>
-                      <div className="text-xs -mt-0.5">{getStarDisplay(dynamicRating)}</div>
+                      <div className="text-xs font-black">{profile.points || 0}</div>
+                      <div className="text-xs -mt-0.5">⚡</div>
                     </div>
                   </div>
                 </div>
@@ -1046,13 +1047,13 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Key Metrics - Limit to 3 essential ones */}
+                  {/* Key Metrics - Focus on new economy metrics */}
                   <div className="flex flex-wrap gap-3 mt-3 mb-2">
                     <span className="text-sm text-gray-300 flex items-center gap-1">
-                      ⚡ <span className="text-white">15 min response</span>
+                      ⚡ <span className="text-white">{profile.points || 0} Points</span>
                     </span>
                     <span className="text-sm text-gray-300 flex items-center gap-1">
-                      💰 <span className="text-white">From $5</span>
+                      🙏 <span className="text-white">{profile.totalThankYous || 0} Thanks</span>
                     </span>
                     <span className="text-sm text-gray-300 flex items-center gap-1">
                       🪙 <span className="text-white">{profile.totalTips || 0} TOA</span>
@@ -1103,7 +1104,7 @@ export default function Home() {
                   {profile.businessEmail && (
                     <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm col-span-2">
                       <div className="flex items-start space-x-2">
-                        <span className="text-blue-600 mt-0.5">✉️</span>
+                        <span className="text-blue-600 mt-0.5">✉</span>
                         <span className="text-xs text-gray-800 font-medium break-all leading-relaxed">{profile.businessEmail}</span>
                       </div>
                     </div>
@@ -1168,7 +1169,7 @@ export default function Home() {
                   {profile.serviceArea && (
                     <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-blue-600">🗺️</span>
+                        <span className="text-blue-600">🗺</span>
                         <span className="text-xs text-gray-800 font-medium">{profile.serviceArea}</span>
                       </div>
                     </div>
@@ -1229,15 +1230,15 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Rating Summary */}
+                    {/* ThankATech Points Summary */}
                     <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-sm">
-                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⭐ client Rating</h4>
+                      <h4 className="text-sm font-semibold text-gray-800 mb-2">⚡ Community Appreciation</h4>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Community feedback</span>
-                        <span className="font-bold text-yellow-600 text-sm">{dynamicRating.toFixed(1)}/5.0 ⭐</span>
+                        <span className="text-xs text-gray-600">ThankATech Points earned</span>
+                        <span className="font-bold text-blue-600 text-sm">{profile.points || 0} ⚡</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} TOA
+                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} TOA received
                       </div>
                     </div>
 
@@ -1341,11 +1342,11 @@ export default function Home() {
                   </button>
                 </div>
                 
-                {/* Minimal Stats - Clean and focused */}
+                {/* Minimal Stats - Clean and focused on new economy */}
                 <div className="flex items-center justify-center gap-3 text-sm text-gray-300">
                   <span className="flex items-center gap-1">
-                    <span className="text-yellow-400">⭐</span>
-                    <span className="text-white font-medium">{dynamicRating.toFixed(1)}</span>
+                    <span className="text-blue-400">⚡</span>
+                    <span className="text-white font-medium">{profile.points || 0} Points</span>
                   </span>
                   <span className="text-gray-500">•</span>
                   <span className="flex items-center gap-1">
