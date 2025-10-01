@@ -802,72 +802,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Navigation Controls */}
-        <div className="flex items-center justify-center gap-6 mb-8 px-4">
-          {/* Previous Button */}
-          <button
-            onClick={flipToPrevious}
-            disabled={currentProfileIndex === 0}
-            className={`group flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-4 rounded-2xl font-medium text-sm sm:text-base transition-all duration-200 shadow-lg ${
-              currentProfileIndex === 0
-                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
-                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-xl hover:border-white/40'
-            }`}
-          >
-            <svg className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="hidden sm:inline">Previous</span>
-          </button>
 
-            {/* Modern Pagination Info */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            {/* Counter */}
-            <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-2xl px-4 py-2 sm:px-6 sm:py-3 shadow-lg" title="Use arrow keys to navigate">
-              <span className="text-white font-medium text-sm sm:text-base">
-                {currentProfileIndex + 1} of {profiles.length}
-              </span>
-            </div>
-            
-            {/* Enhanced Pagination Dots */}
-            <div className="flex items-center gap-3">
-              {profiles.slice(0, Math.min(7, profiles.length)).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentProfileIndex(index)}
-                  className={`rounded-full transition-all duration-300 hover:scale-110 ${
-                    index === currentProfileIndex
-                      ? 'w-3 h-3 sm:w-4 sm:h-4 bg-blue-400 shadow-lg shadow-blue-400/50 scale-125'
-                      : 'w-2 h-2 sm:w-3 sm:h-3 bg-white/40 hover:bg-white/60 shadow-md'
-                  }`}
-                />
-              ))}
-              {profiles.length > 7 && (
-                <div className="flex items-center ml-2">
-                  <span className="text-white/60 text-xs sm:text-sm font-medium">
-                    +{profiles.length - 7} more
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Next Button */}
-          <button
-            onClick={flipToNext}
-            disabled={currentProfileIndex >= profiles.length - 1}
-            className={`group flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-4 rounded-2xl font-medium text-sm sm:text-base transition-all duration-200 shadow-lg ${
-              currentProfileIndex >= profiles.length - 1
-                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
-                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-xl hover:border-white/40'
-            }`}
-          >
-            <span className="hidden sm:inline">Next</span>
-            <svg className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 transition-transform ${currentProfileIndex >= profiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
 
         {/* Modern Glass Rolodex Card */}
         <div id="rolodex-card" className={`card-container relative group ${isFlipping ? 'animate-pulse' : ''} flex justify-center`}>
@@ -1286,6 +1221,73 @@ export default function Home() {
         </div>
             </div>
           </div>
+
+      {/* Compact Navigation Controls - Below Rolodex Card */}
+      <div className="flex items-center justify-center gap-4 mt-6 mb-8 px-4">
+        {/* Previous Button - Compact */}
+        <button
+          onClick={flipToPrevious}
+          disabled={currentProfileIndex === 0}
+          className={`group flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md ${
+            currentProfileIndex === 0
+              ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+              : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
+          }`}
+        >
+          <svg className={`w-4 h-4 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="hidden sm:inline">Prev</span>
+        </button>
+
+        {/* Compact Pagination Info */}
+        <div className="flex items-center gap-3">
+          {/* Counter - Smaller */}
+          <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
+            <span className="text-white font-medium text-sm">
+              {currentProfileIndex + 1} of {profiles.length}
+            </span>
+          </div>
+          
+          {/* Compact Pagination Dots */}
+          <div className="flex items-center gap-1.5">
+            {profiles.slice(0, Math.min(5, profiles.length)).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentProfileIndex(index)}
+                className={`rounded-full transition-all duration-300 hover:scale-110 ${
+                  index === currentProfileIndex
+                    ? 'w-2.5 h-2.5 bg-blue-400 shadow-md shadow-blue-400/50 scale-125'
+                    : 'w-2 h-2 bg-white/40 hover:bg-white/60 shadow-sm'
+                }`}
+              />
+            ))}
+            {profiles.length > 5 && (
+              <div className="flex items-center ml-1">
+                <span className="text-white/60 text-xs font-medium">
+                  +{profiles.length - 5}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Next Button - Compact */}
+        <button
+          onClick={flipToNext}
+          disabled={currentProfileIndex >= profiles.length - 1}
+          className={`group flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md ${
+            currentProfileIndex >= profiles.length - 1
+              ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+              : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
+          }`}
+        >
+          <span className="hidden sm:inline">Next</span>
+          <svg className={`w-4 h-4 transition-transform ${currentProfileIndex >= profiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
 
       {/* Categories Filter - Moved below technician showcase */}
       <div className="mt-12 mb-8 px-4">
