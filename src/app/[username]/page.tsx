@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { findTechnicianByUsername } from '../../lib/firebase';
+import { findTechnicianByUsername } from '../../lib/techniciansApi';
 import { TipModal } from '../../components/TipModal';
 import Footer from '../../components/Footer';
 

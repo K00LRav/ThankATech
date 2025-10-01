@@ -515,6 +515,136 @@ function getMockTechnicians() {
       isActive: true,
       totalThankYous: 145,
       totalTips: 72
+    },
+    {
+      id: 'mock-sophia-martinez',
+      username: 'sophia-electronics',
+      name: "Sophia Martinez",
+      title: "Electronics Repair Specialist",
+      image: "https://images.unsplash.com/photo-1494790108755-2616b332e234?w=300&h=300&fit=crop&crop=face",
+      points: 987,
+      about: "Certified electronics technician specializing in consumer electronics, PCB repair, and component-level diagnostics. From smartphones to gaming consoles, I restore your devices to perfect working condition with precision and care.",
+      phoneNumber: "(555) 234-5678",
+      email: "sophia.martinez@example.com",
+      website: "https://sophiaelectronics.com",
+      businessAddress: "963 Circuit Lane, Atlanta, GA 30341",
+      businessName: "Martinez Electronics Repair",
+      category: "electronics",
+      specialties: "PCB Repair, Gaming Console Fix, Smartphone Repair, Audio Equipment",
+      yearsExperience: 8,
+      certifications: "IPC Certified, Consumer Electronics Certified, Micro-soldering Expert",
+      serviceArea: "Atlanta Metro - 25 mile radius",
+      hourlyRate: "$75-$100",
+      availability: "Monday-Friday 9AM-6PM, Saturday 10AM-4PM, Express service available",
+      userType: "technician",
+      createdAt: new Date('2023-03-20'),
+      isActive: true,
+      totalThankYous: 189,
+      totalTips: 95
+    },
+    {
+      id: 'mock-ryan-mitchell',
+      username: 'ryan-telecom',
+      name: "Ryan Mitchell",
+      title: "Telecommunications Technician",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face",
+      points: 1134,
+      about: "Certified telecommunications specialist with expertise in fiber optic installation, network infrastructure, and wireless systems. I ensure your connectivity needs are met with professional installation and reliable service.",
+      phoneNumber: "(555) 345-6789",
+      email: "ryan.mitchell@example.com",
+      website: "https://ryantelecommunications.com",
+      businessAddress: "147 Signal Drive, Atlanta, GA 30334",
+      businessName: "Mitchell Telecom Solutions",
+      category: "telecommunications",
+      specialties: "Fiber Optic Installation, Network Setup, Wireless Systems, Cable Management",
+      yearsExperience: 12,
+      certifications: "Fiber Optic Certified, Network+ Certified, Wireless Technology Certified",
+      serviceArea: "Greater Atlanta - 40 mile radius",
+      hourlyRate: "$85-$120",
+      availability: "Monday-Friday 7AM-5PM, Emergency service 24/7",
+      userType: "technician",
+      createdAt: new Date('2023-02-15'),
+      isActive: true,
+      totalThankYous: 203,
+      totalTips: 118
+    },
+    {
+      id: 'mock-emma-chen',
+      username: 'emma-medical-tech',
+      name: "Emma Chen",
+      title: "Medical Equipment Technician",
+      image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&h=300&fit=crop&crop=face",
+      points: 1298,
+      about: "Certified biomedical equipment technician specializing in diagnostic imaging, patient monitoring systems, and laboratory equipment. I ensure critical medical devices operate safely and accurately to support patient care.",
+      phoneNumber: "(555) 456-7890",
+      email: "emma.chen@example.com",
+      website: "https://emmabiomedtech.com",
+      businessAddress: "852 Healthcare Blvd, Atlanta, GA 30309",
+      businessName: "Chen Biomedical Services",
+      category: "medical-equipment",
+      specialties: "Imaging Systems, Patient Monitors, Lab Equipment, Calibration Services",
+      yearsExperience: 15,
+      certifications: "BMET Certified, Medical Device Certified, FDA Compliance Trained",
+      serviceArea: "Healthcare facilities - 50 mile radius",
+      hourlyRate: "$95-$150",
+      availability: "Monday-Friday 6AM-8PM, On-call emergency service",
+      userType: "technician",
+      createdAt: new Date('2023-01-10'),
+      isActive: true,
+      totalThankYous: 167,
+      totalTips: 134
+    },
+    {
+      id: 'mock-alex-wright',
+      username: 'alex-creative-tech',
+      name: "Alex Wright",
+      title: "Creative Tech Specialist",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
+      points: 856,
+      about: "Creative technologist specializing in custom PC builds, 3D printing, stage AV installations, and maker space equipment. I bring creative visions to life with cutting-edge technology and innovative solutions.",
+      phoneNumber: "(555) 567-8901",
+      email: "alex.wright@example.com",
+      website: "https://alexcreativetech.com",
+      businessAddress: "741 Maker Street, Atlanta, GA 30316",
+      businessName: "Wright Creative Technologies",
+      category: "creative-tech",
+      specialties: "Custom PC Builds, 3D Printing, AV Installation, Prototyping",
+      yearsExperience: 9,
+      certifications: "A+ Certified, 3D Printing Certified, AV Integration Certified",
+      serviceArea: "Atlanta Metro - 30 mile radius",
+      hourlyRate: "$70-$110",
+      availability: "Monday-Saturday 10AM-8PM, Project consultations available",
+      userType: "technician",
+      createdAt: new Date('2023-05-05'),
+      isActive: true,
+      totalThankYous: 142,
+      totalTips: 87
+    },
+    {
+      id: 'mock-jordan-taylor',
+      username: 'jordan-software-web',
+      name: "Jordan Taylor",
+      title: "Software & Web Technician",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face",
+      points: 1045,
+      about: "Full-stack developer and web technician specializing in website maintenance, CMS troubleshooting, and application deployment. I keep your digital presence running smoothly with expert technical support and optimization.",
+      phoneNumber: "(555) 678-9012",
+      email: "jordan.taylor@example.com",
+      website: "https://jordanwebtech.com",
+      businessAddress: "369 Code Avenue, Atlanta, GA 30312",
+      businessName: "Taylor Web Technologies",
+      category: "software-web",
+      specialties: "Website Maintenance, CMS Support, App Deployment, Database Management",
+      yearsExperience: 7,
+      certifications: "Full Stack Certified, AWS Certified, Google Analytics Certified",
+      serviceArea: "Remote + Atlanta area meetings",
+      hourlyRate: "$80-$125",
+      availability: "Monday-Friday 9AM-7PM, Weekend support available",
+      userType: "technician",
+      createdAt: new Date('2023-04-12'),
+      isActive: true,
+      totalThankYous: 156,
+      totalTips: 103
     }
   ];
 }
@@ -540,4 +670,45 @@ export function getUserLocation() {
       }
     );
   });
+}
+
+/**
+ * Find technician by username (includes both registered and mock technicians)
+ * @param {string} username - The username to search for
+ * @returns {Promise<Object|null>} Technician data or null if not found
+ */
+export async function findTechnicianByUsername(username) {
+  try {
+    // First try to find in Firebase
+    const firebaseTechnician = await findTechnicianByUsernameFirebase(username);
+    if (firebaseTechnician) {
+      return firebaseTechnician;
+    }
+    
+    // If not found in Firebase, search mock data
+    const mockTechnicians = getMockTechnicians();
+    const normalizedUsername = username.toLowerCase().trim();
+    
+    const found = mockTechnicians.find(tech => 
+      tech.username && tech.username.toLowerCase() === normalizedUsername
+    );
+    
+    return found || null;
+  } catch (error) {
+    console.error('Error finding technician by username:', error);
+    return null;
+  }
+}
+
+/**
+ * Helper function to find technician in Firebase by username
+ */
+async function findTechnicianByUsernameFirebase(username) {
+  try {
+    const { findTechnicianByUsername: firebaseFind } = await import('./firebase');
+    return await firebaseFind(username);
+  } catch (error) {
+    console.warn('Firebase search failed, falling back to mock data:', error);
+    return null;
+  }
 }
