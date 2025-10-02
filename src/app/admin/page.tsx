@@ -11,6 +11,7 @@ import { backfillPointsAwarded } from '@/lib/backfill-points';
 import { debugTransactionData } from '@/lib/debug-transactions';
 import { fixZeroPointTransactions } from '@/lib/fix-zero-points';
 import { debugDashboardQuery } from '@/lib/debug-dashboard-query';
+import { findRealUsers } from '@/lib/find-real-users';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -169,6 +170,10 @@ export default function AdminPage() {
   const [isDashboardDebugging, setIsDashboardDebugging] = useState(false);
   const [dashboardDebugResults, setDashboardDebugResults] = useState<string>('');
   const [dashboardDebugUserId, setDashboardDebugUserId] = useState<string>('n7RWETI8uXV9rGmSjTPe');
+  
+  // User finder states
+  const [isFindingUsers, setIsFindingUsers] = useState(false);
+  const [userFinderResults, setUserFinderResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -739,6 +744,35 @@ export default function AdminPage() {
     }
     
     setIsDashboardDebugging(false);
+  };
+
+  // Find real users and their access methods
+  const handleFindUsers = async () => {
+    setIsFindingUsers(true);
+    setUserFinderResults('🔍 Finding real users in the system...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      await findRealUsers();
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      setUserFinderResults(`🎉 User search complete!\n\n📋 Results:\n${logOutput}`);
+    } catch (error) {
+      setUserFinderResults(`❌ User search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsFindingUsers(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4084,6 +4118,54 @@ export default function AdminPage() {
               <div className="text-sm text-slate-400">Reset the results display</div>
             </button>
           </div>
+        </div>
+
+        {/* User Finder Section */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4 flex items-center gap-3">
+            <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            Find Real Users
+          </h3>
+          
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-green-400 font-medium">How to test dashboards</h4>
+                <p className="text-green-300 text-sm mt-1">
+                  First find real users in your system, then login as them to test if ThankATech Points display correctly. 
+                  The tool shows real email addresses you can use to login and test dashboards.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleFindUsers}
+            disabled={isFindingUsers}
+            className="w-full p-4 bg-green-600/20 border border-green-500/30 rounded-lg text-green-300 hover:bg-green-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isFindingUsers ? 'Searching...' : '🔍 Find Real Users & Login Info'}
+            </div>
+            <div className="text-sm text-green-400">
+              Find actual users and their email addresses for testing dashboards
+            </div>
+          </button>
+
+          {userFinderResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {userFinderResults}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Transaction Data Backfill Section */}
