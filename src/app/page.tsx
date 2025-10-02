@@ -107,14 +107,14 @@ export default function Home() {
     const totalTips = profile.totalTips || 0;
 
     // ThankATech Points milestones (primary focus)
-    if ((profile.points || 0) >= 100) badges.push({ icon: '�', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    if ((profile.points || 0) >= 100) badges.push({ icon: '🌟', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if ((profile.points || 0) >= 50) badges.push({ icon: '✨', text: 'Community Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if ((profile.points || 0) >= 25) badges.push({ icon: '⚡', text: 'Rising Star', color: 'bg-purple-100 text-purple-800 border-purple-300' });
 
     // Thank you milestones
     if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if (totalThankYous >= 50) badges.push({ icon: '�', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
-    else if (totalThankYous >= 25) badges.push({ icon: '�', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
+    else if (totalThankYous >= 25) badges.push({ icon: '🥉', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // TOA milestones
     if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
@@ -122,7 +122,7 @@ export default function Home() {
     else if (totalTips >= 10) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // Experience badges (based on profile data)
-    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if (profile.experience?.includes('5+')) badges.push({ icon: '🔧', text: 'Expert', color: 'bg-blue-100 text-blue-800 border-blue-300' });
 
     // Certification badge
@@ -632,7 +632,7 @@ export default function Home() {
           <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
             <Link href="/" className="flex items-center gap-3 group cursor-pointer" prefetch={false}>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-xl font-bold">🔧</span>
+                <span className="text-base sm:text-xl font-bold text-white">🔧</span>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
                 ThankATech
@@ -685,7 +685,7 @@ export default function Home() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center max-w-2xl mx-auto px-4">
               <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">🔍</span>
+                <span className="text-2xl sm:text-3xl lg:text-4xl">🔍</span>
               </div>
               <h1 className="text-3xl font-bold text-white mb-4">
                 {selectedCategory !== 'all' ? (
@@ -950,16 +950,14 @@ export default function Home() {
           {/* Main Glass Card - Mobile Optimized */}
           <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-1 sm:group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden z-10">
             {/* Category Badge - Top Right */}
-            <div className="absolute top-4 right-4 z-10">
-              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
-                <span className="text-lg">{getCategoryIcon(profile.category, profile.title)}</span>
-                <span className="hidden sm:inline text-white text-sm font-medium">
-                  {formatCategory(profile.category)}
-                </span>
-              </div>
-            </div>
-            
-            {/* Card Content - Mobile Enhanced */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
+            <span className="text-base sm:text-lg">{getCategoryIcon(profile.category, profile.title)}</span>
+            <span className="hidden sm:inline text-white text-sm font-medium">
+              {formatCategory(profile.category)}
+            </span>
+          </div>
+        </div>            {/* Card Content - Mobile Enhanced */}
             <div className="relative p-4 sm:p-6 lg:p-8 h-full min-h-[16rem] profile-card-mobile sm:min-h-[20rem] lg:min-h-[24rem]">
 
             <div className="flex flex-col h-full">
@@ -1451,7 +1449,7 @@ export default function Home() {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`mobile-btn group px-2 sm:px-4 lg:px-8 py-3 sm:py-4 w-full rounded-lg sm:rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+              className={`mobile-btn group px-2 sm:px-4 lg:px-8 py-3 sm:py-4 min-h-[44px] w-full rounded-lg sm:rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
                 selectedCategory === category.id
                   ? category.id === 'all'
                     ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg'
@@ -1459,7 +1457,7 @@ export default function Home() {
                   : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
               }`}
             >
-              <div className="text-base sm:text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
+              <div className="text-sm sm:text-base lg:text-lg mb-1 group-hover:scale-110 transition-transform duration-200">
                 {category.icon}
               </div>
               <div className="text-white text-xs font-medium text-center leading-tight break-words">

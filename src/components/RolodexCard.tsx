@@ -61,7 +61,7 @@ export function RolodexCard({
     // Thank you milestones
     if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if (totalThankYous >= 50) badges.push({ icon: '🥉', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
-    else if (totalThankYous >= 25) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
+    else if (totalThankYous >= 25) badges.push({ icon: '🥉', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // TOA milestones
     if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
@@ -105,7 +105,7 @@ export function RolodexCard({
         {/* Category Badge - Top Right */}
         <div className="absolute top-4 right-4 z-10">
           <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
-            <span className="text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
+            <span className="text-base sm:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
             <span className="hidden sm:inline text-white text-sm font-medium">
               {formatCategory(technician.category)}
             </span>
