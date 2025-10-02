@@ -6,8 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { EmailService } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
+  console.log('🧪 Admin email API called');
+  
   try {
+    console.log('📄 Parsing request body...');
     const { email, to, subject, message, testType = 'basic' } = await request.json();
+    console.log('✅ Request body parsed successfully');
 
     // Accept either 'email' or 'to' parameter for backwards compatibility
     const recipientEmail = email || to;
@@ -131,11 +135,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Admin email test API error:', error);
+    console.error('❌ Error stack:', error.stack);
     return NextResponse.json(
       { 
         success: false, 
         message: 'Internal server error', 
-        error: error.message 
+        error: error.message,
+        details: error.stack?.substring(0, 500) // First 500 chars of stack trace
       },
       { status: 500 }
     );

@@ -18,6 +18,7 @@ import { scanAllUserConflicts } from '@/lib/scan-user-conflicts';
 import { debugAuthStatus } from '@/lib/debug-auth-status';
 import { createAdminUser } from '@/lib/create-admin-user';
 import { sendPasswordReset } from '@/lib/send-password-reset';
+import packageJson from '../../../package.json';
 import { 
   createTestThankYou, 
   createTestTOATransaction, 
@@ -383,11 +384,25 @@ export default function AdminPage() {
       defaultPreview: { technicianName: 'John Doe', customerName: 'Jane Smith', message: 'Great work!' },
       category: 'notifications'
     },
-    tipReceived: {
-      name: 'Tip Notification',
-      description: 'Sent to technicians when they receive tips',
-      variables: ['technicianName', 'customerName', 'amount', 'message'],
-      defaultPreview: { technicianName: 'John Doe', customerName: 'Jane Smith', amount: 25, message: 'Excellent service!' },
+    pointsReceived: {
+      name: 'ThankATech Points Received',
+      description: 'Sent to technicians when they receive reputation points',
+      variables: ['technicianName', 'customerName', 'points', 'message'],
+      defaultPreview: { technicianName: 'John Doe', customerName: 'Jane Smith', points: 50, message: 'Excellent work!' },
+      category: 'notifications'
+    },
+    toaSent: {
+      name: 'Token of Appreciation Sent',
+      description: 'Confirmation sent to customers when they send tokens',
+      variables: ['customerName', 'technicianName', 'tokenAmount', 'message'],
+      defaultPreview: { customerName: 'Jane Smith', technicianName: 'John Doe', tokenAmount: 5, message: 'Great service!' },
+      category: 'notifications'
+    },
+    toaReceived: {
+      name: 'Token of Appreciation Received',
+      description: 'Sent to technicians when they receive appreciation tokens',
+      variables: ['technicianName', 'customerName', 'tokenAmount', 'message'],
+      defaultPreview: { technicianName: 'John Doe', customerName: 'Jane Smith', tokenAmount: 5, message: 'Thank you!' },
       category: 'notifications'
     },
     accountDeleted: {
@@ -443,12 +458,30 @@ export default function AdminPage() {
         );
         subject = actualTemplate.subject;
         break;
-      case 'tipReceived':
-        actualTemplate = EmailTemplates.tipReceived(
+      case 'pointsReceived':
+        actualTemplate = EmailTemplates.pointsReceived(
           preview.technicianName || 'John Doe',
           preview.customerName || 'Jane Smith',
-          preview.amount || 25,
-          preview.message || 'Excellent service!'
+          preview.points || 50,
+          preview.message || 'Excellent work!'
+        );
+        subject = actualTemplate.subject;
+        break;
+      case 'toaSent':
+        actualTemplate = EmailTemplates.toaSent(
+          preview.customerName || 'Jane Smith',
+          preview.technicianName || 'John Doe',
+          preview.tokenAmount || 5,
+          preview.message || 'Great service!'
+        );
+        subject = actualTemplate.subject;
+        break;
+      case 'toaReceived':
+        actualTemplate = EmailTemplates.toaReceived(
+          preview.technicianName || 'John Doe',
+          preview.customerName || 'Jane Smith',
+          preview.tokenAmount || 5,
+          preview.message || 'Thank you!'
         );
         subject = actualTemplate.subject;
         break;
@@ -1526,7 +1559,7 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-slate-400 text-sm">Version 1.11.1</p>
+            <p className="text-slate-400 text-sm">Version {packageJson.version}</p>
             <p className="text-slate-400 text-sm">Last Updated: {new Date().toLocaleDateString()}</p>
           </div>
         </div>
