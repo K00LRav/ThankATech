@@ -143,7 +143,7 @@ interface AdminStats {
 }
 
 // Admin configuration
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'k00lrav@gmail.com';
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
