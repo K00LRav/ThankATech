@@ -89,6 +89,7 @@ interface Transaction {
   clientName?: string;
   technicianId?: string;
   technicianName?: string;
+  toTechnicianId?: string; // For new tokenTransactions format
   date: string;
   timestamp?: any;
   status: 'completed' | 'pending' | 'cancelled';
@@ -930,9 +931,11 @@ export default function ModernDashboard() {
                 </div>
                 <div>
                   <p className="font-medium text-white">
-                    {userProfile.userType === 'client' 
-                      ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                      : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                    {transaction.toTechnicianId === '' ? 
+                      'Token Purchase' :
+                      userProfile.userType === 'client' 
+                        ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                        : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
                     }
                   </p>
                   <p className="text-sm text-slate-400">{transaction.date}</p>
@@ -1022,9 +1025,11 @@ export default function ModernDashboard() {
                           </div>
                           <div>
                             <p className="font-semibold text-white">
-                              {userProfile.userType === 'client' 
-                                ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                                : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                              {transaction.toTechnicianId === '' ? 
+                                'Token Purchase' :
+                                userProfile.userType === 'client' 
+                                  ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                                  : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
                               }
                             </p>
                             <p className="text-slate-400">{transaction.date}</p>

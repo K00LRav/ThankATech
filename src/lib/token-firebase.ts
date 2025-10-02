@@ -116,8 +116,23 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
         lastUpdated: new Date()
       });
     }
+
+    // 🆕 Create transaction record for token purchase
+    const transaction: Omit<TokenTransaction, 'id'> = {
+      fromUserId: userId,
+      toTechnicianId: '', // Token purchase doesn't have a recipient
+      tokens: tokensToAdd,
+      message: `Purchased ${tokensToAdd} TOA tokens via Stripe payment ($${purchaseAmount.toFixed(2)})`,
+      isRandomMessage: false,
+      timestamp: new Date(),
+      type: 'toa',
+      dollarValue: purchaseAmount,
+      pointsAwarded: 0 // Token purchases don't award points, sending tokens does
+    };
+
+    await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
     
-    logger.success(`Added ${tokensToAdd} tokens to user ${userId}`);
+    logger.success(`Added ${tokensToAdd} tokens to user ${userId} and created transaction record`);
   } catch (error) {
     logger.error('Error adding tokens to balance:', error);
     throw error;
@@ -289,7 +304,8 @@ export async function sendFreeThankYou(
       message,
       isRandomMessage: false,
       timestamp: new Date(),
-      type: 'thank_you'
+      type: 'thank_you',
+      pointsAwarded: POINTS_LIMITS.POINTS_PER_THANK_YOU // 1 ThankATech Point for thank you
     };
     
     const transactionRef = await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
