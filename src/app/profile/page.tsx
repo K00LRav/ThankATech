@@ -22,7 +22,7 @@ interface UserProfile {
   notificationPreferences?: {
     emailNotifications: boolean;
     smsNotifications: boolean;
-    tipReceipts: boolean;
+    tipReceipts: boolean; // Backend compatibility - TOA receipts
   };
   // Technician-specific fields (for backwards compatibility)
   businessName?: string;
@@ -48,7 +48,7 @@ const formatCurrency = (amountInCents: number): string => {
 };
 
 // Customer TOA History Component
-const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => {
+const CustomerTOAHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,8 +58,8 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
       if (!profile?.uid && !profile?.email) return;
       
       try {
-        const tips = await getClientTransactions(profile.uid, profile.email);
-        setTransactions(tips);
+        const transactions = await getClientTransactions(profile.uid, profile.email);
+        setTransactions(transactions);
       } catch (err) {
         console.error('Error loading customer transactions:', err);
         setError('Failed to load TOA history');
@@ -126,7 +126,7 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
     );
   }
 
-  const totalTipped = transactions.reduce((sum, tip) => sum + tip.amount, 0);
+  const totalTOASent = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
 
   return (
     <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
@@ -137,13 +137,13 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
             <span className="text-sm text-blue-200">Total Sent</span>
             <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">+{transactions.length} Points</span>
           </div>
-          <p className="text-lg font-bold text-white">{formatCurrency(totalTipped)}</p>
+          <p className="text-lg font-bold text-white">{formatCurrency(totalTOASent)}</p>
         </div>
       </div>
       
       <div className="space-y-4">
-        {transactions.slice(0, 5).map((tip) => (
-          <div key={tip.id} className="bg-slate-700/50 rounded-lg p-4 border border-blue-500/20">
+        {transactions.slice(0, 5).map((transaction) => (
+          <div key={transaction.id} className="bg-slate-700/50 rounded-lg p-4 border border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
@@ -152,13 +152,13 @@ const CustomerTipHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-medium">{tip.technicianName}</p>
-                  <p className="text-blue-200 text-sm">{tip.date}</p>
+                  <p className="text-white font-medium">{transaction.technicianName}</p>
+                  <p className="text-blue-200 text-sm">{transaction.date}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-white font-bold">{formatCurrency(tip.amount)}</p>
-                <p className="text-green-400 text-sm capitalize">{tip.status}</p>
+                <p className="text-white font-bold">{formatCurrency(transaction.amount)}</p>
+                <p className="text-green-400 text-sm capitalize">{transaction.status}</p>
               </div>
             </div>
           </div>
@@ -824,7 +824,7 @@ Please complete your profile information below and click "Save Changes" to creat
                         }))}
                         className="w-4 h-4 text-blue-600 bg-white/10 border-blue-500/30 rounded focus:ring-blue-500 focus:ring-2"
                       />
-                      <span className="text-white">Tip receipts</span>
+                      <span className="text-white">TOA receipts</span>
                     </label>
                   </div>
                 </div>
@@ -913,7 +913,7 @@ Please complete your profile information below and click "Save Changes" to creat
           )}
 
           {/* Tip History for Customers */}
-          {profile.userType === 'client' && <CustomerTipHistory profile={profile} />}
+          {profile.userType === 'client' && <CustomerTOAHistory profile={profile} />}
 
           {/* Favorite Technicians for Customers */}
           {profile.userType === 'client' && (

@@ -250,7 +250,7 @@ export default function TechnicianProfile() {
                   </div>
                   <div className="text-xs text-purple-200 font-medium">Achievement Level</div>
                   <div className="text-xs text-purple-300/80 mt-1">
-                    {technician.totalTips ? `${technician.totalTips} satisfied customers` : 'Building reputation'}
+                    {technician.totalTips ? `${technician.totalTips} TOA tokens earned` : 'Building reputation'}
                   </div>
                 </div>
               </div>
@@ -401,7 +401,7 @@ export default function TechnicianProfile() {
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed">
                       Customers earn points for completed jobs and can transfer them to show appreciation. 
-                                            Points reflect real value and can be converted to tips (100 points = $1.00). 
+                                            Points reflect real value and can be converted to TOA tokens (5 points = 1 TOA = $0.01). 
                       This technician has earned <strong className="text-white">{technician.points || 0} points</strong> through quality service.
                     </p>
                   </div>

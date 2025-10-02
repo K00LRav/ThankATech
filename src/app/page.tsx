@@ -120,8 +120,8 @@ export default function Home() {
 
     // TOA milestones
     if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
-    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Recipient', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '🪙', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // Experience badges (based on profile data)
     if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂️', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });
@@ -511,7 +511,7 @@ export default function Home() {
     }
   };
 
-  const handleTip = async () => {
+  const handleSendTOA = async () => {
     if (!currentUser) {
       setShowRegistration(true);
       return;
@@ -1218,7 +1218,7 @@ export default function Home() {
                         <span className="font-bold text-blue-600 text-sm">{profile.points || 0} ⚡</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} TOA received
+                        {profile.totalThankYous || 0} thanks • {profile.totalTips || 0} TOA tokens
                       </div>
                     </div>
 
@@ -1303,7 +1303,7 @@ export default function Home() {
                     <span className="text-white text-sm sm:text-base">Say Thank You</span>
                   </button>
                   <button 
-                    onClick={handleTip}
+                    onClick={handleSendTOA}
                     className="mobile-btn mobile-touch-feedback group flex items-center justify-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1 font-semibold"
                   >
                     <span className="text-white text-base sm:text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
@@ -1365,7 +1365,7 @@ export default function Home() {
             <span className="font-semibold text-white text-sm lg:text-base">Say Thank You</span>
           </button>
           <button 
-            onClick={handleTip}
+            onClick={handleSendTOA}
             className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
           >
             <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🪙</span>

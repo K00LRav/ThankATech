@@ -34,14 +34,14 @@ interface Technician {
 interface RolodexCardProps {
   technician: Technician;
   onThankYou?: () => void;
-  onTip?: () => void;
+  onSendTOA?: () => void;
   showActions?: boolean;
 }
 
 export function RolodexCard({ 
   technician, 
   onThankYou, 
-  onTip, 
+  onSendTOA, 
   showActions = true
 }: RolodexCardProps) {
   // Removed expandedCard state - keeping it simple
@@ -65,8 +65,8 @@ export function RolodexCard({
 
     // TOA milestones
     if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
-    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Recipient', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '🪙', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     return badges;
   };
@@ -230,9 +230,9 @@ export function RolodexCard({
                 </div>
                 <div className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full px-4 py-2 shadow-lg border border-blue-400/20">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">💰</span>
+                    <span className="text-sm">🪙</span>
                     <span className="text-sm font-bold">{technician.totalTips || 0}</span>
-                    <span className="text-sm opacity-90">tips</span>
+                    <span className="text-sm opacity-90">TOA</span>
                   </div>
                 </div>
                 {technician.certifications && (
@@ -244,7 +244,7 @@ export function RolodexCard({
             </div>
 
             {/* Action Buttons */}
-            {showActions && (onThankYou || onTip) && (
+            {showActions && (onThankYou || onSendTOA) && (
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-sm mx-auto mt-6">
                 {onThankYou && (
                   <button 
@@ -254,9 +254,9 @@ export function RolodexCard({
                     <span className="font-semibold text-white text-sm">🙏 Say Thank You</span>
                   </button>
                 )}
-                {onTip && (
+                {onSendTOA && (
                   <button 
-                    onClick={onTip}
+                    onClick={onSendTOA}
                     className="group flex items-center justify-center space-x-2 px-4 py-3 sm:px-6 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 min-h-[48px] flex-1 border border-emerald-400/20"
                   >
                     <span className="font-semibold text-white text-sm">💝 Send TOA</span>
