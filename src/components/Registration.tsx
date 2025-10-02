@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { registerClient, registerTechnician, isUsernameTaken, generateUsernameSuggestions, validateUsername } from '../lib/firebase';
+import { registerUser, registerTechnician, isUsernameTaken, generateUsernameSuggestions, validateUsername } from '../lib/firebase';
 import { TECHNICIAN_CATEGORIES, getSubcategoriesForCategory } from '../lib/categories';
 import GoogleSignIn from './GoogleSignIn';
 
@@ -179,7 +179,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
       
       if (userType === 'client') {
         // Register as customer
-        result = await registerClient({
+        result = await registerUser({
           ...userData,
           userType: 'client'
         });

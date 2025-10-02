@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { logger } from '../lib/logger';
-import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getClient } from '../lib/firebase';
+import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
 import { getUserTokenBalance, sendFreeThankYou } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
@@ -304,7 +304,7 @@ export default function Home() {
           // Try to get user data from either technicians or users collection
           let userData: any = await getTechnician(firebaseUser.uid);
           if (!userData) {
-            userData = await getClient(firebaseUser.uid);
+            userData = await getUser(firebaseUser.uid);
           }
 
           if (userData) {

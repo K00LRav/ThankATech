@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
 import { logger } from '@/lib/logger';
-import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getClient } from '@/lib/firebase';
+import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getUser } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
@@ -136,7 +136,7 @@ export default function ModernDashboard() {
           // Try to get user data from either technicians or users collection
           let userData: any = await getTechnician(firebaseUser.uid);
           if (!userData) {
-            userData = await getClient(firebaseUser.uid);
+            userData = await getUser(firebaseUser.uid);
           }
 
           if (userData) {

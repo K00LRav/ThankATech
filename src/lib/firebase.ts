@@ -2034,6 +2034,177 @@ export async function sendTokens(
   }
 }
 
+/**
+ * Migration script: Move all data from 'users' collection to 'clients' collection
+ * This should be run once during the transition period
+ */
+export async function migrateUsersToClients() {
+  if (!db) {
+    console.warn('Firebase not configured. Cannot perform migration.');
+    return { success: false, error: 'Firebase not configured' };
+  }
+
+  try {
+    console.log('🔄 Starting migration from "users" → "clients" collection...');
+    
+    // Get all documents from 'users' collection
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    
+    if (usersSnapshot.empty) {
+      console.log('✅ No documents found in "users" collection. Migration not needed.');
+      return { success: true, migratedCount: 0, message: 'No data to migrate' };
+    }
+    
+    console.log(`📊 Found ${usersSnapshot.size} documents to migrate`);
+    
+    const migrationPromises = [];
+    const migrationResults = [];
+    
+    usersSnapshot.forEach((userDoc) => {
+      const userData = userDoc.data();
+      const documentId = userDoc.id;
+      
+      console.log(`📝 Preparing to migrate document: ${documentId}`);
+      
+      // Add userType if missing (default to client)
+      if (!userData.userType) {
+        userData.userType = 'client';
+      }
+      
+      // Only migrate actual clients (not technicians that might be in users collection)
+      if (userData.userType === 'client' || userData.userType === 'customer') {
+        // Copy to clients collection with same document ID
+        const clientRef = doc(db, COLLECTIONS.CLIENTS, documentId);
+        const migrationPromise = setDoc(clientRef, {
+          ...userData,
+          userType: 'client', // Normalize to 'client'
+          migratedAt: new Date(),
+          migratedFrom: 'users'
+        }).then(() => {
+          migrationResults.push({
+            id: documentId,
+            email: userData.email,
+            name: userData.name || userData.displayName,
+            success: true
+          });
+          console.log(`✅ Migrated client: ${userData.email || documentId}`);
+        }).catch((error) => {
+          migrationResults.push({
+            id: documentId,
+            email: userData.email,
+            error: error.message,
+            success: false
+          });
+          console.error(`❌ Failed to migrate ${documentId}:`, error);
+        });
+        
+        migrationPromises.push(migrationPromise);
+      } else {
+        console.log(`⏭️ Skipping technician document: ${documentId} (should be in technicians collection)`);
+      }
+    });
+    
+    // Execute all migrations
+    await Promise.all(migrationPromises);
+    
+    const successCount = migrationResults.filter(r => r.success).length;
+    const failureCount = migrationResults.filter(r => !r.success).length;
+    
+    console.log(`✅ Migration completed! Migrated ${successCount} documents to "clients" collection`);
+    
+    if (failureCount > 0) {
+      console.warn(`⚠️ ${failureCount} documents failed to migrate`);
+    }
+    
+    // Log summary
+    console.log('📋 Migration Summary:');
+    migrationResults.forEach(result => {
+      if (result.success) {
+        console.log(`  ✓ ${result.email || result.id}`);
+      } else {
+        console.log(`  ✗ ${result.email || result.id}: ${result.error}`);
+      }
+    });
+    
+    console.log('');
+    console.log('🚨 IMPORTANT: After verifying the migration worked correctly,');
+    console.log('   you should manually delete the old "users" collection from Firebase Console');
+    console.log('   Go to: Firebase Console → Firestore Database → Delete "users" collection');
+    
+    return { 
+      success: true, 
+      migratedCount: successCount,
+      failedCount: failureCount,
+      results: migrationResults,
+      message: `Successfully migrated ${successCount} documents. ${failureCount} failed.`
+    };
+    
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    return { 
+      success: false, 
+      error: error.message,
+      message: 'Migration failed. Please check console for details.'
+    };
+  }
+}
+
+/**
+ * Check migration status - see what data exists in both collections
+ */
+export async function checkMigrationStatus() {
+  if (!db) {
+    console.warn('Firebase not configured.');
+    return null;
+  }
+  
+  try {
+    // Check users collection
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const usersCount = usersSnapshot.size;
+    
+    // Check clients collection  
+    const clientsSnapshot = await getDocs(collection(db, COLLECTIONS.CLIENTS));
+    const clientsCount = clientsSnapshot.size;
+    
+    // Check technicians collection
+    const techSnapshot = await getDocs(collection(db, COLLECTIONS.TECHNICIANS));
+    const techCount = techSnapshot.size;
+    
+    console.log('📊 Migration Status:');
+    console.log(`  "users" collection: ${usersCount} documents`);
+    console.log(`  "clients" collection: ${clientsCount} documents`);  
+    console.log(`  "technicians" collection: ${techCount} documents`);
+    
+    const status = {
+      usersCount,
+      clientsCount,
+      techCount,
+      needsMigration: usersCount > 0,
+      migrationComplete: usersCount === 0 && clientsCount > 0
+    };
+    
+    if (status.needsMigration) {
+      console.log('🔄 Migration needed: Run migrateUsersToClients()');
+    } else if (status.migrationComplete) {
+      console.log('✅ Migration appears complete');
+    } else {
+      console.log('❓ No data found in any collection');
+    }
+    
+    return status;
+  } catch (error) {
+    console.error('Error checking migration status:', error);
+    return null;
+  }
+}
+
+// Backward compatibility aliases (temporary during migration)
+export const getUser = getClient;
+export const registerUser = registerClient;
+export const getUserById = getClientById;
+export const getUserByEmail = getClientByEmail;
+
 // Export token system functions (direct exports - functions already exported above)
 // export { getUserTokenBalance, addTokensToBalance, checkDailyThankYouLimit, sendTokens };
 
