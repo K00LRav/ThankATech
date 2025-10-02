@@ -11,6 +11,17 @@ import Image from 'next/image';
 import PayoutModal from '@/components/PayoutModal';
 import ConversionWidget from '@/components/ConversionWidget';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
+import { 
+  getEnhancedTechnicianTransactions, 
+  getEnhancedClientTransactions,
+  DashboardTransaction,
+  DashboardStats
+} from '@/lib/enhanced-dashboard-service';
+import { 
+  EnhancedTransactionCard, 
+  EnhancedTransactionList, 
+  EnhancedStatsOverview 
+} from '@/components/EnhancedTransactionComponents';
 import '@/lib/adminUtils';
 
 // Modern Dashboard with Improved UX
@@ -112,6 +123,11 @@ export default function ModernDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Enhanced transaction data
+  const [enhancedTransactions, setEnhancedTransactions] = useState<DashboardTransaction[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
   
   // Simplified navigation - only 3 main views
   const [activeView, setActiveView] = useState<'overview' | 'activity' | 'settings'>('overview');
@@ -269,8 +285,31 @@ export default function ModernDashboard() {
       }
       
       setTransactions(transactionData);
+      
+      // Load enhanced transactions
+      await loadEnhancedTransactions(userId, currentProfile.userType);
+      
     } catch (error) {
       logger.error('Error loading transactions:', error);
+    }
+  };
+
+  const loadEnhancedTransactions = async (userId: string, userType: 'technician' | 'client') => {
+    setIsLoadingEnhanced(true);
+    try {
+      if (userType === 'technician') {
+        const { transactions, stats } = await getEnhancedTechnicianTransactions(userId, 50);
+        setEnhancedTransactions(transactions);
+        setDashboardStats(stats);
+      } else {
+        const { transactions, stats } = await getEnhancedClientTransactions(userId, 50);
+        setEnhancedTransactions(transactions);
+        setDashboardStats(stats);
+      }
+    } catch (error) {
+      console.error('Error loading enhanced transactions:', error);
+    } finally {
+      setIsLoadingEnhanced(false);
     }
   };
 
@@ -982,8 +1021,23 @@ export default function ModernDashboard() {
         return (
           <div className="space-y-6">
             <HeroSection />
-            <StatsGrid />
-            <RecentActivity />
+            {dashboardStats && userProfile ? (
+              <EnhancedStatsOverview stats={dashboardStats} userType={userProfile.userType} />
+            ) : (
+              <StatsGrid />
+            )}
+            {enhancedTransactions.length > 0 && userProfile ? (
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <EnhancedTransactionList 
+                  transactions={enhancedTransactions} 
+                  userType={userProfile.userType} 
+                  maxItems={5}
+                  showHeader={true}
+                />
+              </div>
+            ) : (
+              <RecentActivity />
+            )}
           </div>
         );
       
@@ -1002,9 +1056,15 @@ export default function ModernDashboard() {
               </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
-              <div className="divide-y divide-white/10">
-                {transactions.length === 0 ? (
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              {enhancedTransactions.length > 0 && userProfile ? (
+                <EnhancedTransactionList 
+                  transactions={enhancedTransactions} 
+                  userType={userProfile.userType} 
+                  showHeader={false}
+                />
+              ) : (
+                transactions.length === 0 ? (
                   <div className="p-12 text-center">
                     <div className="w-20 h-20 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
                       <span className="text-4xl">📊</span>
@@ -1075,7 +1135,7 @@ export default function ModernDashboard() {
                     </div>
                   ))
                 )}
-              </div>
+              )}
             </div>
           </div>
         );

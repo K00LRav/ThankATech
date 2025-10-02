@@ -149,6 +149,19 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
   }
 
   try {
+    // Check if user is admin - admins have unlimited tokens and thank yous
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
+    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.email === adminEmail) {
+        logger.info(`Admin user ${adminEmail} bypassing daily limits`);
+        return { canSendFree: true, remainingFree: 999 }; // Unlimited for admin
+      }
+    }
+
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const limitId = `${userId}_${technicianId}_${today}`;
     const limitRef = doc(db, COLLECTIONS.DAILY_LIMITS, limitId);
@@ -189,6 +202,27 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
   }
 
   try {
+    // Check if user is admin - admins have unlimited thank yous (but still can't thank themselves)
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
+    const userRef = doc(db, COLLECTIONS.USERS, userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.email === adminEmail) {
+        // Prevent self-thanking even for admin
+        if (userId === technicianId) {
+          return { 
+            canThank: false, 
+            reason: "You cannot thank yourself", 
+            alreadyThankedToday: false 
+          };
+        }
+        logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+        return { canThank: true, alreadyThankedToday: false };
+      }
+    }
+
     // Prevent self-thanking
     if (userId === technicianId) {
       return { 
@@ -562,12 +596,12 @@ export async function sendTokens(
             message
           );
         } else {
-          // Send token notification (we'll update this template next)
-          await EmailService.sendTipNotification(
+          // Send TOA received notification
+          await EmailService.sendToaReceivedNotification(
             techData.email,
             technicianName,
             customerName,
-            Math.round(tokens * 0.1), // Convert tokens to dollar equivalent for now
+            tokens,
             message
           );
         }
