@@ -92,12 +92,12 @@ interface Transaction {
   date: string;
   timestamp?: any;
   status: 'completed' | 'pending' | 'cancelled';
-  type?: 'tip' | 'toa' | 'thankyou';
+  type?: 'tip' | 'toa' | 'thankyou' | 'thank_you' | 'toa_token';
+  pointsAwarded?: number;
   message?: string;
   dollarValue?: number;
   technicianPayout?: number;
   platformFee?: number;
-  pointsAwarded?: number;
   conversionId?: string;
   originalCurrency?: string;
   exchangeRate?: number;
@@ -917,17 +917,22 @@ export default function ModernDashboard() {
             <div key={transaction.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
               <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  transaction.type === 'toa' ? 'bg-blue-500/20' : 'bg-red-500/20'
+                  (transaction.type === 'toa_token' || transaction.type === 'toa') ? 'bg-blue-500/20' : 
+                  transaction.type === 'thank_you' ? 'bg-green-500/20' : 'bg-red-500/20'
                 }`}>
-                  <span className={transaction.type === 'toa' ? 'text-blue-400' : 'text-red-400'}>
-                    {transaction.type === 'toa' ? '💰' : '❤️'}
+                  <span className={
+                    (transaction.type === 'toa_token' || transaction.type === 'toa') ? 'text-blue-400' : 
+                    transaction.type === 'thank_you' ? 'text-green-400' : 'text-red-400'
+                  }>
+                    {(transaction.type === 'toa_token' || transaction.type === 'toa') ? '💰' : 
+                     transaction.type === 'thank_you' ? '🙏' : '❤️'}
                   </span>
                 </div>
                 <div>
                   <p className="font-medium text-white">
                     {userProfile.userType === 'client' 
-                      ? `${transaction.type === 'toa' ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                      : `${transaction.type === 'toa' ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                      ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                      : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
                     }
                   </p>
                   <p className="text-sm text-slate-400">{transaction.date}</p>
@@ -935,10 +940,15 @@ export default function ModernDashboard() {
               </div>
               
               <div className="text-right">
-                {transaction.type === 'toa' && (
+                {(transaction.type === 'toa' || transaction.type === 'toa_token') && transaction.amount && (
                   <p className={`font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
                     {userProfile.userType === 'client' ? '-' : '+'}
                     {formatCurrency(transaction.amount * 100)}
+                  </p>
+                )}
+                {transaction.pointsAwarded && (
+                  <p className="text-blue-400 font-medium text-sm">
+                    +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
                   </p>
                 )}
                 <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
@@ -999,17 +1009,22 @@ export default function ModernDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            transaction.type === 'toa' ? 'bg-blue-500/20' : 'bg-red-500/20'
+                            (transaction.type === 'toa' || transaction.type === 'toa_token') ? 'bg-blue-500/20' : 
+                            transaction.type === 'thank_you' ? 'bg-green-500/20' : 'bg-red-500/20'
                           }`}>
-                            <span className={`text-xl ${transaction.type === 'toa' ? 'text-blue-400' : 'text-red-400'}`}>
-                              {transaction.type === 'toa' ? '💰' : '❤️'}
+                            <span className={`text-xl ${
+                              (transaction.type === 'toa' || transaction.type === 'toa_token') ? 'text-blue-400' : 
+                              transaction.type === 'thank_you' ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                              {(transaction.type === 'toa' || transaction.type === 'toa_token') ? '💰' : 
+                               transaction.type === 'thank_you' ? '🙏' : '❤️'}
                             </span>
                           </div>
                           <div>
                             <p className="font-semibold text-white">
                               {userProfile.userType === 'client' 
-                                ? `${transaction.type === 'toa' ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                                : `${transaction.type === 'toa' ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
+                                ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
+                                : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
                               }
                             </p>
                             <p className="text-slate-400">{transaction.date}</p>
@@ -1020,10 +1035,15 @@ export default function ModernDashboard() {
                         </div>
                         
                         <div className="text-right">
-                          {transaction.type === 'toa' && (
+                          {(transaction.type === 'toa' || transaction.type === 'toa_token') && transaction.amount && (
                             <p className={`text-lg font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
                               {userProfile.userType === 'client' ? '-' : '+'}
                               {formatCurrency(transaction.amount * 100)}
+                            </p>
+                          )}
+                          {transaction.pointsAwarded && (
+                            <p className="text-blue-400 font-semibold text-sm">
+                              +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
                             </p>
                           )}
                           <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${

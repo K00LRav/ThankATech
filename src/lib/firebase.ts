@@ -1714,29 +1714,83 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
   if (!db) return [];
   
   try {
+    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+    
+    // Get token transactions where technician is receiver
+    const tokenTransactionsRef = collection(db, 'tokenTransactions');
+    const tokenQuery = query(
+      tokenTransactionsRef,
+      where('toTechnicianId', '==', technicianId),
+      orderBy('timestamp', 'desc')
+    );
+    
+    const tokenSnapshot = await getDocs(tokenQuery);
+    const transactions = [];
+    
+    // Process token transactions (thank yous and TOA tokens received)
+    for (const docSnap of tokenSnapshot.docs) {
+      const data = docSnap.data();
+      
+      // Get client name
+      let clientName = 'Anonymous Customer';
+      try {
+        const clientDoc = await getDoc(doc(db, 'users', data.fromUserId));
+        if (clientDoc.exists()) {
+          clientName = clientDoc.data().name || clientDoc.data().displayName || 'Customer';
+        }
+      } catch (error) {
+        console.warn('Could not fetch client name:', error);
+      }
+      
+      transactions.push({
+        id: docSnap.id,
+        type: data.type === 'thank_you' ? 'thankyou' : 'toa',
+        amount: data.tokens || 0,
+        dollarValue: data.dollarValue || 0,
+        clientId: data.fromUserId,
+        clientName,
+        message: data.message,
+        date: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : new Date().toLocaleDateString(),
+        timestamp: data.timestamp,
+        status: 'completed',
+        pointsAwarded: data.pointsAwarded || (data.type === 'thank_you' ? 1 : 2),
+        technicianPayout: data.technicianPayout || 0,
+        platformFee: data.platformFee || 0
+      });
+    }
+    
+    // Also get old tips for backwards compatibility
     const tips = await getTipsForTechnician(technicianId, technicianEmail, technicianUniqueId);
     
-    // Convert tips to transaction format expected by dashboard
-    const transactions = tips.map(tip => {
+    // Convert old tips to transaction format
+    tips.forEach(tip => {
       const amountInCents = tip.amount || 0;
       const platformFeeInCents = parseInt(process.env.PLATFORM_FLAT_FEE || '99');
       const technicianPayoutInCents = tip.technicianPayout || (amountInCents - platformFeeInCents);
       
-      return {
+      transactions.push({
         id: tip.id,
-        amount: amountInCents, // Keep in cents for formatCurrency
-        customerName: tip.customerName || tip.customerEmail || tip.fromName || 'Anonymous Tipper',
+        type: 'toa',
+        amount: amountInCents,
+        dollarValue: amountInCents / 100,
+        clientName: tip.customerName || tip.customerEmail || tip.fromName || 'Anonymous Customer',
         date: tip.createdAt ? new Date(tip.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+        timestamp: tip.createdAt,
         status: tip.status || 'completed',
-        platformFee: platformFeeInCents, // Keep in cents for formatCurrency
-        technicianPayout: technicianPayoutInCents, // Add the missing field
+        platformFee: platformFeeInCents,
+        technicianPayout: technicianPayoutInCents,
         paymentIntent: tip.paymentIntent,
-        technicianName: tip.technicianName
-      };
+        message: tip.message || '',
+        pointsAwarded: 0 // Old system didn't have points
+      });
     });
     
-    // Sort by date, newest first
-    transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Sort by timestamp, newest first
+    transactions.sort((a, b) => {
+      const aTime = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(a.date);
+      const bTime = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(b.date);
+      return bTime.getTime() - aTime.getTime();
+    });
     
     return transactions;
   } catch (error) {
@@ -1746,7 +1800,110 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
 }
 
 /**
- * Get customer transactions (tips they've sent)
+ * Get client transactions (new ThankATech Points and TOA system)
+ * @param {string} clientId - Client ID
+ * @param {string} clientEmail - Client email
+ * @returns {Promise<Array>} Array of transactions (thank yous and TOA tokens sent)
+ */
+export async function getClientTransactions(clientId, clientEmail) {
+  if (!db) return [];
+  
+  try {
+    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore');
+    
+    // Get token transactions where user is sender
+    const tokenTransactionsRef = collection(db, 'tokenTransactions');
+    const tokenQuery = query(
+      tokenTransactionsRef,
+      where('fromUserId', '==', clientId),
+      orderBy('timestamp', 'desc')
+    );
+    
+    const tokenSnapshot = await getDocs(tokenQuery);
+    const transactions = [];
+    
+    // Process token transactions (thank yous and TOA tokens)
+    for (const docSnap of tokenSnapshot.docs) {
+      const data = docSnap.data();
+      
+      // Get technician name
+      let technicianName = 'Unknown Technician';
+      try {
+        const techDoc = await getDoc(doc(db, 'technicians', data.toTechnicianId));
+        if (techDoc.exists()) {
+          technicianName = techDoc.data().name || techDoc.data().businessName || 'Technician';
+        }
+      } catch (error) {
+        console.warn('Could not fetch technician name:', error);
+      }
+      
+      transactions.push({
+        id: docSnap.id,
+        type: data.type === 'thank_you' ? 'thankyou' : 'toa',
+        amount: data.tokens || 0,
+        dollarValue: data.dollarValue || 0,
+        technicianId: data.toTechnicianId,
+        technicianName,
+        message: data.message,
+        date: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : new Date().toLocaleDateString(),
+        timestamp: data.timestamp,
+        status: 'completed',
+        pointsAwarded: data.pointsAwarded || (data.type === 'thank_you' ? 1 : 1)
+      });
+    }
+    
+    // Also get old tips for backwards compatibility
+    const tipsRef = collection(db, 'tips');
+    let tipsQuery;
+    if (clientId) {
+      tipsQuery = query(
+        tipsRef,
+        where('customerId', '==', clientId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (clientEmail) {
+      tipsQuery = query(
+        tipsRef,
+        where('customerEmail', '==', clientEmail),
+        orderBy('createdAt', 'desc')
+      );
+    }
+    
+    if (tipsQuery) {
+      const tipsSnapshot = await getDocs(tipsQuery);
+      tipsSnapshot.forEach((doc) => {
+        const tip = doc.data();
+        transactions.push({
+          id: doc.id,
+          type: 'toa',
+          amount: tip.amount || 0,
+          dollarValue: (tip.amount || 0) / 100,
+          technicianName: tip.technicianName || 'Unknown Technician',
+          date: tip.createdAt ? new Date(tip.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          timestamp: tip.createdAt,
+          status: tip.status || 'completed',
+          message: tip.message || '',
+          pointsAwarded: 0 // Old system didn't have points
+        });
+      });
+    }
+    
+    // Sort by timestamp, newest first
+    transactions.sort((a, b) => {
+      const aTime = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(a.date);
+      const bTime = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(b.date);
+      return bTime.getTime() - aTime.getTime();
+    });
+    
+    return transactions;
+  } catch (error) {
+    console.error('❌ Error loading client transactions:', error);
+    return [];
+  }
+}
+
+/**
+ * Get customer transactions (tips they've sent) - DEPRECATED, use getClientTransactions
  * @param {string} customerId - Customer ID
  * @param {string} customerEmail - Customer email
  * @returns {Promise<Array>} Array of tips sent by customer
