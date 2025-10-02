@@ -403,6 +403,14 @@ export async function sendThankYou(technicianId, userId, message = '') {
   }
 
   try {
+    // Prevent users from thanking themselves
+    if (technicianId === userId) {
+      return {
+        success: false,
+        error: 'You cannot thank yourself! Please send thanks to other technicians.'
+      };
+    }
+
     // Add thank you record
     await addDoc(collection(db, COLLECTIONS.THANK_YOUS), {
       technicianId,
@@ -500,6 +508,14 @@ export async function sendTip(technicianId, userId, amount, message = '') {
   }
 
   try {
+    // Prevent users from tipping themselves
+    if (technicianId === userId) {
+      return {
+        success: false,
+        error: 'You cannot tip yourself! Please send tips to other technicians.'
+      };
+    }
+
     const points = Math.round(amount * 5); // $1 = 5 points
     
     // Add tip record
@@ -1149,22 +1165,85 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
+    console.log('🔍 [firebase.TS] getTechnician called with ID:', technicianId);
     
-    // Try technicians collection first
+    // First, check users collection by Firebase Auth UID (new primary method)
+    console.log('🔍 [firebase.TS] Checking users collection...');
+    const usersDoc = await getDoc(doc(db, 'users', technicianId));
+    console.log('📊 [firebase.TS] Users doc exists:', usersDoc.exists());
+    if (usersDoc.exists()) {
+      const userData = usersDoc.data();
+      console.log('📊 [firebase.TS] Users doc data:', userData);
+      console.log('📊 [firebase.TS] userType:', userData.userType);
+      if (userData.userType === 'technician') {
+        const techData = { id: usersDoc.id, ...userData };
+        console.log('✅ [firebase.TS] Found technician in users collection!', techData);
+        return techData;
+      } else {
+        console.log('❌ [firebase.TS] userType is not "technician", it is:', userData.userType);
+      }
+    } else {
+      console.log('❌ [firebase.TS] No document found in users collection');
+    }
+    
+    // Try technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
       const techData = { id: techDoc.id, ...techDoc.data() };
       return techData;
     }
     
-    // Try clients collection as fallback
-    const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
+    // Try clients collection by document ID as fallback
+    const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
+    if (clientDoc.exists()) {
+      const userData = clientDoc.data();
       if (userData.userType === 'technician') {
-        const techData = { id: userDoc.id, ...userData };
+        const techData = { id: clientDoc.id, ...userData };
         return techData;
       }
+    }
+    
+    // If not found as document ID, try as Firebase Auth UID
+    
+    // Search users collection by authUid for technicians
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('authUid', '==', technicianId),
+      where('userType', '==', 'technician'),
+      limit(1)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search technicians collection by authUid
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('authUid', '==', technicianId),
+      limit(1)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const doc = techSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search clients collection by authUid for technicians
+    const clientQuery = query(
+      collection(db, COLLECTIONS.CLIENTS),
+      where('authUid', '==', technicianId),
+      where('userType', '==', 'technician'),
+      limit(1)
+    );
+    const clientSnapshot = await getDocs(clientQuery);
+    
+    if (!clientSnapshot.empty) {
+      const doc = clientSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
     }
     
     return null;
@@ -1184,10 +1263,50 @@ export async function getClient(userId) {
   
   try {
     
-    const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
-    if (userDoc.exists()) {
-      const userData = { id: userDoc.id, ...userDoc.data() };
+    // First, check users collection by Firebase Auth UID (new primary method)
+    const usersDoc = await getDoc(doc(db, 'users', userId));
+    if (usersDoc.exists()) {
+      const userData = usersDoc.data();
+      if (userData.userType === 'client') {
+        const clientData = { id: usersDoc.id, ...userData };
+        return clientData;
+      }
+    }
+    
+    // Try as document ID first
+    const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
+    if (clientDoc.exists()) {
+      const userData = { id: clientDoc.id, ...clientDoc.data() };
       return userData;
+    }
+    
+    // If not found as document ID, try as Firebase Auth UID
+    
+    // Search users collection by authUid for clients
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('authUid', '==', userId),
+      where('userType', '==', 'client'),
+      limit(1)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search clients collection by authUid
+    const clientQuery = query(
+      collection(db, COLLECTIONS.CLIENTS),
+      where('authUid', '==', userId),
+      limit(1)
+    );
+    const clientSnapshot = await getDocs(clientQuery);
+    
+    if (!clientSnapshot.empty) {
+      const doc = clientSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
     }
     
     return null;

@@ -113,11 +113,27 @@ export async function registerTechnician(technicianData) {
     } else if (existingTechnician) {
       throw new Error(`A technician is already registered with email ${technicianData.email}. Please sign in instead or use a different email.`);
     }
+
+    // Create Firebase Auth account if password is provided (manual registration)
+    let authUser = null;
+    if (technicianData.password && auth) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, technicianData.email, technicianData.password);
+        authUser = userCredential.user;
+      } catch (authError) {
+        console.error('Error creating Firebase Auth account:', authError);
+        throw new Error(`Failed to create login account: ${authError.message}`);
+      }
+    }
+
     // Create a complete technician profile
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
       username: technicianData.username?.toLowerCase().trim(),
+      
+      // Firebase Auth UID (if created)
+      authUid: authUser?.uid || null,
       
       // Basic info
       name: technicianData.name,
@@ -186,9 +202,23 @@ export async function registerUser(userData) {
       throw new Error(`An account is already registered with this name and email combination. Please sign in instead.`);
     }
     
+    // Create Firebase Auth account if password is provided (manual registration)
+    let authUser = null;
+    if (userData.password && auth) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+        authUser = userCredential.user;
+      } catch (authError) {
+        console.error('Error creating Firebase Auth account:', authError);
+        throw new Error(`Failed to create login account: ${authError.message}`);
+      }
+    }
+    
     const docRef = await addDoc(collection(db, COLLECTIONS.CLIENTS), {
       ...userData,
       uniqueId: uniqueId,
+      // Firebase Auth UID (if created)
+      authUid: authUser?.uid || null,
       createdAt: new Date(),
       totalThankYousSent: 0,
       totalTipsSent: 0,
@@ -310,6 +340,14 @@ export async function sendThankYou(technicianId, userId, message = '') {
   }
 
   try {
+    // Prevent users from thanking themselves
+    if (technicianId === userId) {
+      return {
+        success: false,
+        error: 'You cannot thank yourself! Please send thanks to other technicians.'
+      };
+    }
+
     // Check daily limit first
     const limitCheck = await checkDailyThankYouLimit(technicianId, userId);
     if (!limitCheck.canSend) {
@@ -402,6 +440,14 @@ export async function sendTip(technicianId, userId, amount, message = '') {
   }
 
   try {
+    // Prevent users from tipping themselves
+    if (technicianId === userId) {
+      return {
+        success: false,
+        error: 'You cannot tip yourself! Please send tips to other technicians.'
+      };
+    }
+
     const points = Math.round(amount * 5); // $1 = 5 points
     
     // Add tip record
@@ -1063,22 +1109,81 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
+    console.log('🔍 [firebase.js] getTechnician called with ID:', technicianId);
     
-    // Try technicians collection first
+    // First, check users collection by Firebase Auth UID (new primary method)
+    console.log('🔍 [firebase.js] Checking users collection...');
+    const usersDoc = await getDoc(doc(db, 'users', technicianId));
+    console.log('📊 [firebase.js] Users doc exists:', usersDoc.exists());
+    if (usersDoc.exists()) {
+      const userData = usersDoc.data();
+      console.log('📊 [firebase.js] Users doc data:', userData);
+      console.log('📊 [firebase.js] userType:', userData.userType);
+      if (userData.userType === 'technician') {
+        const techData = { id: usersDoc.id, ...userData };
+        console.log('✅ [firebase.js] Found technician in users collection!', techData);
+        return techData;
+      }
+    }
+    
+    // Try technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
       const techData = { id: techDoc.id, ...techDoc.data() };
       return techData;
     }
     
-    // Try users collection as fallback
-    const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
+    // Try clients collection by document ID as fallback
+    const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
+    if (clientDoc.exists()) {
+      const userData = clientDoc.data();
       if (userData.userType === 'technician') {
-        const techData = { id: userDoc.id, ...userData };
+        const techData = { id: clientDoc.id, ...userData };
         return techData;
       }
+    }
+    
+    // If not found as document ID, try as Firebase Auth UID
+    
+    // Search users collection by authUid for technicians
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('authUid', '==', technicianId),
+      where('userType', '==', 'technician'),
+      limit(1)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search technicians collection by authUid
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('authUid', '==', technicianId),
+      limit(1)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const doc = techSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search clients collection by authUid for technicians
+    const clientQuery = query(
+      collection(db, COLLECTIONS.CLIENTS),
+      where('authUid', '==', technicianId),
+      where('userType', '==', 'technician'),
+      limit(1)
+    );
+    const clientSnapshot = await getDocs(clientQuery);
+    
+    if (!clientSnapshot.empty) {
+      const doc = clientSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
     }
     
     return null;
@@ -1098,10 +1203,46 @@ export async function getUser(userId) {
   
   try {
     
+    // First, check users collection by Firebase Auth UID (new primary method)
+    const usersDoc = await getDoc(doc(db, 'users', userId));
+    if (usersDoc.exists()) {
+      const userData = { id: usersDoc.id, ...usersDoc.data() };
+      return userData;
+    }
+    
+    // Try clients collection as fallback
     const userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (userDoc.exists()) {
       const userData = { id: userDoc.id, ...userDoc.data() };
       return userData;
+    }
+    
+    // If not found as document ID, try as Firebase Auth UID
+    
+    // Search users collection by authUid
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('authUid', '==', userId),
+      limit(1)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Search clients collection by authUid
+    const clientQuery = query(
+      collection(db, COLLECTIONS.CLIENTS),
+      where('authUid', '==', userId),
+      limit(1)
+    );
+    const clientSnapshot = await getDocs(clientQuery);
+    
+    if (!clientSnapshot.empty) {
+      const doc = clientSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
     }
     
     return null;
