@@ -330,7 +330,7 @@ export default function ModernDashboard() {
     
     try {
       // If technician is updating username, validate it
-      if (userProfile.userType === 'technician' && editedProfile.username) {
+      if (userProfile.userType === 'technician' && editedProfile.username !== undefined) {
         const username = editedProfile.username.toLowerCase().trim();
         
         // Validate format
@@ -343,13 +343,16 @@ export default function ModernDashboard() {
         }
         
         // Check if username is already taken (skip if it's the current username)
-        if (username !== userProfile.username?.toLowerCase()) {
+        const currentUsername = userProfile.username?.toLowerCase().trim();
+        if (username !== currentUsername) {
           const q = query(
             collection(db, 'users'),
             where('username', '==', username)
           );
           const snapshot = await getDocs(q);
-          if (!snapshot.empty) {
+          
+          // Make sure it's not the current user's document
+          if (!snapshot.empty && snapshot.docs[0].id !== userProfile.id) {
             throw new Error(`Username "${username}" is already taken`);
           }
         }
