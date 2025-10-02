@@ -1134,7 +1134,7 @@ export default function ModernDashboard() {
                       </div>
                     </div>
                   ))
-                )}
+                )
               )}
             </div>
           </div>
