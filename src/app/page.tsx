@@ -9,6 +9,7 @@ import { getUserTokenBalance, sendFreeThankYou } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
+import ForgotPassword from '../components/ForgotPassword';
 import TokenSendModal from '../components/TokenSendModal';
 import TokenPurchaseModal from '../components/TokenPurchaseModal';
 import Footer from '../components/Footer';
@@ -72,6 +73,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
@@ -1528,6 +1530,21 @@ export default function Home() {
           onSwitchToRegister={() => {
             setShowSignIn(false);
             setShowRegistration(true);
+          }}
+          onForgotPassword={() => {
+            setShowSignIn(false);
+            setShowForgotPassword(true);
+          }}
+        />
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPassword 
+          onClose={() => setShowForgotPassword(false)}
+          onBackToSignIn={() => {
+            setShowForgotPassword(false);
+            setShowSignIn(true);
           }}
         />
       )}

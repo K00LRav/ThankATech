@@ -8,9 +8,10 @@ interface SignInProps {
   onSignInComplete: (user: any) => void;
   onClose: () => void;
   onSwitchToRegister: () => void;
+  onForgotPassword?: () => void;
 }
 
-export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }: SignInProps) {
+export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister, onForgotPassword }: SignInProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -101,9 +102,18 @@ export default function SignIn({ onSignInComplete, onClose, onSwitchToRegister }
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-2">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-blue-200">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-sm text-blue-400 hover:text-blue-300 underline transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <input
                 type="password"
                 id="password"
