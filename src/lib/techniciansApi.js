@@ -86,8 +86,11 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
       return techWithLocation;
     });
 
-    // Always include mock data alongside registered technicians for demonstration
-    let mockTechs = getMockTechnicians();
+    // Get existing technician IDs to prevent duplicates
+    const existingIds = new Set(processedTechs.map(tech => tech.id));
+    
+    // Only include mock data that doesn't duplicate existing registered technicians
+    let mockTechs = getMockTechnicians().filter(tech => !existingIds.has(tech.id));
     
     // Add coordinates and calculate distances for sample data
     mockTechs = mockTechs.map(tech => {
@@ -113,7 +116,7 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
       return techWithCoords;
     });
 
-    // Combine registered and mock technicians
+    // Combine registered and non-duplicate mock technicians
     let allTechs = [...processedTechs, ...mockTechs];
 
     // Filter by category if specified
