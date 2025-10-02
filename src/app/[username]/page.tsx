@@ -214,7 +214,7 @@ export default function TechnicianProfile() {
                     <div className="text-2xl font-bold text-white">{technician.points || 0}</div>
                   </div>
                   <div className="text-xs text-blue-200 font-medium">ThankATech Points</div>
-                  <div className="text-xs text-blue-300/80 mt-1">${((technician.points || 0) * 0.01).toFixed(2)} value</div>
+                  <div className="text-xs text-blue-300/80 mt-1">${((technician.points || 0) * 0.002).toFixed(4)} value</div>
                 </div>
 
                 {/* Thank You Count */}

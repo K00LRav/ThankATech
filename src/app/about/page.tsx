@@ -129,7 +129,7 @@ export default function About() {
                   <span className="text-2xl">💰</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Earn Real Money</h3>
-                <p className="text-gray-300">Receive 85% of every TOA token sent to you. <span className="text-yellow-400 font-semibold">$0.85 per $1 TOA!</span> Direct to your bank account monthly.</p>
+                <p className="text-gray-300">Receive 85% of every TOA token sent to you. <span className="text-yellow-400 font-semibold">$0.0085 per TOA token!</span> Direct to your bank account monthly.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -318,11 +318,11 @@ export default function About() {
                         <p className="text-gray-300 text-sm">Platform Fee</p>
                       </div>
                     </div>
-                    <p className="text-gray-300 text-sm">Every $1 TOA Token</p>
+                    <p className="text-gray-300 text-sm">Every TOA Token ($0.01)</p>
                   </div>
                   <ul className="space-y-2 text-gray-300 text-sm">
-                    <li>✅ Technicians get $0.85 per $1 TOA</li>
-                    <li>✅ Platform keeps $0.15 for sustainability</li>
+                    <li>✅ Technicians get $0.0085 per TOA token</li>
+                    <li>✅ Platform keeps $0.0015 for sustainability</li>
                     <li>✅ No hidden fees or surprise charges</li>
                     <li>✅ Monthly payouts to bank accounts</li>
                   </ul>

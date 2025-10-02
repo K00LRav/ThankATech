@@ -88,7 +88,7 @@ interface UserProfile {
   availability?: string;
   about?: string;
   
-  // Legacy fields
+  // Legacy fields (deprecated - use TOA system)
   totalTips?: number;
   totalTipAmount?: number;
 }
@@ -104,7 +104,7 @@ interface Transaction {
   date: string;
   timestamp?: any;
   status: 'completed' | 'pending' | 'cancelled';
-  type?: 'tip' | 'toa' | 'thankyou' | 'thank_you' | 'toa_token';
+  type?: 'toa' | 'thankyou' | 'thank_you' | 'toa_token';
   pointsAwarded?: number;
   message?: string;
   dollarValue?: number;
