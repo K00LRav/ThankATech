@@ -52,8 +52,12 @@ export { db, auth, storage, googleProvider };
 const COLLECTIONS = {
   TECHNICIANS: 'technicians',
   CLIENTS: 'clients',
+  USERS: 'users',
   THANK_YOUS: 'thankYous',
-  TIPS: 'tips'
+  TIPS: 'tips',
+  TOKEN_BALANCES: 'tokenBalances',
+  TOKEN_TRANSACTIONS: 'tokenTransactions',
+  DAILY_LIMITS: 'dailyThankYouLimits'
 };
 
 // Helper functions for unique ID generation
@@ -181,7 +185,7 @@ export async function registerTechnician(technicianData) {
       
       // System fields
       points: 0,
-      rating: 5.0, // Start with good rating
+      // Rating system removed - now using ThankATech Points
       createdAt: new Date(),
       isActive: true,
       totalThankYous: 0,
@@ -883,7 +887,7 @@ export async function migrateTechnicianProfile(userId) {
 
   try {
     // Get user from users collection
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
     
     if (!userDoc.exists()) {
       return null;
@@ -933,7 +937,7 @@ export async function migrateTechnicianProfile(userId) {
       
       // Stats
       points: userData.points || 0,
-      rating: userData.rating || 5.0,
+      // Rating system removed - using ThankATech Points system
       totalThankYous: userData.totalThankYous || 0,
       totalTips: userData.totalTips || 0,
       totalTipAmount: userData.totalTipAmount || 0,
@@ -1022,7 +1026,7 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     
     // TODO: Future enhancements for production:
     // - Delete user's photos from Firebase Storage
-    // - Clean up related data (tips, thank yous, ratings, etc.)
+    // - Clean up related data (tips, thank yous, etc.)
     // - Delete the Firebase Auth user account (requires admin SDK)
     // - Archive data for compliance/recovery purposes
     
@@ -1128,7 +1132,7 @@ export async function getTechnician(technicianId) {
   
   try {
     // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, 'users', technicianId));
+    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
     if (usersDoc.exists()) {
       const userData = usersDoc.data();
       if (userData.userType === 'technician') {
@@ -1155,7 +1159,7 @@ export async function getTechnician(technicianId) {
     
     // Search users collection by authUid for technicians
     const usersQuery = query(
-      collection(db, 'users'),
+      collection(db, COLLECTIONS.USERS),
       where('authUid', '==', technicianId),
       where('userType', '==', 'technician'),
       limit(1)
@@ -1212,7 +1216,7 @@ export async function getUser(userId) {
   try {
     
     // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, 'users', userId));
+    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
     if (usersDoc.exists()) {
       const userData = { id: usersDoc.id, ...usersDoc.data() };
       return userData;
@@ -1229,7 +1233,7 @@ export async function getUser(userId) {
     
     // Search users collection by authUid
     const usersQuery = query(
-      collection(db, 'users'),
+      collection(db, COLLECTIONS.USERS),
       where('authUid', '==', userId),
       limit(1)
     );

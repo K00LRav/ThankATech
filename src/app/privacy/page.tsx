@@ -186,7 +186,7 @@ export default function Privacy() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Payment Data Usage</h3>
                 <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                  <li>Processing tips and payments to technicians</li>
+                  <li>Processing TOA token purchases and payouts to technicians</li>
                   <li>Calculating and collecting platform fees</li>
                   <li>Generating receipts and transaction records</li>
                   <li>Fraud detection and prevention</li>

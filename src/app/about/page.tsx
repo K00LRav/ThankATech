@@ -273,15 +273,23 @@ export default function About() {
                     Community Star - 50+ ThankATech Points
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="text-lg">👑</span>
+                    <span className="text-lg">🌟</span>
                     Point Master - 100+ ThankATech Points
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="text-lg">👨‍🔧</span>
-                    Veteran Tech - 5+ years experience
+                    <span className="text-lg">🥉</span>
+                    Community Hero - 50+ Thank Yous
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="text-lg">🎓</span>
+                    <span className="text-lg">💎</span>
+                    Diamond TOA Earner - 50+ TOA Tokens
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="text-lg">🧙‍♂️</span>
+                    Master Tech - 10+ years experience
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="text-lg">📜</span>
                     Certified Pro - Has certifications
                   </li>
                 </ul>

@@ -90,28 +90,10 @@ export default function Home() {
     image: '',
     points: 0,
     totalThankYous: 0,
-    totalTips: 0,
-    rating: 5.0
+    totalTips: 0
   }) as any;
 
-  // Calculate dynamic rating based on thank yous and TOA
-  const calculateRating = (thankYous: number, tokens: number, tokenAmount: number) => {
-    // Base algorithm: convert engagement to 1-5 star rating
-    const totalEngagement = thankYous + (tokens * 2); // TOA count double
-    const baseRating = 3.0; // Everyone starts at 3 stars
-    const engagementBonus = Math.min(totalEngagement / 30, 2.0); // Max 2 extra stars
-    return Math.min(baseRating + engagementBonus, 5.0);
-  };
 
-  // Generate star display - always show just 1 star for compact size
-  const getStarDisplay = (rating: number) => {
-    return '★'; // Always show single star for compact badge
-  };
-
-  // Get dynamic rating for current profile
-  const dynamicRating = profile.totalThankYous && profile.totalTips 
-    ? calculateRating(profile.totalThankYous, profile.totalTips, profile.totalTips * 5)
-    : profile.rating || 5.0;
 
   // Achievement badges based on milestones
   const getAchievementBadges = (profile: Technician) => {
@@ -119,22 +101,20 @@ export default function Home() {
     const totalThankYous = profile.totalThankYous || 0;
     const totalTips = profile.totalTips || 0;
 
-    // Thank you milestones
-    if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalThankYous >= 50) badges.push({ icon: '🥉', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
-    else if (totalThankYous >= 25) badges.push({ icon: '⭐', text: 'Rising Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
-    else if (totalThankYous >= 10) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
-
-    // TOA milestones
-    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-blue-100 text-blue-800 border-blue-300' });
-    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '🥈', text: 'Silver TOA Pro', color: 'bg-gray-100 text-gray-800 border-gray-300' });
-    else if (totalTips >= 5) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
-
-    // ThankATech Points milestones
-    if ((profile.points || 0) >= 100) badges.push({ icon: '🌟', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    // ThankATech Points milestones (primary focus)
+    if ((profile.points || 0) >= 100) badges.push({ icon: '�', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if ((profile.points || 0) >= 50) badges.push({ icon: '✨', text: 'Community Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
     else if ((profile.points || 0) >= 25) badges.push({ icon: '⚡', text: 'Rising Star', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+
+    // Thank you milestones
+    if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalThankYous >= 50) badges.push({ icon: '�', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
+    else if (totalThankYous >= 25) badges.push({ icon: '�', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
+
+    // TOA milestones
+    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     // Experience badges (based on profile data)
     if (profile.experience?.includes('10+')) badges.push({ icon: '🧙‍♂', text: 'Master Tech', color: 'bg-blue-100 text-blue-800 border-blue-300' });

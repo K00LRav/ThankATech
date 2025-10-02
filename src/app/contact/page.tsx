@@ -255,19 +255,19 @@ export default function Contact() {
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span>
-                    <span className="text-gray-300">How to register as a technician</span>
+                    <span className="text-gray-300">How to register with username requirement</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
-                    <span className="text-gray-300">How ratings and badges work</span>
+                    <span className="text-gray-300">ThankATech Points and TOA tokens</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-400 rounded-full"></span>
-                    <span className="text-gray-300">How to send tips and thank yous</span>
+                    <span className="text-gray-300">Closed-loop appreciation economy</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
-                    <span className="text-gray-300">Platform safety and guidelines</span>
+                    <span className="text-gray-300">Points to TOA conversion system</span>
                   </li>
                 </ul>
               </div>

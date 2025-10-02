@@ -13,35 +13,39 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
   const faqData = [
     {
       question: "How does ThankATech work?",
-      answer: "ThankATech is a platform where clients can find skilled technicians and show appreciation through thank yous and tips. Technicians register their profiles, and clients can interact with them, view ratings, and send appreciation."
+      answer: "ThankATech is a revolutionary closed-loop appreciation economy where customers find skilled technicians and show appreciation through free thank yous and TOA tokens. Both customers and technicians earn ThankATech Points for every interaction, creating a self-sustaining cycle of appreciation!"
     },
     {
       question: "How do I register as a technician?",
-      answer: "Click the 'Register as Technician' button on the main page. You can sign up with Google or email, then complete your business profile with services, rates, and contact information."
+      answer: "Click 'Register as Technician' and sign up with Google or email. You'll need to choose a unique username (mandatory) and complete your business profile with services, rates, and contact information. Your profile will be accessible at thankatech.com/yourusername"
     },
     {
-      question: "How are ratings calculated?",
-      answer: "Ratings start at 3.5 stars and increase based on customer feedback. Thank yous add +0.1 stars each, and tips add +0.2 stars each, up to a maximum of 5.0 stars."
+      question: "What are ThankATech Points?",
+      answer: "ThankATech Points power our closed-loop economy! Earn 1 point for sending/receiving thank yous, 1 point per TOA token sent, and 2 points per TOA received. Convert 5 points → 1 TOA token to keep the appreciation cycle going without spending money!"
     },
     {
       question: "What are achievement badges?",
-      answer: "Achievement badges recognize technicians for milestones like receiving thank yous, tips, high ratings, experience levels, and certifications. They help clients identify top-performing technicians."
+      answer: "Achievement badges recognize technicians for milestones like receiving thank yous, TOA tokens, ThankATech Points earned, experience levels, and certifications. They help customers identify top-performing technicians based on community appreciation!"
     },
     {
-      question: "How do tips work?",
-      answer: "clients can send monetary tips to show extra appreciation for excellent service. Tips contribute to higher ratings and achievement badges, helping technicians build their reputation."
+      question: "How do TOA tokens work?",
+      answer: "TOA (Token of Appreciation) is our appreciation currency. Customers buy 1000 TOA for $10, technicians get 85% payout, platform takes 15% fee. Everyone earns ThankATech Points, creating viral appreciation cycles across industries!"
     },
     {
       question: "Is ThankATech free to use?",
-      answer: "Yes! Registration and basic features are completely free for both technicians and clients. Tips are optional and go directly to the technicians."
+      answer: "Yes! Registration, profiles, and thank yous are completely free. TOA tokens are optional ($10 for 1000 tokens) but create a beautiful closed-loop where points convert back to TOA - reducing reliance on purchases and increasing engagement!"
+    },
+    {
+      question: "How does the closed-loop economy work?",
+      answer: "1) Send thank you/TOA → earn points, 2) Convert 5 points → 1 TOA, 3) Send TOA → recipient gets money + points, 4) They convert points → more TOA, 5) Cycle continues infinitely! It's customer-funded, self-sustaining appreciation!"
     },
     {
       question: "How do I contact a technician?",
-      answer: "Use the chat button to send an email or the phone button to call directly. Contact information is displayed on each technician's expanded profile details."
+      answer: "Visit their profile at thankatech.com/username or use the chat button to email them directly. Phone contact information is displayed on expanded profile details for registered technicians."
     },
     {
       question: "Can I edit my technician profile?",
-      answer: "Yes, registered technicians can update their profiles, business information, rates, and availability at any time through their account dashboard."
+      answer: "Yes! Update your profile, business information, rates, availability, profile picture, and even your username through your account dashboard. Your unique profile URL (thankatech.com/yourusername) updates automatically."
     }
   ];
 
@@ -101,8 +105,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
                 </h3>
               </div>
               <p className="text-gray-300 mb-4 leading-relaxed">
-                Connecting clients with skilled technicians and enabling meaningful appreciation through our innovative platform. 
-                Building stronger communities one thank you at a time.
+                Revolutionary closed-loop appreciation economy connecting customers with skilled technicians. Earn ThankATech Points for every appreciation, convert points to TOA tokens, creating endless cycles of gratitude across industries!
               </p>
               <div className="flex gap-4">
                 <a 

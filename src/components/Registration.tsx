@@ -294,7 +294,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             >
               <div className="text-3xl mb-2">👤</div>
               <div className="font-semibold">Customer</div>
-              <div className="text-sm text-blue-300">Thank and tip technicians</div>
+              <div className="text-sm text-blue-300">Send thank yous & TOA tokens</div>
             </button>
             
             <button

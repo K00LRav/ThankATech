@@ -46,35 +46,27 @@ export function RolodexCard({
 }: RolodexCardProps) {
   // Removed expandedCard state - keeping it simple
 
-  // Calculate dynamic rating based on thank yous and tips
-  const calculateRating = (thankYous: number, tips: number) => {
-    const totalEngagement = thankYous + (tips * 2);
-    if (totalEngagement === 0) return 5.0;
-    const rating = Math.min(5.0, 3.5 + (totalEngagement * 0.05));
-    return Math.max(3.5, rating);
-  };
-
-  const dynamicRating = calculateRating(
-    technician.totalThankYous || 0, 
-    technician.totalTips || 0
-  );
-
-  // Achievement badges logic
+  // Achievement badges based on ThankATech Points and community engagement
   const getAchievementBadges = () => {
     const badges = [];
     const totalThankYous = technician.totalThankYous || 0;
     const totalTips = technician.totalTips || 0;
+    const totalPoints = (technician as any).points || 0;
 
+    // ThankATech Points milestones (primary focus)
+    if (totalPoints >= 100) badges.push({ icon: '🌟', text: 'Point Master', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalPoints >= 50) badges.push({ icon: '✨', text: 'Community Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    else if (totalPoints >= 25) badges.push({ icon: '⚡', text: 'Rising Star', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+
+    // Thank you milestones
     if (totalThankYous >= 100) badges.push({ icon: '🏆', text: 'Thank You Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
     else if (totalThankYous >= 50) badges.push({ icon: '🥉', text: 'Community Hero', color: 'bg-orange-100 text-orange-800 border-orange-300' });
-    else if (totalThankYous >= 25) badges.push({ icon: '🌟', text: 'Rising Star', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    else if (totalThankYous >= 25) badges.push({ icon: '👋', text: 'Appreciated', color: 'bg-green-100 text-green-800 border-green-300' });
 
-    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Premium Service', color: 'bg-purple-100 text-purple-800 border-purple-300' });
-    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '🎯', text: 'Reliable Pro', color: 'bg-green-100 text-green-800 border-green-300' });
-
-    if (dynamicRating >= 4.8) badges.push({ icon: '🌟', text: 'Excellence', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (dynamicRating >= 4.5) badges.push({ icon: '⭐', text: 'High Quality', color: 'bg-blue-100 text-blue-800 border-blue-300' });
+    // TOA milestones
+    if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
+    else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Standard', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
+    else if (totalTips >= 10) badges.push({ icon: '💰', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
 
     return badges;
   };
@@ -136,10 +128,10 @@ export function RolodexCard({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {/* Dynamic Rating overlay */}
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg border-2 border-white">
+                {/* ThankATech Points overlay */}
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg border-2 border-white">
                   <span className="flex items-center justify-center">
-                    {dynamicRating.toFixed(1)}⭐
+                    {(technician as any).points || 0}✨
                   </span>
                 </div>
               </div>
@@ -267,7 +259,7 @@ export function RolodexCard({
                     onClick={onTip}
                     className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-4 lg:px-8 lg:py-5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 backdrop-blur-sm rounded-xl lg:rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 min-h-[52px] lg:min-h-[60px] flex-1 border border-emerald-400/20"
                   >
-                    <span className="font-semibold text-white text-sm lg:text-base">💝 Send a Tip</span>
+                    <span className="font-semibold text-white text-sm lg:text-base">💝 Send TOA</span>
                   </button>
                 )}
               </div>

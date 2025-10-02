@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
-import { TipModal } from '../../components/TipModal';
+import TokenSendModal from '../../components/TokenSendModal';
 import Footer from '../../components/Footer';
 
 interface Technician {
@@ -40,7 +40,7 @@ export default function TechnicianProfile() {
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showTipModal, setShowTipModal] = useState(false);
+  const [showTokenSendModal, setShowTokenSendModal] = useState(false);
 
   const loadTechnician = useCallback(async () => {
     try {
@@ -515,7 +515,7 @@ export default function TechnicianProfile() {
                   
                   {/* Send TOA Tokens */}
                   <button
-                    onClick={() => setShowTipModal(true)}
+                    onClick={() => setShowTokenSendModal(true)}
                     className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
                   >
                     <div className="flex items-center justify-center gap-3">
@@ -736,29 +736,14 @@ export default function TechnicianProfile() {
         </div>
       </main>
 
-      {/* Tip Modal */}
-      {showTipModal && technician && (
-        <TipModal
-          isOpen={showTipModal}
-          technician={{
-            id: technician.id,
-            name: technician.name,
-            businessName: technician.businessName,
-            category: technician.category
-          }}
-          customer={{
-            id: 'guest', // For now, we'll use a guest customer
-            name: 'Guest User',
-            email: ''
-          }}
-          onClose={() => setShowTipModal(false)}
-          onTipSuccess={() => {
-            setShowTipModal(false);
-            // Optionally reload technician data to update stats
-            loadTechnician();
-          }}
-        />
-      )}
+      {/* Token Send Modal */}
+      <TokenSendModal
+        isOpen={showTokenSendModal}
+        onClose={() => setShowTokenSendModal(false)}
+        technicianId={technician?.id || ''}
+        technicianName={technician?.name || technician?.businessName || ''}
+        userId="guest" // For now, use guest user ID - will need authentication later
+      />
 
       {/* Standard Footer - Consistent with Main Page */}
       <Footer onOpenRegistration={() => {}} />

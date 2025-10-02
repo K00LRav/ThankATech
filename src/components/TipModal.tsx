@@ -119,12 +119,12 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
           }
           
           // Payment successful and recorded!
-          alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
+          alert(`🎉 Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} TOA has been sent to ${technician.name}! You both earned ThankATech Points!`);
           onClose();
         } catch (recordError) {
           console.error('❌ Failed to record transaction:', recordError);
           // Still show success since payment went through, but don't update UI
-          alert(`Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} tip has been sent to ${technician.name}!`);
+          alert(`🎉 Thank you! Your ${formatCurrency(dollarsToCents(currentAmount))} TOA has been sent to ${technician.name}! You both earned ThankATech Points!`);
           onClose();
         }
       }
@@ -140,7 +140,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
       {/* Header */}
       <div className="text-center">
         <h3 className="text-2xl font-bold text-white mb-2">
-          Send a Tip to {technician.name}
+          Send TOA to {technician.name}
         </h3>
         <p className="text-blue-200">
           {technician.businessName} • {technician.category}
@@ -267,7 +267,7 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
         >
           {isProcessing
             ? 'Processing...'
-            : `Send ${formatCurrency(currentAmountCents)} Tip`}
+            : `Send ${formatCurrency(currentAmountCents)} TOA`}
         </button>
       </form>
     </div>

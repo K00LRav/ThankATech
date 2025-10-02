@@ -64,6 +64,7 @@ export { db, auth, storage, googleProvider };
 const COLLECTIONS = {
   TECHNICIANS: 'technicians',
   CLIENTS: 'clients',
+  USERS: 'users',
   THANK_YOUS: 'thankYous',
   TIPS: 'tips',
   TOKEN_BALANCES: 'tokenBalances',
@@ -195,7 +196,7 @@ export async function registerTechnician(technicianData) {
       
       // System fields
       points: 0,
-      rating: 5.0, // Start with good rating
+      // Rating system removed - now using ThankATech Points
       createdAt: new Date(),
       isActive: true,
       totalThankYous: 0,
@@ -990,7 +991,7 @@ export async function migrateTechnicianProfile(userId) {
 
   try {
     // Get user from clients collection
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
     
     if (!userDoc.exists()) {
       return null;
@@ -1040,7 +1041,7 @@ export async function migrateTechnicianProfile(userId) {
       
       // Stats
       points: userData.points || 0,
-      rating: userData.rating || 5.0,
+      // Rating system removed - using ThankATech Points system
       totalThankYous: userData.totalThankYous || 0,
       totalTips: userData.totalTips || 0,
       totalTipAmount: userData.totalTipAmount || 0,
@@ -1091,7 +1092,7 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     
     // TODO: Future enhancements for production:
     // - Delete user's photos from Firebase Storage
-    // - Clean up related data (tips, thank yous, ratings, etc.)
+    // - Clean up related data (tips, thank yous, etc.)
     // - Delete the Firebase Auth user account (requires admin SDK)
     // - Send deletion confirmation email
     // - Archive data for compliance/recovery purposes
@@ -1182,7 +1183,7 @@ export async function getTechnician(technicianId) {
   
   try {
     // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, 'users', technicianId));
+    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
     if (usersDoc.exists()) {
       const userData = usersDoc.data();
       if (userData.userType === 'technician') {
@@ -1209,7 +1210,7 @@ export async function getTechnician(technicianId) {
     
     // Search users collection by authUid for technicians
     const usersQuery = query(
-      collection(db, 'users'),
+      collection(db, COLLECTIONS.USERS),
       where('authUid', '==', technicianId),
       where('userType', '==', 'technician'),
       limit(1)
@@ -1266,7 +1267,7 @@ export async function getClient(userId) {
   try {
     
     // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, 'users', userId));
+    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
     if (usersDoc.exists()) {
       const userData = usersDoc.data();
       if (userData.userType === 'client') {
@@ -1286,7 +1287,7 @@ export async function getClient(userId) {
     
     // Search users collection by authUid for clients
     const usersQuery = query(
-      collection(db, 'users'),
+      collection(db, COLLECTIONS.USERS),
       where('authUid', '==', userId),
       where('userType', '==', 'client'),
       limit(1)
@@ -2224,7 +2225,7 @@ export async function migrateUsersToClients() {
     console.log('🔄 Starting migration from "users" → "clients" collection...');
     
     // Get all documents from 'users' collection
-    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
     
     if (usersSnapshot.empty) {
       console.log('✅ No documents found in "users" collection. Migration not needed.');
@@ -2336,7 +2337,7 @@ export async function checkMigrationStatus() {
   
   try {
     // Check users collection
-    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
     const usersCount = usersSnapshot.size;
     
     // Check clients collection  
