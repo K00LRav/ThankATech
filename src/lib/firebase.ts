@@ -1754,7 +1754,7 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
         date: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : new Date().toLocaleDateString(),
         timestamp: data.timestamp,
         status: 'completed',
-        pointsAwarded: data.pointsAwarded || (data.type === 'thank_you' ? 1 : 2),
+        pointsAwarded: data.pointsAwarded !== undefined ? data.pointsAwarded : (data.type === 'thank_you' ? 1 : 2),
         technicianPayout: data.technicianPayout || 0,
         platformFee: data.platformFee || 0
       });
@@ -1850,7 +1850,7 @@ export async function getClientTransactions(clientId, clientEmail) {
         date: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : new Date().toLocaleDateString(),
         timestamp: data.timestamp,
         status: 'completed',
-        pointsAwarded: data.pointsAwarded || (data.type === 'thank_you' ? 1 : 1)
+        pointsAwarded: data.pointsAwarded !== undefined ? data.pointsAwarded : (data.type === 'thank_you' ? 1 : 1)
       });
     }
     
