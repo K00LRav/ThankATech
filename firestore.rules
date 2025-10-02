@@ -1,0 +1,101 @@
+rules_version = '2';
+
+// Firestore Security Rules for ThankATech
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection - new unified structure
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles
+      allow read: if isAuthenticated();
+      
+      // Users can only write to their own profile
+      allow write: if isOwner(userId);
+    }
+    
+    // Technicians collection (legacy - for backward compatibility)
+    match /technicians/{techId} {
+      // Anyone authenticated can read technician profiles
+      allow read: if isAuthenticated();
+      
+      // Technicians can only write to their own profile
+      allow write: if isOwner(techId);
+    }
+    
+    // Clients collection (legacy - for backward compatibility)
+    match /clients/{clientId} {
+      // Anyone authenticated can read client profiles
+      allow read: if isAuthenticated();
+      
+      // Clients can only write to their own profile
+      allow write: if isOwner(clientId);
+    }
+    
+    // Thank Yous collection
+    match /thankYous/{thankYouId} {
+      // Anyone authenticated can read
+      allow read: if isAuthenticated();
+      
+      // Only authenticated users can create thank yous
+      allow create: if isAuthenticated();
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    // Tips collection
+    match /tips/{tipId} {
+      // Anyone authenticated can read
+      allow read: if isAuthenticated();
+      
+      // Only authenticated users can create tips
+      allow create: if isAuthenticated();
+      
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    // Token balances
+    match /tokenBalances/{userId} {
+      // Users can read their own balance
+      allow read: if isOwner(userId);
+      
+      // Only system can write (server-side)
+      allow write: if false;
+    }
+    
+    // Token transactions
+    match /tokenTransactions/{transactionId} {
+      // Users can read transactions they're involved in
+      allow read: if isAuthenticated() 
+                  && (resource.data.fromUserId == request.auth.uid 
+                      || resource.data.toUserId == request.auth.uid);
+      
+      // Only system can write (server-side)
+      allow write: if false;
+    }
+    
+    // Daily limits
+    match /dailyThankYouLimits/{userId} {
+      // Users can read their own limits
+      allow read: if isOwner(userId);
+      
+      // Users can update their own limits
+      allow write: if isOwner(userId);
+    }
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

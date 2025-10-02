@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for ThankATech
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Profile photos - users can read anyone's photos but only write their own
+    match /profile-photos/{userId}/{fileName} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow write only if the user is uploading to their own folder
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');  // Only images
+    }
+    
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
