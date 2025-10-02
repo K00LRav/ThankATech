@@ -576,17 +576,22 @@ export default function AdminPage() {
         provider.providerId === 'google.com'
       );
       
-      // Must be both correct email AND Google authenticated
-      const isAdmin = isCorrectEmail && isGoogleAuth;
+      // Check if user is authenticated via email/password
+      const isEmailAuth = user.providerData?.some((provider: any) => 
+        provider.providerId === 'password'
+      ) || user.providerData?.length === 0; // Firebase Auth sometimes has empty providerData for email/password
+      
+      // Admin can use either Google OR email/password authentication with correct email
+      const isAdmin = isCorrectEmail && (isGoogleAuth || isEmailAuth);
       
       if (!isCorrectEmail) {
         // Admin access denied: Wrong email address
       }
-      if (!isGoogleAuth) {
-        // Access denied: Must use Google authentication
+      if (!isGoogleAuth && !isEmailAuth) {
+        // Access denied: Must use valid authentication method
       }
       if (isAdmin) {
-        // Admin access granted
+        // Admin access granted with correct email and valid authentication
       }
       
       setIsAuthorized(isAdmin);
