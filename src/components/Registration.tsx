@@ -214,22 +214,22 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      {/* Animated background elements matching main page */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-900/80 via-blue-900/60 to-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      {/* Animated background elements matching main page - Hidden on mobile for performance */}
+      <div className="absolute inset-0 overflow-hidden hidden sm:block">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-blue-800/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       
-      <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-500/20 backdrop-blur-sm">
-        {/* ThankATech Header */}
-        <div className="text-center mb-6 px-6 pt-6">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
+      <div className="mobile-modal relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-500/20 backdrop-blur-sm">
+        {/* ThankATech Header - Mobile Optimized */}
+        <div className="text-center mb-4 sm:mb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+          <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
             ThankATech
           </div>
-          <h2 className="text-lg font-semibold text-white">
-            {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'client' ? 'client' : 'Technician'} Profile`}
+          <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">
+            {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'client' ? 'Client' : 'Technician'} Profile`}
           </h2>
         </div>
         
@@ -279,41 +279,41 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           </div>
         )}
 
-        {/* User Type Selection */}
-        <div className="mb-8 px-6">
-          <h3 className="text-lg font-semibold mb-4 text-white">I want to join as a:</h3>
-          <div className="flex space-x-4 py-2">
+        {/* User Type Selection - Mobile Enhanced */}
+        <div className="mb-6 sm:mb-8 px-4 sm:px-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">I want to join as a:</h3>
+          <div className="mobile-flex-col flex sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 py-2">
             <button
               type="button"
               onClick={() => setUserType('client')}
-              className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:shadow-lg hover:border-blue-300 ${
+              className={`mobile-btn flex-1 p-3 sm:p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:shadow-lg hover:border-blue-300 ${
                 userType === 'client' 
                   ? 'border-blue-400 bg-blue-500/20 text-blue-300 shadow-lg' 
                   : 'border-blue-500/30 bg-white/10 hover:border-blue-400 hover:bg-blue-500/10 text-blue-200'
               }`}
             >
-              <div className="text-3xl mb-2">👤</div>
-              <div className="font-semibold">Customer</div>
-              <div className="text-sm text-blue-300">Send thank yous & TOA tokens</div>
+              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">👤</div>
+              <div className="font-semibold text-sm sm:text-base">Customer</div>
+              <div className="text-xs sm:text-sm text-blue-300">Send thank yous & TOA tokens</div>
             </button>
             
             <button
               type="button"
               onClick={() => setUserType('technician')}
-              className={`flex-1 p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:shadow-lg hover:border-green-300 ${
+              className={`mobile-btn flex-1 p-3 sm:p-4 rounded-xl backdrop-blur-sm border-2 text-center transition-all duration-200 hover:shadow-lg hover:border-green-300 ${
                 userType === 'technician' 
                   ? 'border-green-400 bg-green-500/20 text-green-300 shadow-lg' 
                   : 'border-blue-500/30 bg-white/10 hover:border-green-400 hover:bg-green-500/10 text-blue-200'
               }`}
             >
-              <div className="text-3xl mb-2">🔧</div>
-              <div className="font-semibold">Technician</div>
-              <div className="text-sm text-green-300">Receive thanks and tips</div>
+              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">🔧</div>
+              <div className="font-semibold text-sm sm:text-base">Technician</div>
+              <div className="text-xs sm:text-sm text-green-300">Receive thanks and tips</div>
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 px-6">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 px-4 sm:px-6">
           {/* Basic Info for Everyone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

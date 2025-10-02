@@ -71,38 +71,38 @@ export default function TokenPurchaseModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 max-w-5xl w-full max-h-[85vh] overflow-y-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-6 rounded-t-2xl border-b border-white/20">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">Purchase TOA Tokens</h2>
-              <p className="text-green-100 mt-1">Power the closed-loop appreciation economy & earn ThankATech Points</p>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="mobile-modal bg-white/15 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl border border-white/30 max-w-sm sm:max-w-5xl w-full max-h-[95vh] sm:max-h-[85vh] overflow-y-auto">
+        {/* Header - Mobile Enhanced */}
+        <div className="bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl border-b border-white/20">
+          <div className="flex justify-between items-start sm:items-center">
+            <div className="flex-1 mr-2">
+              <h2 className="text-lg sm:text-2xl font-bold leading-tight">Purchase TOA Tokens</h2>
+              <p className="text-green-100 mt-1 text-sm sm:text-base leading-tight">Power the closed-loop appreciation economy & earn ThankATech Points</p>
             </div>
             <button 
               onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl font-bold"
+              className="mobile-btn text-white hover:text-gray-200 text-xl sm:text-2xl font-bold p-2 flex-shrink-0"
             >
               ×
             </button>
           </div>
           
-          {/* Current Balance */}
-          <div className="mt-4 bg-white/20 backdrop-blur-sm rounded-lg p-3">
-            <div className="text-sm text-green-100">Current TOA Balance</div>
-            <div className="text-xl font-bold text-white">{formatTokens(currentBalance)}</div>
+          {/* Current Balance - Mobile Optimized */}
+          <div className="mt-3 sm:mt-4 bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3">
+            <div className="text-xs sm:text-sm text-green-100">Current TOA Balance</div>
+            <div className="text-lg sm:text-xl font-bold text-white">{formatTokens(currentBalance)}</div>
           </div>
         </div>
 
-        {/* Token Packs */}
-        <div className="p-6 bg-white/5 backdrop-blur-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+        {/* Token Packs - Mobile Enhanced */}
+        <div className="p-3 sm:p-6 bg-white/5 backdrop-blur-sm">
+          <div className="mobile-grid-fix grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {TOKEN_PACKS.map((pack) => (
               <div
                 key={pack.id}
                 onClick={() => setSelectedPack(pack)}
-                className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 backdrop-blur-md ${
+                className={`mobile-btn relative border-2 rounded-lg sm:rounded-xl p-3 sm:p-4 cursor-pointer transition-all duration-200 backdrop-blur-md ${
                   selectedPack.id === pack.id
                     ? 'border-green-400/60 bg-gradient-to-br from-green-100/30 to-blue-100/30 shadow-lg scale-105 border-opacity-80'
                     : 'border-white/30 bg-white/10 hover:border-green-300/50 hover:bg-white/20 hover:shadow-md hover:scale-102'
