@@ -95,7 +95,7 @@ export function RolodexCard({
   };
 
   return (
-    <div className="card-container relative group flex justify-center max-w-md sm:max-w-lg lg:max-w-2xl mx-auto">
+    <div className="card-container relative group flex justify-center max-w-md sm:max-w-lg lg:max-w-3xl mx-auto">
       {/* Rolodex background layers - properly contained */}
       <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl"></div>
       <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl"></div>

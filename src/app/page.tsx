@@ -942,7 +942,7 @@ export default function Home() {
 
 
         {/* Modern Glass Rolodex Card - Enhanced Mobile */}
-        <div id="rolodex-card" className="card-container mobile-relative group relative flex justify-center w-full max-w-sm sm:max-w-lg lg:max-w-2xl mx-auto px-2 sm:px-0">
+        <div id="rolodex-card" className="card-container mobile-relative group relative flex justify-center w-full max-w-sm sm:max-w-lg lg:max-w-3xl mx-auto px-2 sm:px-0">
           {/* Rolodex background layers - properly contained for desktop only */}
           <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl hidden sm:block"></div>
           <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl hidden sm:block"></div>
