@@ -291,7 +291,8 @@ Please complete your profile information below and click "Save Changes" to creat
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setSaveMessage(null);
+    // Only clear save message after a longer delay to give user time to see it
+    // Don't clear immediately on input change
     setFormError(null);
   };
 
@@ -318,17 +319,22 @@ Please complete your profile information below and click "Save Changes" to creat
       // Try to update first, if that fails, create the document
       try {
         await updateDoc(doc(db, collection, user.uid), profileData);
-        setSaveMessage('Profile updated successfully!');
+        setSaveMessage('✅ Profile updated successfully!');
       } catch (updateError) {
         // If update fails (document doesn't exist), create it
         await setDoc(doc(db, collection, user.uid), {
           ...profileData,
           createdAt: new Date().toISOString()
         });
-        setSaveMessage('Profile created successfully!');
+        setSaveMessage('✅ Profile created successfully!');
       }
       
       setProfile({ ...profile, ...profileData } as UserProfile);
+      
+      // Clear the save message after 5 seconds
+      setTimeout(() => {
+        setSaveMessage(null);
+      }, 5000);
     } catch (error) {
       console.error('Error saving profile:', error);
       setFormError('Failed to save profile. Please try again.');
@@ -452,12 +458,14 @@ Please complete your profile information below and click "Save Changes" to creat
       <div className="relative max-w-4xl mx-auto px-4 py-8">
         {/* Status Messages */}
         {saveMessage && (
-          <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 mb-6">
+          <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 mb-6 animate-pulse">
             <div className="flex items-center gap-3">
-              <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <p className="text-green-300 font-medium">{saveMessage}</p>
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-green-300 font-medium text-lg">{saveMessage}</p>
             </div>
           </div>
         )}
