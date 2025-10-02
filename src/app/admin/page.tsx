@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
 import { EmailTemplates } from '@/lib/email';
 import { getUserTokenBalance, addTokensToBalance, checkDailyPerTechnicianLimit } from '@/lib/token-firebase';
+import { backfillPointsAwarded } from '@/lib/backfill-points';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -148,6 +149,10 @@ export default function AdminPage() {
   // Operation states
   const [isGeneratingUsernames, setIsGeneratingUsernames] = useState(false);
   const [operationResults, setOperationResults] = useState<string>('');
+  
+  // Backfill states
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillResults, setBackfillResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -600,6 +605,27 @@ export default function AdminPage() {
       console.error('Error loading admin data:', error);
     }
     }, []);
+
+  // Backfill pointsAwarded for existing transactions
+  const handleBackfillPoints = async () => {
+    setIsBackfilling(true);
+    setBackfillResults('🔄 Starting pointsAwarded backfill for existing transactions...\n');
+    
+    try {
+      const result = await backfillPointsAwarded();
+      
+      if (result.success) {
+        setBackfillResults(`🎉 Backfill completed successfully!\n✅ Updated: ${result.updated} transactions\n⏭️ Skipped: ${result.skipped} transactions (already processed)\n\n💡 Existing users should now see their ThankATech Points in dashboards!`);
+      } else {
+        setBackfillResults(`❌ Backfill failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error during backfill:', error);
+      setBackfillResults(`❌ Backfill failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsBackfilling(false);
+  };
 
   const generateUsernamesForAllTechnicians = async () => {
     setIsGeneratingUsernames(true);
@@ -3944,6 +3970,54 @@ export default function AdminPage() {
               <div className="text-sm text-slate-400">Reset the results display</div>
             </button>
           </div>
+        </div>
+
+        {/* Transaction Data Backfill Section */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4 flex items-center gap-3">
+            <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            Fix Existing User Data
+          </h3>
+          
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-blue-400 font-medium">Why is this needed?</h4>
+                <p className="text-blue-300 text-sm mt-1">
+                  Existing transactions are missing the <code className="bg-blue-900/30 px-1 rounded">pointsAwarded</code> field, 
+                  so ThankATech Points don't appear in user dashboards. This tool backfills that data for all existing transactions.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleBackfillPoints}
+            disabled={isBackfilling}
+            className="w-full p-4 bg-purple-600/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isBackfilling ? 'Processing...' : '🔧 Backfill ThankATech Points Data'}
+            </div>
+            <div className="text-sm text-purple-400">
+              Add missing pointsAwarded field to existing transactions
+            </div>
+          </button>
+
+          {backfillResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {backfillResults}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Admin Note */}
