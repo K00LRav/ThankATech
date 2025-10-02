@@ -330,15 +330,9 @@ export default function ModernDashboard() {
     setSaveMessage(null);
     
     try {
-      console.log('💾 Starting profile save...');
-      console.log('Current userProfile:', userProfile);
-      console.log('editedProfile:', editedProfile);
-      
       // If technician is updating username, validate it
       if (userProfile.userType === 'technician' && editedProfile.username !== undefined) {
         const username = editedProfile.username.toLowerCase().trim();
-        
-        console.log('Validating username:', username);
         
         // Validate format
         if (username.length < 3 || username.length > 20) {
@@ -352,7 +346,6 @@ export default function ModernDashboard() {
         // Check if username is already taken (skip if it's the current username)
         const currentUsername = userProfile.username?.toLowerCase().trim();
         if (username !== currentUsername) {
-          console.log('Checking if username is taken...');
           const q = query(
             collection(db, 'users'),
             where('username', '==', username)
@@ -363,7 +356,6 @@ export default function ModernDashboard() {
           if (!snapshot.empty && snapshot.docs[0].id !== userProfile.id) {
             throw new Error(`Username "${username}" is already taken`);
           }
-          console.log('Username is available!');
         }
         
         // Normalize username
@@ -375,24 +367,17 @@ export default function ModernDashboard() {
         updatedAt: new Date().toISOString()
       };
       
-      console.log('Updating with data:', updatedData);
-      
       // Update users collection
-      console.log('Updating users collection...');
       await updateDoc(doc(db, 'users', userProfile.id), updatedData);
-      console.log('✅ Users collection updated');
       
       // If user is a technician, also update technicians collection
       if (userProfile.userType === 'technician') {
         try {
-          console.log('Updating technicians collection...');
           await updateDoc(doc(db, 'technicians', userProfile.id), updatedData);
-          console.log('✅ Technicians collection updated');
           logger.info('Updated technician profile in technicians collection');
         } catch (techError) {
           // If technician document doesn't exist, this is okay
           // The user might not have been migrated to technicians collection yet
-          console.warn('Could not update technicians collection:', techError);
           logger.warn('Could not update technicians collection:', techError);
         }
       }
@@ -406,7 +391,6 @@ export default function ModernDashboard() {
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error: any) {
       logger.error('Error saving profile:', error);
-      console.error('Full error details:', error);
       const errorMessage = error?.message || 'Failed to save profile. Please try again.';
       setSaveMessage(`❌ ${errorMessage}`);
       
@@ -444,13 +428,8 @@ export default function ModernDashboard() {
     setPhotoUploadMessage(null);
     
     try {
-      console.log('📸 Starting photo upload...');
-      console.log('File:', file.name, file.size, file.type);
-      
       const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
       const { storage } = await import('@/lib/firebase');
-      
-      console.log('Storage available:', !!storage);
       
       if (!storage) {
         throw new Error('Storage not configured');
@@ -459,37 +438,27 @@ export default function ModernDashboard() {
       // Create a unique filename
       const timestamp = Date.now();
       const fileName = `profile-photos/${userProfile.id}/${timestamp}-${file.name}`;
-      console.log('Uploading to:', fileName);
       const storageRef = ref(storage, fileName);
       
       // Upload file
-      console.log('Uploading bytes...');
       await uploadBytes(storageRef, file);
-      console.log('✅ Upload complete');
       
       // Get download URL
-      console.log('Getting download URL...');
       const photoURL = await getDownloadURL(storageRef);
-      console.log('✅ Download URL:', photoURL);
       
       // Update user profile in both collections
-      console.log('Updating users collection...');
       await updateDoc(doc(db, 'users', userProfile.id), {
         photoURL,
         updatedAt: new Date().toISOString()
       });
-      console.log('✅ Users collection updated');
       
       if (userProfile.userType === 'technician') {
         try {
-          console.log('Updating technicians collection...');
           await updateDoc(doc(db, 'technicians', userProfile.id), {
             photoURL,
             updatedAt: new Date().toISOString()
           });
-          console.log('✅ Technicians collection updated');
         } catch (error) {
-          console.warn('Could not update technicians collection:', error);
           // Technician doc might not exist, that's okay
         }
       }
@@ -501,8 +470,7 @@ export default function ModernDashboard() {
       // Clear message after 3 seconds
       setTimeout(() => setPhotoUploadMessage(null), 3000);
     } catch (error: any) {
-      console.error('Error uploading photo:', error);
-      console.error('Full error details:', error);
+      logger.error('Error uploading photo:', error);
       const errorMessage = error?.message || 'Failed to upload photo';
       setPhotoUploadMessage(`❌ ${errorMessage}`);
       setTimeout(() => setPhotoUploadMessage(null), 5000);
