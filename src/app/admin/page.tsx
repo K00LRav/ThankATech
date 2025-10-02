@@ -18,6 +18,12 @@ import { scanAllUserConflicts } from '@/lib/scan-user-conflicts';
 import { debugAuthStatus } from '@/lib/debug-auth-status';
 import { createAdminUser } from '@/lib/create-admin-user';
 import { sendPasswordReset } from '@/lib/send-password-reset';
+import { 
+  createTestThankYou, 
+  createTestTOATransaction, 
+  debugTransactionState, 
+  debugDashboardDisplay 
+} from '@/lib/transaction-test-debug';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -136,6 +142,9 @@ interface AdminStats {
   activeTechnicians: number;
 }
 
+// Admin configuration
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
+
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -202,6 +211,15 @@ export default function AdminPage() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetResults, setResetResults] = useState<string>('');
   const [resetEmail, setResetEmail] = useState<string>('info@charlietelecom.com');
+  
+  // Transaction testing states
+  const [isTestingTransactions, setIsTestingTransactions] = useState(false);
+  const [transactionTestResults, setTransactionTestResults] = useState<string>('');
+  const [testFromUserId, setTestFromUserId] = useState<string>('n7RWETI8uXV9rGmSjTPe'); // Default admin
+  const [testToTechnicianId, setTestToTechnicianId] = useState<string>('');
+  const [comprehensiveDebugUserId, setComprehensiveDebugUserId] = useState<string>('n7RWETI8uXV9rGmSjTPe');
+  const [isRunningComprehensiveDebug, setIsRunningComprehensiveDebug] = useState(false);
+  const [comprehensiveDebugResults, setComprehensiveDebugResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -548,8 +566,7 @@ export default function AdminPage() {
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
-      // Only k00lrav@gmail.com with Google authentication is admin
-      const ADMIN_EMAIL = 'k00lrav@gmail.com';
+      // Only specific admin email with Google authentication is admin
       
       // Check if user email matches admin email
       const isCorrectEmail = user.email?.toLowerCase() === ADMIN_EMAIL;
@@ -820,7 +837,7 @@ export default function AdminPage() {
       };
       
       // Use the actual admin email from the ADMIN_EMAIL constant
-      await debugAdminAccount('k00lrav@gmail.com');
+      await debugAdminAccount(ADMIN_EMAIL);
       
       // Restore console.log
       console.log = originalLog;
@@ -925,7 +942,7 @@ export default function AdminPage() {
         originalLog(...args);
       };
       
-      const result = await createAdminUser('k00lrav@gmail.com', user.uid);
+      const result = await createAdminUser(ADMIN_EMAIL, user.uid);
       
       // Restore console.log
       console.log = originalLog;
@@ -978,6 +995,97 @@ export default function AdminPage() {
     }
     
     setIsSendingReset(false);
+  };
+
+  // Create test thank you transaction
+  const handleCreateTestThankYou = async () => {
+    if (!testFromUserId.trim() || !testToTechnicianId.trim()) {
+      setTransactionTestResults('❌ Please enter both user IDs');
+      return;
+    }
+    
+    setIsTestingTransactions(true);
+    setTransactionTestResults(`🧪 Creating test thank you from ${testFromUserId} to ${testToTechnicianId}...\n`);
+    
+    try {
+      const result = await createTestThankYou(testFromUserId, testToTechnicianId);
+      
+      if (result.success) {
+        setTransactionTestResults(`🎉 Test thank you created!\n\n📋 Transaction ID: ${result.transactionId}\n\n💡 Now check both users' dashboards to see if transaction appears!`);
+      } else {
+        setTransactionTestResults(`❌ Test failed: ${result.error}`);
+      }
+    } catch (error) {
+      setTransactionTestResults(`❌ Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsTestingTransactions(false);
+  };
+
+  // Create test TOA transaction
+  const handleCreateTestTOA = async () => {
+    if (!testFromUserId.trim() || !testToTechnicianId.trim()) {
+      setTransactionTestResults('❌ Please enter both user IDs');
+      return;
+    }
+    
+    setIsTestingTransactions(true);
+    setTransactionTestResults(`🧪 Creating test TOA transaction (5 tokens) from ${testFromUserId} to ${testToTechnicianId}...\n`);
+    
+    try {
+      const result = await createTestTOATransaction(testFromUserId, testToTechnicianId, 5);
+      
+      if (result.success) {
+        setTransactionTestResults(`🎉 Test TOA transaction created!\n\n📋 Transaction ID: ${result.transactionId}\n\n💡 Now check both users' dashboards to see if transaction appears!`);
+      } else {
+        setTransactionTestResults(`❌ Test failed: ${result.error}`);
+      }
+    } catch (error) {
+      setTransactionTestResults(`❌ Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsTestingTransactions(false);
+  };
+
+  // Run comprehensive dashboard debugging
+  const handleComprehensiveDebug = async () => {
+    if (!comprehensiveDebugUserId.trim()) {
+      setComprehensiveDebugResults('❌ Please enter a user ID');
+      return;
+    }
+    
+    setIsRunningComprehensiveDebug(true);
+    setComprehensiveDebugResults(`🔍 Running comprehensive debug for user: ${comprehensiveDebugUserId}...\n`);
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      const result = await debugDashboardDisplay(comprehensiveDebugUserId);
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      let summary = `🎉 Comprehensive debug complete!\n\n`;
+      summary += `👤 User Profile: ${result.userProfile ? 'Found' : 'Not Found'}\n`;
+      summary += `🔧 Technician Transactions: ${result.technicianTransactions.length}\n`;
+      summary += `👨‍💼 Client Transactions: ${result.clientTransactions.length}\n`;
+      summary += `📊 Total DB Transactions: ${result.dbState.totalTransactions}\n`;
+      summary += `📋 Detailed Output:\n${logOutput}`;
+      
+      setComprehensiveDebugResults(summary);
+    } catch (error) {
+      setComprehensiveDebugResults(`❌ Debug failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsRunningComprehensiveDebug(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4645,6 +4753,119 @@ export default function AdminPage() {
                 </pre>
               </div>
             )}
+          </div>
+
+          {/* New Transaction Testing Tools */}
+          <div className="border-t border-slate-600 pt-6 mt-6">
+            <h4 className="text-slate-300 font-medium mb-4 flex items-center gap-2">
+              🧪 Transaction Testing & Creation Tools
+              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">NEW</span>
+            </h4>
+            
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h5 className="text-green-400 font-medium">Transaction Testing Suite</h5>
+                  <p className="text-green-300 text-sm mt-1">
+                    Create test transactions and debug the complete flow from creation to dashboard display.
+                    Use this to verify the transaction system is working correctly.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">From User ID (Client)</label>
+                <input
+                  type="text"
+                  value={testFromUserId}
+                  onChange={(e) => setTestFromUserId(e.target.value)}
+                  placeholder="Client user ID"
+                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-slate-300 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">To Technician ID</label>
+                <input
+                  type="text"
+                  value={testToTechnicianId}
+                  onChange={(e) => setTestToTechnicianId(e.target.value)}
+                  placeholder="Technician user ID"
+                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-slate-300 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={handleCreateTestThankYou}
+                disabled={isTestingTransactions}
+                className="p-3 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-600/30 transition-all duration-200 disabled:opacity-50"
+              >
+                <div className="text-sm font-medium">
+                  {isTestingTransactions ? 'Creating...' : '🙏 Create Test Thank You'}
+                </div>
+                <div className="text-xs text-blue-400">
+                  Free thank you (1 point each)
+                </div>
+              </button>
+              
+              <button
+                onClick={handleCreateTestTOA}
+                disabled={isTestingTransactions}
+                className="p-3 bg-purple-600/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-600/30 transition-all duration-200 disabled:opacity-50"
+              >
+                <div className="text-sm font-medium">
+                  {isTestingTransactions ? 'Creating...' : '💰 Create Test TOA (5 tokens)'}
+                </div>
+                <div className="text-xs text-purple-400">
+                  TOA transaction ($6.25 value)
+                </div>
+              </button>
+            </div>
+
+            {transactionTestResults && (
+              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 mb-4">
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                  {transactionTestResults}
+                </pre>
+              </div>
+            )}
+
+            <div className="border-t border-slate-600 pt-4">
+              <h5 className="text-slate-300 font-medium mb-3">🔍 Comprehensive Dashboard Debug</h5>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={comprehensiveDebugUserId}
+                  onChange={(e) => setComprehensiveDebugUserId(e.target.value)}
+                  placeholder="User ID to debug completely"
+                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-slate-300"
+                />
+                <button
+                  onClick={handleComprehensiveDebug}
+                  disabled={isRunningComprehensiveDebug}
+                  className="px-4 py-2 bg-green-600/20 border border-green-500/30 rounded text-green-300 hover:bg-green-600/30 transition-all duration-200 disabled:opacity-50"
+                >
+                  {isRunningComprehensiveDebug ? 'Debugging...' : 'Full Debug'}
+                </button>
+              </div>
+              <div className="text-xs text-slate-400 mb-3">
+                Complete analysis: profile + transactions + database state + retrieval testing
+              </div>
+
+              {comprehensiveDebugResults && (
+                <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+                  <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                    {comprehensiveDebugResults}
+                  </pre>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
