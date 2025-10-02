@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripe, formatCurrency, dollarsToCents, calculatePlatformFee, calculateTechnicianPayout } from '@/lib/stripe';
 import { recordTransaction } from '../lib/firebase';
-
-const stripePromise = getStripe();
 
 interface TipModalProps {
   isOpen: boolean;
@@ -277,6 +275,9 @@ const TipForm: React.FC<Omit<TipModalProps, 'isOpen' | 'onClose'> & { onClose: (
 };
 
 export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, onTipSuccess, technician, customer }) => {
+  // Only load Stripe when modal is opened (lazy loading to avoid HTTP warning in dev)
+  const stripePromise = useMemo(() => isOpen ? getStripe() : null, [isOpen]);
+
   if (!isOpen) return null;
 
   // Check if Stripe is configured
@@ -318,9 +319,11 @@ export const TipModal: React.FC<TipModalProps> = ({ isOpen, onClose, onTipSucces
           </button>
         </div>
 
-        <Elements stripe={stripePromise}>
-          <TipForm technician={technician} customer={customer} onClose={onClose} onTipSuccess={onTipSuccess} />
-        </Elements>
+        {stripePromise && (
+          <Elements stripe={stripePromise}>
+            <TipForm technician={technician} customer={customer} onClose={onClose} onTipSuccess={onTipSuccess} />
+          </Elements>
+        )}
       </div>
     </div>
   );

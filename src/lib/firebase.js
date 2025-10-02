@@ -1112,6 +1112,28 @@ export async function getUser(userId) {
 }
 
 /**
+ * Get client data from Firestore (alias for getUser for clarity)
+ * @param {string} clientId - The client's user ID
+ * @returns {Object|null} Client data object or null if not found
+ */
+export async function getClient(clientId) {
+  if (!db || !clientId) return null;
+  
+  try {
+    const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, clientId));
+    if (clientDoc.exists()) {
+      const clientData = { id: clientDoc.id, ...clientDoc.data() };
+      return clientData;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error getting client:', error);
+    return null;
+  }
+}
+
+/**
  * Get technician's earnings from Firebase
  * @param {string} technicianId - Technician ID
  * @returns {Promise<Object>} Earnings data

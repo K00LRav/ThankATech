@@ -132,7 +132,9 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
       allTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
     }
 
-    return allTechs.slice(0, maxResults)
+    const finalResults = allTechs.slice(0, maxResults);
+    
+    return finalResults;
 
   } catch (error) {
     console.error('Error fetching technicians:', error);
@@ -175,8 +177,14 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
 
 /**
  * Get mock technician data for demo purposes
+ * NOTE: Most mocks were converted to real registered users with profile pages
+ * Keeping this empty now since we have real users in Firebase
  */
 function getMockTechnicians() {
+  // Return empty array - all technicians are now registered users with profiles
+  return [];
+  
+  /* ORIGINAL MOCK DATA - Commented out since converted to real users
   return [
     {
       id: 'mock-jane-doe',
@@ -650,6 +658,7 @@ function getMockTechnicians() {
       totalTips: 103
     }
   ];
+  */ // End of commented out mock data
 }
 
 /**

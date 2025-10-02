@@ -57,6 +57,7 @@ interface Technician {
 
 export default function Home() {
   const [profiles, setProfiles] = useState<Technician[]>([]);
+  const [displayedProfiles, setDisplayedProfiles] = useState<Technician[]>([]);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -82,7 +83,7 @@ export default function Home() {
   
   // Note: Technician earnings are handled in the dashboard, not on main page
   
-  const profile = (profiles[currentProfileIndex] || {
+  const profile = (displayedProfiles[currentProfileIndex] || {
     name: '',
     title: '',
     category: '',
@@ -283,6 +284,8 @@ export default function Home() {
     setFilteredProfiles(filtered);
     setProfiles(filtered);
     setCurrentProfileIndex(0);
+    // Update displayed profiles for infinite scroll with first 3 filtered results
+    setDisplayedProfiles(filtered.slice(0, 3));
   }, [allProfiles, selectedCategory]);
 
   // Handle search query changes
@@ -431,10 +434,13 @@ export default function Home() {
         
         // Fetch technicians with location data
         const data = await fetchTechnicians('all', location || undefined, 20);
+        
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
           setAllProfiles(data);
           setFilteredProfiles(data);
+          // Initialize with first 3 profiles for infinite scroll
+          setDisplayedProfiles(data.slice(0, 3));
           setCurrentProfileIndex(0);
         } else {
           setError('No technician data available');
@@ -450,19 +456,28 @@ export default function Home() {
     loadTechnicians();
   }, []);
 
+  // Infinite scroll logic - load more profiles when approaching the end
+  useEffect(() => {
+    // Load 2 more profiles when user is within 2 profiles of the end
+    if (currentProfileIndex >= displayedProfiles.length - 2 && displayedProfiles.length < profiles.length) {
+      const nextBatch = profiles.slice(displayedProfiles.length, displayedProfiles.length + 2);
+      setDisplayedProfiles(prev => [...prev, ...nextBatch]);
+    }
+  }, [currentProfileIndex, displayedProfiles.length, profiles]);
+
   const flipToNext = useCallback(() => {
     if (isFlipping) return;
     setIsFlipping(true);
-    setCurrentProfileIndex((prev) => (prev + 1) % profiles.length);
+    setCurrentProfileIndex((prev) => (prev + 1) % displayedProfiles.length);
     setTimeout(() => setIsFlipping(false), 600);
-  }, [isFlipping, profiles.length]);
+  }, [isFlipping, displayedProfiles.length]);
 
   const flipToPrevious = useCallback(() => {
     if (isFlipping) return;
     setIsFlipping(true);
-    setCurrentProfileIndex((prev) => (prev - 1 + profiles.length) % profiles.length);
+    setCurrentProfileIndex((prev) => (prev - 1 + displayedProfiles.length) % displayedProfiles.length);
     setTimeout(() => setIsFlipping(false), 600);
-  }, [isFlipping, profiles.length]);
+  }, [isFlipping, displayedProfiles.length]);
 
   const handleThankYou = async () => {
     if (!currentUser) {
@@ -471,7 +486,7 @@ export default function Home() {
     }
 
     try {
-      const currentTechnician = profiles[currentProfileIndex];
+      const currentTechnician = displayedProfiles[currentProfileIndex];
       
       // Use new consolidated ThankATech Points system
       const result = await sendFreeThankYou(currentUser.id, currentTechnician.id);
@@ -989,8 +1004,9 @@ export default function Home() {
                       height={96}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to default image if Google photo fails to load
-                        e.currentTarget.src = profile.image;
+                        // Fallback to placeholder avatar if image fails to load
+                        const target = e.currentTarget as HTMLImageElement;
+                        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&size=96&background=0ea5e9&color=ffffff&bold=true`;
                       }}
                     />
                   </div>
@@ -1373,7 +1389,7 @@ export default function Home() {
             </div>
           </div>
 
-      {/* Compact Navigation Controls - Below Rolodex Card */}
+      {/* Infinite Scroll Navigation - Below Rolodex Card */}
       <div className="flex items-center justify-center gap-4 mt-6 mb-8 px-4">
         {/* Previous Button - Compact */}
         <button
@@ -1391,50 +1407,48 @@ export default function Home() {
           <span className="hidden sm:inline">Prev</span>
         </button>
 
-        {/* Compact Pagination Info */}
+        {/* Infinite Scroll Info */}
         <div className="flex items-center gap-3">
-          {/* Counter - Smaller */}
+          {/* Location Indicator */}
+          <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Technicians sorted by distance from your location">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-300">📍</span>
+              <span className="text-white font-medium text-sm">
+                Sorted by distance
+              </span>
+            </div>
+          </div>
+          
+          {/* Counter */}
           <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
             <span className="text-white font-medium text-sm">
               {currentProfileIndex + 1} of {profiles.length}
             </span>
           </div>
           
-          {/* Compact Pagination Dots */}
-          <div className="flex items-center gap-1.5">
-            {profiles.slice(0, Math.min(5, profiles.length)).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentProfileIndex(index)}
-                className={`rounded-full transition-all duration-300 hover:scale-110 ${
-                  index === currentProfileIndex
-                    ? 'w-2.5 h-2.5 bg-blue-400 shadow-md shadow-blue-400/50 scale-125'
-                    : 'w-2 h-2 bg-white/40 hover:bg-white/60 shadow-sm'
-                }`}
-              />
-            ))}
-            {profiles.length > 5 && (
-              <div className="flex items-center ml-1">
-                <span className="text-white/60 text-xs font-medium">
-                  +{profiles.length - 5}
-                </span>
+          {/* Loading More Indicator */}
+          {displayedProfiles.length < profiles.length && currentProfileIndex >= displayedProfiles.length - 3 && (
+            <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg px-3 py-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin w-3 h-3 border border-blue-300 border-t-transparent rounded-full"></div>
+                <span className="text-blue-300">Loading more...</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Next Button - Compact */}
         <button
           onClick={flipToNext}
-          disabled={currentProfileIndex >= profiles.length - 1}
+          disabled={currentProfileIndex >= displayedProfiles.length - 1}
           className={`group flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md ${
-            currentProfileIndex >= profiles.length - 1
+            currentProfileIndex >= displayedProfiles.length - 1
               ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
               : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
           }`}
         >
           <span className="hidden sm:inline">Next</span>
-          <svg className={`w-4 h-4 transition-transform ${currentProfileIndex >= profiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-4 h-4 transition-transform ${currentProfileIndex >= displayedProfiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -1542,10 +1556,10 @@ export default function Home() {
         isOpen={showTipModal}
         onClose={() => setShowTipModal(false)}
         technician={{
-          id: profiles[currentProfileIndex]?.id || '',
-          name: profiles[currentProfileIndex]?.name || '',
-          businessName: profiles[currentProfileIndex]?.businessName || '',
-          category: profiles[currentProfileIndex]?.category || '',
+          id: displayedProfiles[currentProfileIndex]?.id || '',
+          name: displayedProfiles[currentProfileIndex]?.name || '',
+          businessName: displayedProfiles[currentProfileIndex]?.businessName || '',
+          category: displayedProfiles[currentProfileIndex]?.category || '',
         }}
         customer={{
           id: currentUser?.id || '',
@@ -1558,8 +1572,8 @@ export default function Home() {
       <TokenSendModal
         isOpen={showTokenSendModal}
         onClose={() => setShowTokenSendModal(false)}
-        technicianId={profiles[currentProfileIndex]?.id || ''}
-        technicianName={profiles[currentProfileIndex]?.name || profiles[currentProfileIndex]?.businessName || ''}
+        technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
+        technicianName={displayedProfiles[currentProfileIndex]?.name || displayedProfiles[currentProfileIndex]?.businessName || ''}
         userId={currentUser?.id || ''}
       />
 
