@@ -2200,7 +2200,9 @@ export async function checkMigrationStatus() {
 }
 
 // Backward compatibility aliases (temporary during migration)
-export const getUser = getClient;
+export async function getUser(userId: string) {
+  return getClient(userId);
+}
 export const registerUser = registerClient;
 export const getUserById = getClientById;
 export const getUserByEmail = getClientByEmail;

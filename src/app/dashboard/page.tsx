@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/stripe';
 import { logger } from '@/lib/logger';
-import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getUser } from '@/lib/firebase';
+import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getClient as getUser } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
