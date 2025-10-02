@@ -25,6 +25,14 @@ export async function POST(request: NextRequest) {
       const userName = email.split('@')[0];
       const resetLink = 'https://thankatech.com/test-reset-link';
       
+      console.log(`🧪 About to send test email...`);
+      console.log(`📧 From: ${process.env.EMAIL_FROM}`);
+      console.log(`👤 From Name: ${process.env.EMAIL_FROM_NAME}`);
+      console.log(`🔑 Brevo API Key exists: ${!!process.env.BREVO_API_KEY}`);
+      console.log(`🎯 To: ${email}`);
+      console.log(`👤 User: ${userName}`);
+      console.log(`🔗 Reset Link: ${resetLink}`);
+      
       await EmailService.sendPasswordResetEmail(email, userName, resetLink);
       
       console.log(`✅ Test email sent successfully to: ${email}`);
