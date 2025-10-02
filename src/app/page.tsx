@@ -4,12 +4,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { logger } from '../lib/logger';
-import { sendThankYou, sendTip, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
+import { sendThankYou, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
 import { getUserTokenBalance, sendFreeThankYou } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
-import { TipModal } from '../components/TipModal';
 import TokenSendModal from '../components/TokenSendModal';
 import TokenPurchaseModal from '../components/TokenPurchaseModal';
 import Footer from '../components/Footer';
@@ -74,7 +73,6 @@ export default function Home() {
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [showTipModal, setShowTipModal] = useState(false);
   const [showTokenSendModal, setShowTokenSendModal] = useState(false);
   const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
   const [filteredProfiles, setFilteredProfiles] = useState<Technician[]>([]);
@@ -1531,21 +1529,13 @@ export default function Home() {
       )}
 
 
-      {/* Stripe-Powered Tip Modal */}
-      <TipModal
-        isOpen={showTipModal}
-        onClose={() => setShowTipModal(false)}
-        technician={{
-          id: displayedProfiles[currentProfileIndex]?.id || '',
-          name: displayedProfiles[currentProfileIndex]?.name || '',
-          businessName: displayedProfiles[currentProfileIndex]?.businessName || '',
-          category: displayedProfiles[currentProfileIndex]?.category || '',
-        }}
-        customer={{
-          id: currentUser?.id || '',
-          name: currentUser?.name || currentUser?.displayName || '',
-          email: currentUser?.email || '',
-        }}
+      {/* Token Send Modal */}
+      <TokenSendModal
+        isOpen={showTokenSendModal}
+        onClose={() => setShowTokenSendModal(false)}
+        technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
+        technicianName={displayedProfiles[currentProfileIndex]?.name || ''}
+        userId={currentUser?.id || ''}
       />
 
       {/* Token Send Modal */}

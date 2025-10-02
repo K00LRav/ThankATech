@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ThankATech - Appreciate Your Local Technicians",
-  description: "Connect with skilled technicians in your area. Thank them, reward them, and support the people who keep our world running.",
-  keywords: "technicians, local services, thank you, tips, appreciation, skilled workers",
+  description: "Connect with skilled technicians in your area. Thank them, reward them with TOA tokens, and support the people who keep our world running.",
+  keywords: "technicians, local services, thank you, TOA tokens, appreciation, skilled workers, token rewards",
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -29,13 +29,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "ThankATech - Appreciate Your Local Technicians",
-    description: "Connect with skilled technicians in your area. Thank them, reward them, and support the people who keep our world running.",
+    description: "Connect with skilled technicians in your area. Thank them, reward them with TOA tokens, and support the people who keep our world running.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "ThankATech - Appreciate Your Local Technicians",
-    description: "Connect with skilled technicians in your area. Thank them, reward them, and support the people who keep our world running.",
+    description: "Connect with skilled technicians in your area. Thank them, reward them with TOA tokens, and support the people who keep our world running.",
   },
 };
 
