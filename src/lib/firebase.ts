@@ -962,8 +962,6 @@ export const authHelpers = {
           console.warn('Could not clear IndexedDB:', dbError);
         }
       }
-      
-      console.log('✅ Complete sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);
       // Even if Firebase signOut fails, clear local storage
@@ -1183,32 +1181,19 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
-    console.log('🔍 [firebase.TS] getTechnician called with ID:', technicianId);
-    
     // First, check users collection by Firebase Auth UID (new primary method)
-    console.log('🔍 [firebase.TS] Checking users collection...');
     const usersDoc = await getDoc(doc(db, 'users', technicianId));
-    console.log('📊 [firebase.TS] Users doc exists:', usersDoc.exists());
     if (usersDoc.exists()) {
       const userData = usersDoc.data();
-      console.log('📊 [firebase.TS] Users doc data:', userData);
-      console.log('📊 [firebase.TS] userType:', userData.userType);
       if (userData.userType === 'technician') {
-        const techData = { id: usersDoc.id, ...userData };
-        console.log('✅ [firebase.TS] Found technician in users collection!', techData);
-        return techData;
-      } else {
-        console.log('❌ [firebase.TS] userType is not "technician", it is:', userData.userType);
+        return { id: usersDoc.id, ...userData };
       }
-    } else {
-      console.log('❌ [firebase.TS] No document found in users collection');
     }
     
     // Try technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
-      const techData = { id: techDoc.id, ...techDoc.data() };
-      return techData;
+      return { id: techDoc.id, ...techDoc.data() };
     }
     
     // Try clients collection by document ID as fallback
@@ -1216,8 +1201,7 @@ export async function getTechnician(technicianId) {
     if (clientDoc.exists()) {
       const userData = clientDoc.data();
       if (userData.userType === 'technician') {
-        const techData = { id: clientDoc.id, ...userData };
-        return techData;
+        return { id: clientDoc.id, ...userData };
       }
     }
     
@@ -2051,8 +2035,6 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
         lastUpdated: new Date()
       });
     }
-    
-    console.log(`✅ Added ${tokensToAdd} tokens to user ${userId}`);
   } catch (error) {
     console.error('Error adding tokens to balance:', error);
     throw error;

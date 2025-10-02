@@ -316,8 +316,6 @@ export class EmailService {
           textContent: emailData.html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
         };
 
-        console.log('📤 Sending payload to Brevo API...');
-
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
           headers: {

@@ -1127,28 +1127,19 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
-    console.log('🔍 [firebase.js] getTechnician called with ID:', technicianId);
-    
     // First, check users collection by Firebase Auth UID (new primary method)
-    console.log('🔍 [firebase.js] Checking users collection...');
     const usersDoc = await getDoc(doc(db, 'users', technicianId));
-    console.log('📊 [firebase.js] Users doc exists:', usersDoc.exists());
     if (usersDoc.exists()) {
       const userData = usersDoc.data();
-      console.log('📊 [firebase.js] Users doc data:', userData);
-      console.log('📊 [firebase.js] userType:', userData.userType);
       if (userData.userType === 'technician') {
-        const techData = { id: usersDoc.id, ...userData };
-        console.log('✅ [firebase.js] Found technician in users collection!', techData);
-        return techData;
+        return { id: usersDoc.id, ...userData };
       }
     }
     
     // Try technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
-      const techData = { id: techDoc.id, ...techDoc.data() };
-      return techData;
+      return { id: techDoc.id, ...techDoc.data() };
     }
     
     // Try clients collection by document ID as fallback
@@ -1156,8 +1147,7 @@ export async function getTechnician(technicianId) {
     if (clientDoc.exists()) {
       const userData = clientDoc.data();
       if (userData.userType === 'technician') {
-        const techData = { id: clientDoc.id, ...userData };
-        return techData;
+        return { id: clientDoc.id, ...userData };
       }
     }
     
@@ -1978,7 +1968,6 @@ export async function addUsernameToTechnician(technicianId, username) {
       username: username.toLowerCase()
     });
 
-    console.log(`✅ Successfully added username "${username}" to technician ${technicianId}`);
     return { success: true, username: username.toLowerCase() };
   } catch (error) {
     console.error('Error adding username to technician:', error);
