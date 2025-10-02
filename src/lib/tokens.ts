@@ -29,7 +29,7 @@ export interface TokenTransaction {
   message: string;
   isRandomMessage: boolean;
   timestamp: Date;
-  type: 'thank_you' | 'appreciation' | 'toa';
+  type: 'thank_you' | 'thankyou' | 'appreciation' | 'toa';
   // TOA Business Model fields
   dollarValue?: number; // Total dollar value (tokens * customerPaysPerTOA)
   technicianPayout?: number; // 85% payout to technician
