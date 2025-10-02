@@ -12,6 +12,7 @@ import { debugTransactionData } from '@/lib/debug-transactions';
 import { fixZeroPointTransactions } from '@/lib/fix-zero-points';
 import { debugDashboardQuery } from '@/lib/debug-dashboard-query';
 import { findRealUsers } from '@/lib/find-real-users';
+import { debugAdminAccount } from '@/lib/debug-admin-account';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -174,6 +175,10 @@ export default function AdminPage() {
   // User finder states
   const [isFindingUsers, setIsFindingUsers] = useState(false);
   const [userFinderResults, setUserFinderResults] = useState<string>('');
+  
+  // Admin account debug states
+  const [isDebuggingAdmin, setIsDebuggingAdmin] = useState(false);
+  const [adminDebugResults, setAdminDebugResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -773,6 +778,36 @@ export default function AdminPage() {
     }
     
     setIsFindingUsers(false);
+  };
+
+  // Debug admin account specifically
+  const handleDebugAdmin = async () => {
+    setIsDebuggingAdmin(true);
+    setAdminDebugResults('🔍 Diagnosing admin account setup...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      // Use the actual admin email from the ADMIN_EMAIL constant
+      await debugAdminAccount('k00lrav@gmail.com');
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      setAdminDebugResults(`🎉 Admin diagnostic complete!\n\n📋 Results:\n${logOutput}`);
+    } catch (error) {
+      setAdminDebugResults(`❌ Admin diagnostic failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsDebuggingAdmin(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4163,6 +4198,27 @@ export default function AdminPage() {
             <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
               <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
                 {userFinderResults}
+              </pre>
+            </div>
+          )}
+
+          <button
+            onClick={handleDebugAdmin}
+            disabled={isDebuggingAdmin}
+            className="w-full p-4 bg-yellow-600/20 border border-yellow-500/30 rounded-lg text-yellow-300 hover:bg-yellow-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isDebuggingAdmin ? 'Checking...' : '🔍 Debug Admin Account'}
+            </div>
+            <div className="text-sm text-yellow-400">
+              Check if admin account exists in database and has transaction records
+            </div>
+          </button>
+
+          {adminDebugResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {adminDebugResults}
               </pre>
             </div>
           )}
