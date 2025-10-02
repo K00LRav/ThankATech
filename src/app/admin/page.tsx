@@ -143,7 +143,7 @@ interface AdminStats {
 }
 
 // Admin configuration
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'k00lrav@gmail.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
 
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
@@ -4385,7 +4385,7 @@ export default function AdminPage() {
             <button
               onClick={async () => {
                 try {
-                  const adminUser = await findUserByEmail('k00lrav@gmail.com');
+                  const adminUser = await findUserByEmail(ADMIN_EMAIL);
                   if (adminUser) {
                     setTokenUserId(adminUser.id);
                     setTokensToAdd(1000);
@@ -4406,7 +4406,7 @@ export default function AdminPage() {
             <button
               onClick={async () => {
                 try {
-                  const adminUser = await findUserByEmail('k00lrav@gmail.com');
+                  const adminUser = await findUserByEmail(ADMIN_EMAIL);
                   if (adminUser) {
                     setPointsUserId(adminUser.id);
                     await handleCheckUserBalance(adminUser.id);
