@@ -69,44 +69,46 @@ export interface PointsConversion {
   createdAt: Date;
 }
 
-// Token pack configurations
+// Token pack configurations with psychological pricing
+// Base rate: 1000 tokens = $9.99 (psychological pricing)
+// Premium pack capped at $49.99 maximum
 export const TOKEN_PACKS: TokenPack[] = [
   {
     id: 'starter',
     name: 'Starter Pack',
-    tokens: 50,
-    price: 500, // $5.00
-    pricePerToken: 10 // 10¢ per token
+    tokens: 100,
+    price: 199, // $1.99 (psychological pricing - under $2)
+    pricePerToken: 1.99 // 1.99¢ per token
   },
   {
     id: 'popular',
-    name: 'Popular Pack',
-    tokens: 100,
-    price: 1000, // $10.00
+    name: 'Most Popular', 
+    tokens: 500,
+    price: 499, // $4.99 (classic psychological price point)
     popular: true,
-    pricePerToken: 10 // 10¢ per token
+    pricePerToken: 0.998 // ~1¢ per token
   },
   {
     id: 'value',
-    name: 'Value Pack',
-    tokens: 300,
-    price: 2500, // $25.00
-    pricePerToken: 8.33 // 8.33¢ per token
+    name: 'Best Value',
+    tokens: 1000,
+    price: 999, // $9.99 (maintains your target, psychological pricing)
+    bestValue: true,
+    pricePerToken: 0.999 // ~1¢ per token
   },
   {
     id: 'bulk',
-    name: 'Bulk Pack',
-    tokens: 1000,
-    price: 1000, // $10.00
-    bestValue: true,
-    pricePerToken: 1 // 1¢ per token - Amazing value!
+    name: 'Power User',
+    tokens: 2500,
+    price: 1999, // $19.99 (under $20 psychological barrier)
+    pricePerToken: 0.8 // 0.8¢ per token
   },
   {
     id: 'premium',
-    name: 'Premium Pack',
-    tokens: 650,
-    price: 5000, // $50.00
-    pricePerToken: 7.69 // 7.69¢ per token
+    name: 'Ultimate Pack',
+    tokens: 7500,
+    price: 4999, // $49.99 (under $50 psychological barrier)
+    pricePerToken: 0.67 // 0.67¢ per token - Maximum savings!
   }
 ];
 
