@@ -949,9 +949,15 @@ export default function ModernDashboard() {
                     {formatCurrency(transaction.amount * 100)}
                   </p>
                 )}
-                {transaction.pointsAwarded && (
+                {(transaction.pointsAwarded && transaction.pointsAwarded > 0) && (
                   <p className="text-blue-400 font-medium text-sm">
                     +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {/* Debug: Show if transaction should have points but doesn't */}
+                {!transaction.pointsAwarded && (transaction.type === 'thankyou' || transaction.type === 'thank_you') && (
+                  <p className="text-red-400 font-medium text-xs">
+                    DEBUG: Missing +1 Point (type: {transaction.type})
                   </p>
                 )}
                 <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
@@ -1046,9 +1052,15 @@ export default function ModernDashboard() {
                               {formatCurrency(transaction.amount * 100)}
                             </p>
                           )}
-                          {transaction.pointsAwarded && (
+                          {(transaction.pointsAwarded && transaction.pointsAwarded > 0) && (
                             <p className="text-blue-400 font-semibold text-sm">
                               +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
+                            </p>
+                          )}
+                          {/* Debug: Show if transaction should have points but doesn't */}
+                          {!transaction.pointsAwarded && (transaction.type === 'thankyou' || transaction.type === 'thank_you') && (
+                            <p className="text-red-400 font-semibold text-xs">
+                              DEBUG: Missing +1 Point (type: {transaction.type})
                             </p>
                           )}
                           <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
