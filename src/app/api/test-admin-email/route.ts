@@ -71,11 +71,19 @@ export async function POST(request: NextRequest) {
             break;
             
           case 'thank-you':
-            result = await EmailService.sendThankYouNotification(recipientEmail, 'Test Technician', 'Test Customer', 'Great work!');
+            result = await EmailService.sendToaReceivedNotification(recipientEmail, 'Test Technician', 'Test Customer', 5, 'Great work!');
             break;
             
-          case 'tip':
-            result = await EmailService.sendTipNotification(recipientEmail, 'Test Technician', 'Test Customer', 25, 'Excellent service!');
+          case 'toaSent':
+            result = await EmailService.sendToaSentNotification(recipientEmail, 'Test Customer', 'Test Technician', 5, 'Excellent service!');
+            break;
+            
+          case 'toaReceived':
+            result = await EmailService.sendToaReceivedNotification(recipientEmail, 'Test Technician', 'Test Customer', 5, 'Thank you for your service!');
+            break;
+            
+          case 'pointsReceived':
+            result = await EmailService.sendPointsNotification(recipientEmail, 'Test Technician', 'Test Customer', 10, 'Points earned for great service!');
             break;
             
           default: // basic test
