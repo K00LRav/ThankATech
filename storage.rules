@@ -4,16 +4,24 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Profile photos - users can read anyone's photos but only write their own
+    // Profile photos - public read, authenticated write to own folder
     match /profile-photos/{userId}/{fileName} {
-      // Allow read for all authenticated users
-      allow read: if request.auth != null;
+      // Allow public read so anyone can view technician profile pictures
+      allow read: if true;
       
-      // Allow write only if the user is uploading to their own folder
+      // Allow write only if:
+      // 1. User is authenticated
+      // 2. User is uploading to their own folder
+      // 3. File is under 5MB
+      // 4. File is an image
       allow write: if request.auth != null 
                    && request.auth.uid == userId
                    && request.resource.size < 5 * 1024 * 1024  // Max 5MB
                    && request.resource.contentType.matches('image/.*');  // Only images
+      
+      // Allow delete only for own files
+      allow delete: if request.auth != null 
+                    && request.auth.uid == userId;
     }
     
     // Deny all other access by default

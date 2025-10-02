@@ -13,13 +13,28 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    function isValidUsername(username) {
+      return username.size() >= 3 
+             && username.size() <= 20 
+             && username.matches('^[a-z0-9_-]+$');
+    }
+    
     // Users collection - new unified structure
     match /users/{userId} {
-      // Anyone authenticated can read user profiles
+      // Anyone authenticated can read user profiles (for browsing technicians)
       allow read: if isAuthenticated();
       
-      // Users can only write to their own profile
-      allow write: if isOwner(userId);
+      // Users can create their own profile during registration
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can only update their own profile
+      allow update: if isOwner(userId) 
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['userType', 'authUid', 'uniqueId']))
+                    && (request.resource.data.username == resource.data.username 
+                        || isValidUsername(request.resource.data.username));
+      
+      // Users can soft-delete their own profile
+      allow delete: if isOwner(userId);
     }
     
     // Technicians collection (legacy - for backward compatibility)
@@ -27,8 +42,11 @@ service cloud.firestore {
       // Anyone authenticated can read technician profiles
       allow read: if isAuthenticated();
       
-      // Technicians can only write to their own profile
-      allow write: if isOwner(techId);
+      // Technicians can create/update their own profile
+      allow create, update: if isOwner(techId);
+      
+      // Technicians can delete their own profile
+      allow delete: if isOwner(techId);
     }
     
     // Clients collection (legacy - for backward compatibility)
@@ -36,31 +54,42 @@ service cloud.firestore {
       // Anyone authenticated can read client profiles
       allow read: if isAuthenticated();
       
-      // Clients can only write to their own profile
-      allow write: if isOwner(clientId);
+      // Clients can create/update their own profile
+      allow create, update: if isOwner(clientId);
+      
+      // Clients can delete their own profile
+      allow delete: if isOwner(clientId);
     }
     
     // Thank Yous collection
     match /thankYous/{thankYouId} {
-      // Anyone authenticated can read
+      // Anyone authenticated can read (for viewing thank you history)
       allow read: if isAuthenticated();
       
       // Only authenticated users can create thank yous
-      allow create: if isAuthenticated();
+      // Validate that sender is the authenticated user
+      allow create: if isAuthenticated() 
+                    && request.resource.data.fromUserId == request.auth.uid
+                    && request.resource.data.technicianId != request.auth.uid;  // Prevent self-thanking
       
-      // No updates or deletes
+      // No updates or deletes (thank yous are permanent)
       allow update, delete: if false;
     }
     
     // Tips collection
     match /tips/{tipId} {
-      // Anyone authenticated can read
-      allow read: if isAuthenticated();
+      // Anyone authenticated can read their own tips
+      allow read: if isAuthenticated() 
+                  && (resource.data.customerId == request.auth.uid 
+                      || resource.data.technicianId == request.auth.uid);
       
       // Only authenticated users can create tips
-      allow create: if isAuthenticated();
+      // Validate that sender is the authenticated user
+      allow create: if isAuthenticated() 
+                    && request.resource.data.customerId == request.auth.uid
+                    && request.resource.data.technicianId != request.auth.uid;  // Prevent self-tipping
       
-      // No updates or deletes
+      // No updates or deletes (tips are permanent)
       allow update, delete: if false;
     }
     
@@ -69,7 +98,7 @@ service cloud.firestore {
       // Users can read their own balance
       allow read: if isOwner(userId);
       
-      // Only system can write (server-side)
+      // System/server-side only can write
       allow write: if false;
     }
     
@@ -80,7 +109,7 @@ service cloud.firestore {
                   && (resource.data.fromUserId == request.auth.uid 
                       || resource.data.toUserId == request.auth.uid);
       
-      // Only system can write (server-side)
+      // System/server-side only can write
       allow write: if false;
     }
     
@@ -89,8 +118,11 @@ service cloud.firestore {
       // Users can read their own limits
       allow read: if isOwner(userId);
       
-      // Users can update their own limits
-      allow write: if isOwner(userId);
+      // Users can create/update their own limits
+      allow create, update: if isOwner(userId);
+      
+      // Don't allow delete (keep history)
+      allow delete: if false;
     }
     
     // Deny all other access by default
