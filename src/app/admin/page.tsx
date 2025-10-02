@@ -8,6 +8,7 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'fire
 import { EmailTemplates } from '@/lib/email';
 import { getUserTokenBalance, addTokensToBalance, checkDailyPerTechnicianLimit } from '@/lib/token-firebase';
 import { backfillPointsAwarded } from '@/lib/backfill-points';
+import { debugTransactionData } from '@/lib/debug-transactions';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -153,6 +154,10 @@ export default function AdminPage() {
   // Backfill states
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [backfillResults, setBackfillResults] = useState<string>('');
+  
+  // Debug states
+  const [isDebugging, setIsDebugging] = useState(false);
+  const [debugResults, setDebugResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -625,6 +630,36 @@ export default function AdminPage() {
     }
     
     setIsBackfilling(false);
+  };
+
+  // Debug transaction data
+  const handleDebugTransactions = async () => {
+    setIsDebugging(true);
+    setDebugResults('🔍 Inspecting transaction data...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      await debugTransactionData();
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      setDebugResults(logOutput);
+    } catch (error) {
+      console.error('Error during debug:', error);
+      setDebugResults(`❌ Debug failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsDebugging(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4015,6 +4050,54 @@ export default function AdminPage() {
             <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
               <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
                 {backfillResults}
+              </pre>
+            </div>
+          )}
+        </div>
+
+        {/* Debug Transaction Data Section */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-slate-200 mb-4 flex items-center gap-3">
+            <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            Debug Transaction Data
+          </h3>
+          
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-orange-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-orange-400 font-medium">Debug Tool</h4>
+                <p className="text-orange-300 text-sm mt-1">
+                  This tool inspects the actual transaction data to see why points might not be showing in dashboards.
+                  It will show the raw data structure and help identify data format issues.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleDebugTransactions}
+            disabled={isDebugging}
+            className="w-full p-4 bg-orange-600/20 border border-orange-500/30 rounded-lg text-orange-300 hover:bg-orange-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isDebugging ? 'Inspecting...' : '🔍 Debug Transaction Data'}
+            </div>
+            <div className="text-sm text-orange-400">
+              Inspect raw transaction data structure
+            </div>
+          </button>
+
+          {debugResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {debugResults}
               </pre>
             </div>
           )}

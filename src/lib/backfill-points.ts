@@ -35,10 +35,21 @@ export async function backfillPointsAwarded(): Promise<{success: boolean, update
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       
-      // Skip if pointsAwarded already exists and is not null/undefined
-      if (data.pointsAwarded !== undefined && data.pointsAwarded !== null) {
-        skippedCount++;
-        continue;
+      // Check if pointsAwarded needs fixing
+      const hasPointsField = 'pointsAwarded' in data;
+      const currentPoints = data.pointsAwarded;
+      
+      console.log(`🔍 Checking transaction ${docSnap.id}: type=${data.type}, pointsAwarded=${currentPoints} (${typeof currentPoints}), hasField=${hasPointsField}`);
+      
+      // Skip if pointsAwarded already exists and is correct (not 0 for thank_you/toa)
+      if (hasPointsField && currentPoints !== undefined && currentPoints !== null) {
+        // For thank_you, points should be 1+, for toa with tokens, should be 1+
+        const shouldHavePoints = (data.type === 'thank_you') || (data.type === 'toa' && data.tokens > 0);
+        if (!shouldHavePoints || currentPoints > 0) {
+          console.log(`⏭️  Skipped transaction ${docSnap.id}: already has correct pointsAwarded = ${currentPoints}`);
+          skippedCount++;
+          continue;
+        }
       }
       
       // Calculate points based on transaction type and data
