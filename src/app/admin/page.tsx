@@ -13,6 +13,7 @@ import { fixZeroPointTransactions } from '@/lib/fix-zero-points';
 import { debugDashboardQuery } from '@/lib/debug-dashboard-query';
 import { findRealUsers } from '@/lib/find-real-users';
 import { debugAdminAccount } from '@/lib/debug-admin-account';
+import { fixUserTypeConflicts } from '@/lib/fix-user-conflicts';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -179,6 +180,11 @@ export default function AdminPage() {
   // Admin account debug states
   const [isDebuggingAdmin, setIsDebuggingAdmin] = useState(false);
   const [adminDebugResults, setAdminDebugResults] = useState<string>('');
+  
+  // User conflict fix states
+  const [isFixingConflicts, setIsFixingConflicts] = useState(false);
+  const [conflictFixResults, setConflictFixResults] = useState<string>('');
+  const [conflictEmail, setConflictEmail] = useState<string>('info@charlietelecom.com');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -808,6 +814,44 @@ export default function AdminPage() {
     }
     
     setIsDebuggingAdmin(false);
+  };
+
+  // Fix user type conflicts
+  const handleFixConflicts = async () => {
+    if (!conflictEmail.trim()) {
+      setConflictFixResults('❌ Please enter an email address');
+      return;
+    }
+    
+    setIsFixingConflicts(true);
+    setConflictFixResults(`🔧 Fixing user type conflicts for: ${conflictEmail}...\n`);
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      const result = await fixUserTypeConflicts(conflictEmail);
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      if (result.success) {
+        setConflictFixResults(`🎉 Conflict fix complete!\n\n📋 Result: ${result.message}\n\n📋 Details:\n${logOutput}\n💡 User should now see correct dashboard!`);
+      } else {
+        setConflictFixResults(`❌ Fix failed: ${result.message}\n\n📋 Details:\n${logOutput}`);
+      }
+    } catch (error) {
+      setConflictFixResults(`❌ Fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsFixingConflicts(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4222,6 +4266,37 @@ export default function AdminPage() {
               </pre>
             </div>
           )}
+
+          <div className="border-t border-slate-600 pt-4">
+            <h4 className="text-slate-300 font-medium mb-3">🔧 Fix User Type Conflicts</h4>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="email"
+                value={conflictEmail}
+                onChange={(e) => setConflictEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-slate-300"
+              />
+              <button
+                onClick={handleFixConflicts}
+                disabled={isFixingConflicts}
+                className="px-4 py-2 bg-red-600/20 border border-red-500/30 rounded text-red-300 hover:bg-red-600/30 transition-all duration-200 disabled:opacity-50"
+              >
+                {isFixingConflicts ? 'Fixing...' : 'Fix Conflicts'}
+              </button>
+            </div>
+            <div className="text-xs text-slate-400 mb-3">
+              Fixes duplicate records and conflicting userType settings
+            </div>
+            
+            {conflictFixResults && (
+              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                  {conflictFixResults}
+                </pre>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Transaction Data Backfill Section */}
