@@ -14,6 +14,7 @@ import { debugDashboardQuery } from '@/lib/debug-dashboard-query';
 import { findRealUsers } from '@/lib/find-real-users';
 import { debugAdminAccount } from '@/lib/debug-admin-account';
 import { fixUserTypeConflicts } from '@/lib/fix-user-conflicts';
+import { scanAllUserConflicts } from '@/lib/scan-user-conflicts';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -185,6 +186,10 @@ export default function AdminPage() {
   const [isFixingConflicts, setIsFixingConflicts] = useState(false);
   const [conflictFixResults, setConflictFixResults] = useState<string>('');
   const [conflictEmail, setConflictEmail] = useState<string>('info@charlietelecom.com');
+  
+  // System-wide conflict scan states
+  const [isScanningConflicts, setIsScanningConflicts] = useState(false);
+  const [scanResults, setScanResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -852,6 +857,39 @@ export default function AdminPage() {
     }
     
     setIsFixingConflicts(false);
+  };
+
+  // Scan for all user conflicts system-wide
+  const handleScanConflicts = async () => {
+    setIsScanningConflicts(true);
+    setScanResults('🔍 Scanning entire system for duplicate users...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      const result = await scanAllUserConflicts();
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      if (result.success) {
+        setScanResults(`🎉 System scan complete!\n\n📋 ${result.message}\n\n📋 Detailed Results:\n${logOutput}\n💡 Use individual fix tool above to resolve conflicts!`);
+      } else {
+        setScanResults(`❌ Scan failed: ${result.message}\n\n📋 Details:\n${logOutput}`);
+      }
+    } catch (error) {
+      setScanResults(`❌ Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsScanningConflicts(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4296,6 +4334,29 @@ export default function AdminPage() {
                 </pre>
               </div>
             )}
+
+            <div className="border-t border-slate-600 pt-4">
+              <button
+                onClick={handleScanConflicts}
+                disabled={isScanningConflicts}
+                className="w-full p-4 bg-purple-600/20 border border-purple-500/30 rounded-lg text-purple-300 hover:bg-purple-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+              >
+                <div className="text-lg font-medium">
+                  {isScanningConflicts ? 'Scanning...' : '🔍 Scan All User Conflicts'}
+                </div>
+                <div className="text-sm text-purple-400">
+                  Find duplicate users and conflicting userType settings system-wide
+                </div>
+              </button>
+
+              {scanResults && (
+                <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+                  <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                    {scanResults}
+                  </pre>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
