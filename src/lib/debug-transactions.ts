@@ -28,17 +28,50 @@ export async function debugTransactionData(): Promise<void> {
     
     console.log(`📊 Found ${snapshot.docs.length} transactions to inspect`);
     
+    let thankYouCount = 0;
+    let thankYouWithPoints = 0;
+    let thankYouWithZeroPoints = 0;
+    let thankYouWithoutField = 0;
+    
     snapshot.docs.forEach((docSnap, index) => {
       const data = docSnap.data();
       console.log(`\n📄 Transaction ${index + 1}: ${docSnap.id}`);
       console.log('   Type:', data.type);
       console.log('   Tokens:', data.tokens);
-      console.log('   Points Awarded:', data.pointsAwarded, typeof data.pointsAwarded);
+      console.log('   Points Awarded:', data.pointsAwarded, `(${typeof data.pointsAwarded})`);
       console.log('   From User:', data.fromUserId);
       console.log('   To Technician:', data.toTechnicianId);
       console.log('   Timestamp:', data.timestamp);
-      console.log('   Full Data:', data);
+      
+      // Analyze thank you transactions specifically
+      if (data.type === 'thank_you' || data.type === 'thankyou') {
+        thankYouCount++;
+        if (!('pointsAwarded' in data)) {
+          thankYouWithoutField++;
+          console.log('   ❌ ISSUE: Thank you missing pointsAwarded field');
+        } else if (data.pointsAwarded === 0) {
+          thankYouWithZeroPoints++;
+          console.log('   ⚠️  ISSUE: Thank you has 0 points (should be 1)');
+        } else if (data.pointsAwarded > 0) {
+          thankYouWithPoints++;
+          console.log('   ✅ OK: Thank you has points');
+        } else {
+          console.log('   ❓ WEIRD: Thank you has weird points value');
+        }
+      }
+      
+      // Check dashboard display logic
+      const wouldShowPoints = data.pointsAwarded && data.pointsAwarded > 0;
+      const wouldShowDebug = !data.pointsAwarded && (data.type === 'thankyou' || data.type === 'thank_you');
+      console.log(`   🖥️  Dashboard would show points: ${wouldShowPoints}`);
+      console.log(`   🐛 Dashboard would show debug: ${wouldShowDebug}`);
     });
+    
+    console.log(`\n📈 Thank You Summary:`);
+    console.log(`   Total thank you transactions: ${thankYouCount}`);
+    console.log(`   Thank yous with points: ${thankYouWithPoints}`);
+    console.log(`   Thank yous with 0 points: ${thankYouWithZeroPoints}`);
+    console.log(`   Thank yous missing field: ${thankYouWithoutField}`);
     
     // Also check if dashboard query is working
     console.log('\n🔍 Testing dashboard query...');

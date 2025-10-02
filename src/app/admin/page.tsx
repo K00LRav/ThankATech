@@ -9,6 +9,7 @@ import { EmailTemplates } from '@/lib/email';
 import { getUserTokenBalance, addTokensToBalance, checkDailyPerTechnicianLimit } from '@/lib/token-firebase';
 import { backfillPointsAwarded } from '@/lib/backfill-points';
 import { debugTransactionData } from '@/lib/debug-transactions';
+import { fixZeroPointTransactions } from '@/lib/fix-zero-points';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -158,6 +159,10 @@ export default function AdminPage() {
   // Debug states
   const [isDebugging, setIsDebugging] = useState(false);
   const [debugResults, setDebugResults] = useState<string>('');
+  
+  // Fix zero points states
+  const [isFixingZeroPoints, setIsFixingZeroPoints] = useState(false);
+  const [fixZeroPointsResults, setFixZeroPointsResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -660,6 +665,40 @@ export default function AdminPage() {
     }
     
     setIsDebugging(false);
+  };
+
+  // Fix transactions where pointsAwarded is 0 but should be higher
+  const handleFixZeroPoints = async () => {
+    setIsFixingZeroPoints(true);
+    setFixZeroPointsResults('🔧 Searching for transactions with 0 points that should have points...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      const result = await fixZeroPointTransactions();
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      if (result.success) {
+        setFixZeroPointsResults(`🎉 Fix completed!\n✅ Fixed: ${result.fixed} transactions\n\n📋 Details:\n${logOutput}\n💡 Try refreshing the dashboard to see updated points!`);
+      } else {
+        setFixZeroPointsResults(`❌ Fix failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error during fix:', error);
+      setFixZeroPointsResults(`❌ Fix failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsFixingZeroPoints(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4098,6 +4137,27 @@ export default function AdminPage() {
             <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
               <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
                 {debugResults}
+              </pre>
+            </div>
+          )}
+
+          <button
+            onClick={handleFixZeroPoints}
+            disabled={isFixingZeroPoints}
+            className="w-full p-4 bg-red-600/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isFixingZeroPoints ? 'Fixing...' : '🔧 Fix Zero Point Transactions'}
+            </div>
+            <div className="text-sm text-red-400">
+              Fix transactions where pointsAwarded is 0 but should be 1+
+            </div>
+          </button>
+
+          {fixZeroPointsResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {fixZeroPointsResults}
               </pre>
             </div>
           )}
