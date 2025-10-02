@@ -1171,7 +1171,7 @@ export default function AdminPage() {
           </div>
           <h1 className="text-2xl font-bold text-white mb-4">Admin Access Required</h1>
           <p className="text-slate-300 mb-6">
-            This admin panel requires authentication as k00lrav@gmail.com using Google Sign-In.
+            This admin panel requires authorized administrator access. Please contact support if you need access.
           </p>
           <Link
             href="/dashboard"
