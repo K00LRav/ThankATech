@@ -266,9 +266,29 @@ export default function ModernDashboard() {
 
   const handleSignOut = async () => {
     try {
+      // Clear Firebase auth
       await signOut(auth);
+      
+      // Clear local storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear user state
+      setUser(null);
+      setUserProfile(null);
+      setIsLoading(false);
+      
+      // Force redirect to home page
+      window.location.href = '/';
+      
     } catch (error) {
       logger.error('Sign out error:', error);
+      // Even if signOut fails, clear local data
+      localStorage.clear();
+      sessionStorage.clear();
+      setUser(null);
+      setUserProfile(null);
+      window.location.href = '/';
     }
   };
 

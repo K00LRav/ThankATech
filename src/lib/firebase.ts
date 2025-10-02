@@ -905,9 +905,38 @@ export const authHelpers = {
   // Sign out
   signOut: async () => {
     try {
+      // Firebase sign out
       await signOut(auth);
+      
+      // Clear browser storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear Firebase persistence data
+        try {
+          // Clear IndexedDB for Firebase
+          if ('indexedDB' in window) {
+            const databases = await indexedDB.databases();
+            databases.forEach(db => {
+              if (db.name && db.name.includes('firebase')) {
+                indexedDB.deleteDatabase(db.name);
+              }
+            });
+          }
+        } catch (dbError) {
+          console.warn('Could not clear IndexedDB:', dbError);
+        }
+      }
+      
+      console.log('✅ Complete sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if Firebase signOut fails, clear local storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
       throw error;
     }
   },
