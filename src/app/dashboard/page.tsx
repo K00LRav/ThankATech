@@ -125,6 +125,15 @@ export default function ModernDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   
+  // Profile picture states
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadMessage, setPhotoUploadMessage] = useState<string | null>(null);
+  
+  // Delete account states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const { earnings, loading: earningsLoading } = useTechnicianEarnings(user?.uid);
 
   // Auth state management - using same system as main page
@@ -320,6 +329,35 @@ export default function ModernDashboard() {
     setSaveMessage(null);
     
     try {
+      // If technician is updating username, validate it
+      if (userProfile.userType === 'technician' && editedProfile.username) {
+        const username = editedProfile.username.toLowerCase().trim();
+        
+        // Validate format
+        if (username.length < 3 || username.length > 20) {
+          throw new Error('Username must be between 3 and 20 characters');
+        }
+        
+        if (!/^[a-z0-9_-]+$/.test(username)) {
+          throw new Error('Username can only contain lowercase letters, numbers, hyphens, and underscores');
+        }
+        
+        // Check if username is already taken (skip if it's the current username)
+        if (username !== userProfile.username?.toLowerCase()) {
+          const q = query(
+            collection(db, 'users'),
+            where('username', '==', username)
+          );
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty) {
+            throw new Error(`Username "${username}" is already taken`);
+          }
+        }
+        
+        // Normalize username
+        editedProfile.username = username;
+      }
+      
       const updatedData = {
         ...editedProfile,
         updatedAt: new Date().toISOString()
@@ -357,6 +395,134 @@ export default function ModernDashboard() {
 
   const handleInputChange = (field: string, value: string) => {
     setEditedProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!userProfile || !event.target.files || event.target.files.length === 0) return;
+    
+    const file = event.target.files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPhotoUploadMessage('❌ Please select an image file');
+      setTimeout(() => setPhotoUploadMessage(null), 3000);
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoUploadMessage('❌ Image must be smaller than 5MB');
+      setTimeout(() => setPhotoUploadMessage(null), 3000);
+      return;
+    }
+    
+    setIsUploadingPhoto(true);
+    setPhotoUploadMessage(null);
+    
+    try {
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { storage } = await import('@/lib/firebase');
+      
+      if (!storage) {
+        throw new Error('Storage not configured');
+      }
+      
+      // Create a unique filename
+      const timestamp = Date.now();
+      const fileName = `profile-photos/${userProfile.id}/${timestamp}-${file.name}`;
+      const storageRef = ref(storage, fileName);
+      
+      // Upload file
+      await uploadBytes(storageRef, file);
+      
+      // Get download URL
+      const photoURL = await getDownloadURL(storageRef);
+      
+      // Update user profile in both collections
+      await updateDoc(doc(db, 'users', userProfile.id), {
+        photoURL,
+        updatedAt: new Date().toISOString()
+      });
+      
+      if (userProfile.userType === 'technician') {
+        try {
+          await updateDoc(doc(db, 'technicians', userProfile.id), {
+            photoURL,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (error) {
+          // Technician doc might not exist, that's okay
+        }
+      }
+      
+      // Update local state
+      setUserProfile({ ...userProfile, photoURL });
+      setPhotoUploadMessage('✅ Profile picture updated successfully!');
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setPhotoUploadMessage(null), 3000);
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      setPhotoUploadMessage('❌ Failed to upload photo. Please try again.');
+      setTimeout(() => setPhotoUploadMessage(null), 3000);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!userProfile || !user) return;
+    
+    // Verify user typed "DELETE" exactly
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type "DELETE" exactly to confirm');
+      return;
+    }
+    
+    setIsDeleting(true);
+    
+    try {
+      const { deleteUser } = await import('firebase/auth');
+      
+      // Delete user data from Firestore
+      await updateDoc(doc(db, 'users', userProfile.id), {
+        deleted: true,
+        deletedAt: new Date().toISOString(),
+        deletedEmail: userProfile.email
+      });
+      
+      // If technician, mark as deleted in technicians collection
+      if (userProfile.userType === 'technician') {
+        try {
+          await updateDoc(doc(db, 'technicians', userProfile.id), {
+            deleted: true,
+            deletedAt: new Date().toISOString()
+          });
+        } catch (error) {
+          // Technician doc might not exist
+        }
+      }
+      
+      // Delete Firebase Auth user
+      await deleteUser(user);
+      
+      // Clear local storage and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      
+      // Check if re-authentication is needed
+      if (error.code === 'auth/requires-recent-login') {
+        alert('For security, please sign out and sign back in, then try deleting your account again.');
+      } else {
+        alert('Failed to delete account. Please try again or contact support.');
+      }
+      
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (isLoading) {
@@ -504,12 +670,18 @@ export default function ModernDashboard() {
               </>
             ) : (
               <>
-                <Link
-                  href={`/${userProfile.username || userProfile.uniqueId}`}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
-                >
-                  View Public Profile
-                </Link>
+                {userProfile.username ? (
+                  <Link
+                    href={`/${userProfile.username}`}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
+                  >
+                    View Public Profile
+                  </Link>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 py-3 px-6 rounded-xl text-center">
+                    Please set up your username in settings to enable public profile
+                  </div>
+                )}
                 {earnings && earnings.availableBalance > 0 && (
                   <button
                     onClick={() => setShowPayoutModal(true)}
@@ -905,6 +1077,61 @@ export default function ModernDashboard() {
               </div>
             )}
             
+            {/* Profile Picture Section - Compact */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-white mb-4 text-center">Profile Picture</h3>
+              
+              {photoUploadMessage && (
+                <div className={`p-3 rounded-lg mb-4 text-sm ${
+                  photoUploadMessage.includes('✅') 
+                    ? 'bg-green-500/20 border border-green-500/30 text-green-300'
+                    : 'bg-red-500/20 border border-red-500/30 text-red-300'
+                }`}>
+                  {photoUploadMessage}
+                </div>
+              )}
+              
+              <div className="flex flex-col items-center gap-4">
+                {userProfile.photoURL ? (
+                  <Image 
+                    src={userProfile.photoURL}
+                    alt={userProfile.name}
+                    width={120}
+                    height={120}
+                    className="w-30 h-30 rounded-full border-4 border-white/20 object-cover"
+                  />
+                ) : (
+                  <div className="w-30 h-30 bg-slate-600/50 rounded-full flex items-center justify-center border-4 border-white/20">
+                    <span className="text-white text-4xl font-bold">
+                      {userProfile.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="text-center">
+                  <label 
+                    htmlFor="photo-upload" 
+                    className={`cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block ${
+                      isUploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isUploadingPhoto ? '⏳ Uploading...' : '📸 Change Photo'}
+                  </label>
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-slate-400 mt-2">
+                    JPG, PNG or GIF. Max 5MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Profile Information */}
               <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
@@ -938,6 +1165,57 @@ export default function ModernDashboard() {
                   </div>
                   
                   {userProfile.userType === 'technician' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                          Username {!userProfile.username && <span className="text-red-400">(Required for public profile)</span>}
+                        </label>
+                        {isEditingProfile ? (
+                          <div>
+                            <input
+                              type="text"
+                              value={editedProfile.username || ''}
+                              onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
+                              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                              placeholder="e.g., johndoe, tech-expert"
+                              pattern="[a-z0-9_-]+"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">
+                              3-20 characters. Letters, numbers, hyphens, and underscores only. This will be your profile URL: thankatech.com/<span className="text-blue-400">{editedProfile.username || 'username'}</span>
+                            </p>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.username || 'Not set'}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Name</label>
+                        {isEditingProfile ? (
+                          <input
+                            type="text"
+                            value={editedProfile.businessName || ''}
+                            onChange={(e) => handleInputChange('businessName', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="Enter your business name"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={userProfile.businessName || ''}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                            readOnly
+                          />
+                        )}
+                      </div>
+                    </>
+                  )}
+                  
+                  {userProfile.userType === 'client' && userProfile.businessName && (
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">Business Name</label>
                       {isEditingProfile ? (
@@ -1284,20 +1562,77 @@ export default function ModernDashboard() {
 
                 {/* Account Actions */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">Account Actions</h3>
                   <div className="space-y-3">
-                    <Link
-                      href={`/${userProfile.username || userProfile.uniqueId}`}
-                      className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
-                    >
-                      👁️ View Public Profile
-                    </Link>
+                    {userProfile.userType === 'technician' && userProfile.username ? (
+                      <Link
+                        href={`/${userProfile.username}`}
+                        className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                      >
+                        👁️ View Public Profile
+                      </Link>
+                    ) : userProfile.userType === 'technician' ? (
+                      <div className="block w-full bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-center">
+                        ⚠️ Set up username to enable public profile
+                      </div>
+                    ) : null}
                     <button
                       onClick={handleSignOut}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                     >
                       🚪 Sign Out
                     </button>
+                    
+                    {/* Delete Account Section */}
+                    <div className="pt-4 border-t border-white/10">
+                      {!showDeleteConfirm ? (
+                        <button
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          🗑️ Delete Account
+                        </button>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+                            <h4 className="text-red-300 font-semibold mb-2">⚠️ Warning</h4>
+                            <p className="text-red-200 text-sm mb-3">
+                              This action is permanent and cannot be undone. All your data will be deleted.
+                            </p>
+                            <p className="text-white text-sm mb-2 font-medium">
+                              Type <span className="bg-red-900/50 px-2 py-1 rounded font-mono">DELETE</span> to confirm:
+                            </p>
+                            <input
+                              type="text"
+                              value={deleteConfirmText}
+                              onChange={(e) => setDeleteConfirmText(e.target.value)}
+                              placeholder="Type DELETE here"
+                              className="w-full bg-white/10 border border-red-500/30 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:border-red-400 focus:outline-none mb-3"
+                              disabled={isDeleting}
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                              >
+                                {isDeleting ? 'Deleting...' : 'Delete My Account'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowDeleteConfirm(false);
+                                  setDeleteConfirmText('');
+                                }}
+                                disabled={isDeleting}
+                                className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

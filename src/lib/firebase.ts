@@ -104,6 +104,24 @@ export async function registerTechnician(technicianData) {
   }
 
   try {
+    // Validate username is provided (mandatory for technicians)
+    if (!technicianData.username || !technicianData.username.trim()) {
+      throw new Error('Username is required for technician registration');
+    }
+
+    // Validate username format
+    const usernameValidation = validateUsername(technicianData.username);
+    if (!usernameValidation.isValid) {
+      throw new Error(usernameValidation.error);
+    }
+
+    // Check if username is already taken
+    const normalizedUsername = technicianData.username.toLowerCase().trim();
+    const existingUserWithUsername = await findTechnicianByUsername(normalizedUsername);
+    if (existingUserWithUsername) {
+      throw new Error(`Username "${technicianData.username}" is already taken. Please choose a different username.`);
+    }
+
     // Generate unique ID from email and names
     const uniqueId = createUniqueId(
       technicianData.email, 
@@ -144,7 +162,7 @@ export async function registerTechnician(technicianData) {
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
-      username: technicianData.username?.toLowerCase().trim(),
+      username: normalizedUsername, // Required for technicians
       
       // Firebase Auth UID (if created)
       authUid: authUser?.uid || null,
@@ -1883,17 +1901,45 @@ export async function findTechnicianByUsername(username: string): Promise<any> {
 
   try {
     const normalizedUsername = username.toLowerCase().trim();
-    const q = query(
+    
+    // First, try to find in users collection (new structure)
+    const usersQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('username', '==', normalizedUsername),
+      where('userType', '==', 'technician')
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (!usersSnapshot.empty) {
+      const doc = usersSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Fallback: try uniqueId in users collection (for backward compatibility)
+    const uniqueIdQuery = query(
+      collection(db, COLLECTIONS.USERS),
+      where('uniqueId', '==', username),
+      where('userType', '==', 'technician')
+    );
+    const uniqueIdSnapshot = await getDocs(uniqueIdQuery);
+    
+    if (!uniqueIdSnapshot.empty) {
+      const doc = uniqueIdSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    }
+    
+    // Legacy fallback: search in technicians collection
+    const techQuery = query(
       collection(db, COLLECTIONS.TECHNICIANS),
       where('username', '==', normalizedUsername)
     );
-    const querySnapshot = await getDocs(q);
+    const techSnapshot = await getDocs(techQuery);
     
-    if (querySnapshot.empty) {
+    if (techSnapshot.empty) {
       return null;
     }
     
-    const doc = querySnapshot.docs[0];
+    const doc = techSnapshot.docs[0];
     return { id: doc.id, ...doc.data() };
   } catch (error) {
     console.error('Error finding technician by username:', error);
