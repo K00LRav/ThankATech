@@ -15,6 +15,8 @@ import { findRealUsers } from '@/lib/find-real-users';
 import { debugAdminAccount } from '@/lib/debug-admin-account';
 import { fixUserTypeConflicts } from '@/lib/fix-user-conflicts';
 import { scanAllUserConflicts } from '@/lib/scan-user-conflicts';
+import { debugAuthStatus } from '@/lib/debug-auth-status';
+import { createAdminUser } from '@/lib/create-admin-user';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -190,6 +192,10 @@ export default function AdminPage() {
   // System-wide conflict scan states
   const [isScanningConflicts, setIsScanningConflicts] = useState(false);
   const [scanResults, setScanResults] = useState<string>('');
+  
+  // Create admin user states
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [createAdminResults, setCreateAdminResults] = useState<string>('');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -890,6 +896,44 @@ export default function AdminPage() {
     }
     
     setIsScanningConflicts(false);
+  };
+
+  // Create admin user in database
+  const handleCreateAdmin = async () => {
+    if (!user?.uid) {
+      setCreateAdminResults('❌ No user logged in');
+      return;
+    }
+    
+    setIsCreatingAdmin(true);
+    setCreateAdminResults('🔧 Creating admin user in database...\n');
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      const result = await createAdminUser('k00lrav@gmail.com', user.uid);
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      if (result.success) {
+        setCreateAdminResults(`🎉 Admin user creation complete!\n\n📋 ${result.message}\n\n📋 Details:\n${logOutput}\n💡 Your dashboard should now work! Try accessing /dashboard`);
+      } else {
+        setCreateAdminResults(`❌ Creation failed: ${result.message}\n\n📋 Details:\n${logOutput}`);
+      }
+    } catch (error) {
+      setCreateAdminResults(`❌ Creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsCreatingAdmin(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4301,6 +4345,27 @@ export default function AdminPage() {
             <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
               <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
                 {adminDebugResults}
+              </pre>
+            </div>
+          )}
+
+          <button
+            onClick={handleCreateAdmin}
+            disabled={isCreatingAdmin}
+            className="w-full p-4 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-300 hover:bg-blue-600/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+          >
+            <div className="text-lg font-medium">
+              {isCreatingAdmin ? 'Creating...' : '🔧 Create Admin User in Database'}
+            </div>
+            <div className="text-sm text-blue-400">
+              Add your admin account to database so dashboard works
+            </div>
+          </button>
+
+          {createAdminResults && (
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {createAdminResults}
               </pre>
             </div>
           )}
