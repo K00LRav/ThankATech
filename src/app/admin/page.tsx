@@ -10,6 +10,7 @@ import { getUserTokenBalance, addTokensToBalance, checkDailyPerTechnicianLimit }
 import { backfillPointsAwarded } from '@/lib/backfill-points';
 import { debugTransactionData } from '@/lib/debug-transactions';
 import { fixZeroPointTransactions } from '@/lib/fix-zero-points';
+import { debugDashboardQuery } from '@/lib/debug-dashboard-query';
 
 // Username utility functions
 async function isUsernameTaken(username: string): Promise<boolean> {
@@ -163,6 +164,11 @@ export default function AdminPage() {
   // Fix zero points states
   const [isFixingZeroPoints, setIsFixingZeroPoints] = useState(false);
   const [fixZeroPointsResults, setFixZeroPointsResults] = useState<string>('');
+  
+  // Dashboard debug states
+  const [isDashboardDebugging, setIsDashboardDebugging] = useState(false);
+  const [dashboardDebugResults, setDashboardDebugResults] = useState<string>('');
+  const [dashboardDebugUserId, setDashboardDebugUserId] = useState<string>('n7RWETI8uXV9rGmSjTPe');
   
   // Email testing states
   const [emailTestResults, setEmailTestResults] = useState<string>('');
@@ -699,6 +705,40 @@ export default function AdminPage() {
     }
     
     setIsFixingZeroPoints(false);
+  };
+
+  // Debug specific user's dashboard query
+  const handleDashboardDebug = async () => {
+    if (!dashboardDebugUserId.trim()) {
+      setDashboardDebugResults('❌ Please enter a user ID to debug');
+      return;
+    }
+    
+    setIsDashboardDebugging(true);
+    setDashboardDebugResults(`🔍 Testing dashboard query for user: ${dashboardDebugUserId}...\n`);
+    
+    try {
+      // Capture console.log output
+      const originalLog = console.log;
+      let logOutput = '';
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        logOutput += message + '\n';
+        originalLog(...args);
+      };
+      
+      await debugDashboardQuery(dashboardDebugUserId);
+      
+      // Restore console.log
+      console.log = originalLog;
+      
+      setDashboardDebugResults(`🎉 Dashboard debug complete!\n\n📋 Results:\n${logOutput}`);
+    } catch (error) {
+      setDashboardDebugResults(`❌ Dashboard debug failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    setIsDashboardDebugging(false);
   };
 
   const generateUsernamesForAllTechnicians = async () => {
@@ -4161,6 +4201,37 @@ export default function AdminPage() {
               </pre>
             </div>
           )}
+
+          <div className="border-t border-slate-600 pt-4">
+            <h4 className="text-slate-300 font-medium mb-3">🎯 Dashboard Query Debugger</h4>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={dashboardDebugUserId}
+                onChange={(e) => setDashboardDebugUserId(e.target.value)}
+                placeholder="Enter user/technician ID"
+                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-slate-300"
+              />
+              <button
+                onClick={handleDashboardDebug}
+                disabled={isDashboardDebugging}
+                className="px-4 py-2 bg-blue-600/20 border border-blue-500/30 rounded text-blue-300 hover:bg-blue-600/30 transition-all duration-200 disabled:opacity-50"
+              >
+                {isDashboardDebugging ? 'Testing...' : 'Test Dashboard'}
+              </button>
+            </div>
+            <div className="text-xs text-slate-400 mb-3">
+              Known IDs: n7RWETI8uXV9rGmSjTPe (12 transactions), mock-maria-gonzalez (2 transactions)
+            </div>
+            
+            {dashboardDebugResults && (
+              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4">
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                  {dashboardDebugResults}
+                </pre>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Admin Note */}
