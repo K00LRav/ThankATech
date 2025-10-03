@@ -95,18 +95,18 @@ export function RolodexCard({
   };
 
   return (
-    <div className="card-container relative group flex justify-center max-w-md sm:max-w-lg lg:max-w-3xl mx-auto">
-      {/* Rolodex background layers - properly contained */}
-      <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl"></div>
-      <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl"></div>
+    <div className="card-container relative group flex justify-center max-w-sm mx-auto sm:max-w-lg lg:max-w-3xl iphone-card">
+      {/* Rolodex background layers - hidden on mobile for performance */}
+      <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl hidden sm:block"></div>
+      <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl hidden sm:block"></div>
       
-      {/* Main Glass Card */}
-      <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden z-10">
-        {/* Category Badge - Top Right */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
-            <span className="text-base sm:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
-            <span className="hidden sm:inline text-white text-sm font-medium">
+      {/* Main Glass Card - iPhone 12 Pro Max Optimized */}
+      <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:bg-white/15 overflow-hidden z-10 mobile-touch-feedback">
+        {/* Category Badge - iPhone 12 Pro Max Optimized */}
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-lg">
+            <span className="text-sm sm:text-base lg:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
+            <span className="text-white text-xs sm:text-sm font-medium">
               {formatCategory(technician.category)}
             </span>
           </div>

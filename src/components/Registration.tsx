@@ -222,13 +222,13 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
       
-      <div className="mobile-modal relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-500/20 backdrop-blur-sm">
-        {/* ThankATech Header - Mobile Optimized */}
-        <div className="text-center mb-4 sm:mb-6 px-4 sm:px-6 pt-4 sm:pt-6">
-          <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
+      <div className="iphone-modal relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-500/20 backdrop-blur-sm sm:max-w-2xl sm:max-h-[90vh]">
+        {/* ThankATech Header - iPhone 12 Pro Max Optimized */}
+        <div className="text-center mb-4 sm:mb-6 px-4 sm:px-6 pt-6">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
             ThankATech
           </div>
-          <h2 className="text-base sm:text-lg font-semibold text-white leading-tight">
+          <h2 className="text-lg font-semibold text-white leading-tight">
             {showGoogleOptions ? 'Join ThankATech' : `Complete Your ${userType === 'client' ? 'Client' : 'Technician'} Profile`}
           </h2>
         </div>

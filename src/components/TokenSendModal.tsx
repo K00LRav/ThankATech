@@ -65,9 +65,9 @@ export default function TokenSendModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 p-6 w-full max-w-md">
-        <div className="flex justify-between items-center bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 rounded-t-xl -m-6 mb-4 border-b border-white/20">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 iphone-safe-top iphone-safe-bottom">
+      <div className="iphone-modal bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 p-4 sm:p-6 w-full max-w-sm sm:max-w-md">
+        <div className="flex justify-between items-center bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 rounded-t-2xl -m-4 mb-4 border-b border-white/20 sm:-m-6 sm:mb-4">
           <h2 className="text-xl font-bold">Send TOA Tokens</h2>
           <button
             onClick={onClose}
@@ -129,7 +129,7 @@ export default function TokenSendModal({
           <button
             onClick={handleSend}
             disabled={sending || userBalance < tokens}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white rounded-xl hover:from-green-600/90 hover:to-blue-700/90 disabled:from-gray-400/50 disabled:to-gray-500/50 disabled:cursor-not-allowed transition-all border border-white/30"
+            className="iphone-btn-primary flex-1 px-4 py-3 bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white rounded-2xl hover:from-green-600/90 hover:to-blue-700/90 disabled:from-gray-400/50 disabled:to-gray-500/50 disabled:cursor-not-allowed transition-all border border-white/30 active:scale-95"
           >
             {sending ? 'Sending...' : `Send ${formatTokens(tokens)}`}
           </button>

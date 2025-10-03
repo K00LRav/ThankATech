@@ -627,33 +627,34 @@ export default function Home() {
   // Show enhanced empty state - still show the full page with helpful content
   if (profiles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-4 iphone-safe-top iphone-safe-bottom">
         {/* Clean background without animated elements */}
-        <div className="relative">
-          {/* Header */}
-          <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer" prefetch={false}>
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-base sm:text-xl font-bold text-white">🔧</span>
+        <div className="relative max-w-md mx-auto sm:max-w-none">
+          {/* Header - Optimized for iPhone 12 Pro Max */}
+          <header className="flex justify-between items-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 iphone-nav">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer iphone-touch-target" prefetch={false}>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-sm sm:text-base lg:text-xl font-bold text-white">🔧</span>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
                 ThankATech
               </span>
             </Link>
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-2 sm:gap-4 items-center">
               {currentUser ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     {currentUser?.photoURL && (
                       <Image 
                         src={currentUser.photoURL} 
                         alt="Profile" 
                         width={32}
                         height={32}
-                        className="w-8 h-8 rounded-full border-2 border-white/20"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white/20"
                       />
                     )}
-                    <span className="text-gray-300">Welcome, {currentUser?.name}!</span>
+                    <span className="text-gray-300 text-sm sm:text-base hidden sm:inline">Welcome, {currentUser?.name}!</span>
+                    <span className="text-gray-300 text-sm sm:hidden">{currentUser?.name?.split(' ')[0]}</span>
                     <button
                       onClick={() => {
                         setCurrentUser(null);
@@ -788,11 +789,11 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
       {/* Clean background without animated elements */}
-      <div className="relative overflow-hidden">
+      <div className="relative">
         {/* Header - Clean Mobile Design */}
-        <header className="flex justify-between items-center p-3 sm:p-6 bg-slate-800/80 backdrop-blur-sm border border-slate-600/30 rounded-lg sm:rounded-2xl mb-6 sm:mb-8 shadow-lg">
+        <header className="flex justify-between items-center p-3 sm:p-6 bg-slate-800/80 backdrop-blur-sm border border-slate-600/30 rounded-lg sm:rounded-2xl mb-6 sm:mb-8 shadow-lg snap-section hero-section">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer" prefetch={false}>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
@@ -943,24 +944,25 @@ export default function Home() {
 
 
 
-        {/* Modern Glass Rolodex Card - Enhanced Mobile */}
-        <div id="rolodex-card" className="card-container mobile-relative group relative flex justify-center w-full max-w-sm sm:max-w-lg lg:max-w-3xl mx-auto px-2 sm:px-0">
-          {/* Rolodex background layers - properly contained for desktop only */}
+        {/* Modern Glass Rolodex Card - Index Card Proportions */}
+        <div id="rolodex-card" className="card-container mobile-relative group relative flex justify-center w-full max-w-md mx-auto px-3 sm:max-w-xl lg:max-w-4xl sm:px-0 iphone-card">
+          {/* Rolodex background layers - desktop only for performance */}
           <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl hidden sm:block"></div>
           <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-xl sm:rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl hidden sm:block"></div>
           
-          {/* Main Glass Card - Mobile Optimized */}
-          <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl sm:rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-3xl group-hover:-translate-y-1 sm:group-hover:-translate-y-2 group-hover:bg-white/15 overflow-hidden z-10">
-            {/* Category Badge - Top Right */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1.5 shadow-lg">
-            <span className="text-base sm:text-lg">{getCategoryIcon(profile.category, profile.title)}</span>
-            <span className="hidden sm:inline text-white text-sm font-medium">
-              {formatCategory(profile.category)}
-            </span>
-          </div>
-        </div>            {/* Card Content - Mobile Enhanced */}
-            <div className="relative p-4 sm:p-6 lg:p-8 h-full min-h-[16rem] profile-card-mobile sm:min-h-[20rem] lg:min-h-[24rem]">
+          {/* Main Glass Card - Index Card Aspect Ratio */}
+          <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:bg-white/15 overflow-hidden z-10 mobile-touch-feedback">
+            {/* Card Content - Index Card Proportions */}
+            <div className="relative p-4 sm:p-6 lg:p-8 h-full min-h-[14rem] sm:min-h-[16rem] lg:min-h-[18rem] flex flex-col">
+              {/* Category Badge - Positioned to avoid name overlap */}
+              <div className="absolute top-2 right-2 z-10">
+                <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-2.5 py-1 shadow-lg">
+                  <span className="text-sm">{getCategoryIcon(profile.category, profile.title)}</span>
+                  <span className="text-white text-xs font-medium">
+                    {formatCategory(profile.category)}
+                  </span>
+                </div>
+              </div>
 
             <div className="flex flex-col h-full">
               {/* Header Section - Mobile Optimized */}
@@ -981,36 +983,37 @@ export default function Home() {
                       }}
                     />
                   </div>
-                  {/* ThankATech Points Display - Mobile Optimized */}
-                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-full w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 flex items-center justify-center font-bold shadow-lg border border-white">
-                    <div className="text-center">
-                      <div className="text-xs sm:text-xs font-black">{profile.points || 0}</div>
-                      <div className="text-xs -mt-0.5 hidden sm:block">⚡</div>
+                  {/* ThankATech Points Display - Right-sized for mobile */}
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center font-bold shadow-lg border border-white">
+                    <div className="text-center leading-none">
+                      <div className="text-xs font-black">{profile.points || 0}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Name and Essential Info - Mobile Responsive */}
-                <div className="flex-1 min-w-0">
+                {/* Name and Essential Info - Mobile Responsive with padding to avoid category badge */}
+                <div className="flex-1 min-w-0 pr-20">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white leading-tight">{profile.name}</h2>
                   <p className="text-sm sm:text-base lg:text-lg text-blue-200 font-semibold mt-1 leading-tight">{profile.businessName || profile.title}</p>
                   
-                  {/* Verified Badge - Single clean indicator */}
+                  {/* Verified Badge - Compact size */}
                   <div className="mt-2">
-                    <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm font-medium border border-blue-400/30 flex items-center gap-2 w-fit">
-                      ✓ Verified Technician
+                    <span className="bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-full text-xs font-medium border border-blue-400/30 flex items-center gap-1.5 w-fit">
+                      <span className="text-blue-300">✓</span>
+                      <span>Verified Technician</span>
                     </span>
                   </div>
                   
-                  {/* Only show distance if available - Mobile optimized */}
+                  {/* Location Display - Compact mobile */}
                   {profile.distance !== undefined && profile.distance < 100 && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs sm:text-sm text-gray-200 flex items-center">
-                        🚗 {profile.distance.toFixed(1)} miles away
+                      <span className="text-xs text-gray-200 flex items-center gap-1 bg-gray-500/15 px-2 py-0.5 rounded-full">
+                        <span className="text-sm">🚗</span>
+                        <span className="font-medium">{profile.distance.toFixed(1)} mi</span>
                       </span>
                       {profile.isNearby && (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                          📍 Nearby
+                        <span className="bg-green-500/20 text-green-200 px-2 py-0.5 rounded-full text-xs font-medium border border-green-500/30">
+                          <span className="text-green-300">📍</span> Nearby
                         </span>
                       )}
                     </div>
@@ -1018,25 +1021,26 @@ export default function Home() {
                   {/* Show location instead of distance if too far */}
                   {(profile.distance === undefined || profile.distance >= 100) && profile.businessAddress && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs sm:text-sm text-gray-200 flex items-center">
-                        📍 {profile.businessAddress.split(',').slice(-2).join(',').trim()}
+                      <span className="text-xs text-gray-200 flex items-center gap-1 bg-gray-500/15 px-2 py-0.5 rounded-full">
+                        <span className="text-sm">📍</span>
+                        <span className="font-medium">{profile.businessAddress.split(',').slice(-2).join(',').trim()}</span>
                       </span>
                     </div>
                   )}
 
-                  {/* Key Metrics - Mobile optimized layout */}
-                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 mb-2">
-                    <span className="text-xs sm:text-sm text-gray-300 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded-full">
-                      ⚡ <span className="text-white font-medium">{profile.points || 0}</span>
-                      <span className="hidden sm:inline text-xs">Points</span>
+                  {/* Key Metrics - Compact mobile layout */}
+                  <div className="flex flex-wrap gap-1.5 mt-3 mb-2">
+                    <span className="text-xs text-gray-300 flex items-center gap-1 bg-blue-500/15 px-2 py-1 rounded-full border border-blue-500/25">
+                      <span className="text-sm">⚡</span>
+                      <span className="text-white font-medium">{profile.points || 0}</span>
                     </span>
-                    <span className="text-xs sm:text-sm text-gray-300 flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded-full">
-                      🙏 <span className="text-white font-medium">{profile.totalThankYous || 0}</span>
-                      <span className="hidden sm:inline text-xs">Thanks</span>
+                    <span className="text-xs text-gray-300 flex items-center gap-1 bg-red-500/15 px-2 py-1 rounded-full border border-red-500/25">
+                      <span className="text-sm">🙏</span>
+                      <span className="text-white font-medium">{profile.totalThankYous || 0}</span>
                     </span>
-                    <span className="text-xs sm:text-sm text-gray-300 flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-full">
-                      🪙 <span className="text-white font-medium">{profile.totalTips || 0}</span>
-                      <span className="hidden sm:inline text-xs">TOA</span>
+                    <span className="text-xs text-gray-300 flex items-center gap-1 bg-yellow-500/15 px-2 py-1 rounded-full border border-yellow-500/25">
+                      <span className="text-sm">🪙</span>
+                      <span className="text-white font-medium">{profile.totalTips || 0}</span>
                     </span>
                   </div>
                   
@@ -1293,21 +1297,21 @@ export default function Home() {
 
               {/* Bottom Section - Mobile Enhanced Action Buttons */}
               <div className="mt-auto pt-3 sm:pt-4 border-t border-white/20 space-y-3 sm:space-y-4">
-                {/* Mobile-Optimized Action Buttons */}
-                <div className="mobile-action-buttons flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
+                {/* iPhone 12 Pro Max Optimized Action Buttons - Vertical Stack */}
+                <div className="flex flex-col gap-3 w-full">
                   <button 
                     onClick={handleThankYou}
-                    className="mobile-btn mobile-touch-feedback group flex items-center justify-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-1 flex-1 font-semibold"
+                    className="group flex items-center justify-center space-x-3 px-5 py-4 bg-gradient-to-r from-blue-500 to-blue-600 backdrop-blur-sm rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl w-full font-semibold active:scale-95 min-h-[50px]"
                   >
-                    <span className="text-white text-base sm:text-lg group-hover:scale-110 transition-transform duration-200">🙏</span>
-                    <span className="text-white text-sm sm:text-base">Say Thank You</span>
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🙏</span>
+                    <span className="text-white text-base font-semibold">Say Thank You</span>
                   </button>
                   <button 
                     onClick={handleSendTOA}
-                    className="mobile-btn mobile-touch-feedback group flex items-center justify-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-xl sm:rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 flex-1 font-semibold"
+                    className="group flex items-center justify-center space-x-3 px-5 py-4 bg-gradient-to-r from-green-500 to-green-600 backdrop-blur-sm rounded-2xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl w-full font-semibold active:scale-95 min-h-[50px]"
                   >
-                    <span className="text-white text-base sm:text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
-                    <span className="text-white text-sm sm:text-base">Send TOA</span>
+                    <span className="text-white text-lg group-hover:scale-110 transition-transform duration-200">🪙</span>
+                    <span className="text-white text-base font-semibold">Send TOA</span>
                   </button>
                 </div>
                 
@@ -1375,65 +1379,53 @@ export default function Home() {
             </div>
           </div>
 
-      {/* Infinite Scroll Navigation - Mobile Enhanced */}
-      <div className="flex items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-6 mb-6 sm:mb-8 px-2 sm:px-4">
-        {/* Previous Button - Mobile Optimized */}
+      {/* Infinite Scroll Navigation - Compact mobile */}
+      <div className="flex items-center justify-center gap-2 mt-4 mb-6 px-4">
+        {/* Previous Button - Compact size */}
         <button
           onClick={flipToPrevious}
           disabled={currentProfileIndex === 0}
-          className={`mobile-btn group flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 shadow-md ${
+          className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
             currentProfileIndex === 0
               ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
               : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
           }`}
         >
-          <svg className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <span className="hidden sm:inline">Prev</span>
+          <span>Prev</span>
         </button>
 
-        {/* Mobile-Optimized Info */}
-        <div className="flex items-center gap-1 sm:gap-3">
-          {/* Counter - Always visible */}
-          <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-2 sm:px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
-            <span className="text-white font-medium text-xs sm:text-sm">
+        {/* Compact Info Display */}
+        <div className="flex items-center gap-2">
+          {/* Counter - Compact size */}
+          <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
+            <span className="text-white font-medium text-xs">
               {currentProfileIndex + 1} of {profiles.length}
             </span>
           </div>
-          
-          {/* Location Indicator - Hidden on mobile, shown on larger screens */}
-          <div className="hidden sm:block bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Technicians sorted by distance from your location">
-            <div className="flex items-center gap-2">
-              <span className="text-blue-300">📍</span>
-              <span className="text-white font-medium text-sm">
-                Sorted by distance
-              </span>
-            </div>
-          </div>
-          
-
         </div>
 
-        {/* Next Button - Mobile Optimized */}
+        {/* Next Button - Compact size */}
         <button
           onClick={flipToNext}
           disabled={currentProfileIndex >= displayedProfiles.length - 1}
-          className={`mobile-btn group flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 shadow-md ${
+          className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
             currentProfileIndex >= displayedProfiles.length - 1
               ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
               : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
           }`}
         >
-          <span className="hidden sm:inline">Next</span>
-          <svg className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${currentProfileIndex >= displayedProfiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span>Next</span>
+          <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex >= displayedProfiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
       {/* Categories Filter - Moved below technician showcase */}
-      <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 px-4">
+      <div className="mt-12 sm:mt-16 mb-6 sm:mb-8 px-4 snap-section categories-section">
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-xl font-bold text-white mb-2">
             Filter by Category
@@ -1441,8 +1433,8 @@ export default function Home() {
           <p className="text-gray-400 text-sm">Narrow down your search by service type</p>
         </div>
         
-        {/* Mobile-Responsive Category Grid */}
-  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 w-full max-w-4xl mx-auto my-4 sm:my-6">
+        {/* Mobile-Responsive Category Grid - Center Last Item */}
+  <div className="grid grid-cols-3 place-items-center sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 w-full max-w-4xl mx-auto my-4 sm:my-6">
           {/* Build responsive grid: All + categories */}
           {[
             { id: 'all', icon: '🔧', name: 'All', isAll: true },
@@ -1451,7 +1443,7 @@ export default function Home() {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`mobile-btn group px-2 sm:px-4 lg:px-8 py-3 sm:py-4 min-h-[44px] w-full rounded-lg sm:rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${
+              className={`mobile-btn group px-2 sm:px-4 lg:px-8 py-3 sm:py-4 min-h-[44px] w-full rounded-lg sm:rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${idx === 9 ? 'col-start-2 sm:col-start-auto' : ''} ${
                 selectedCategory === category.id
                   ? category.id === 'all'
                     ? 'bg-gradient-to-r from-green-600/30 to-green-800/30 border-green-400/50 shadow-lg'

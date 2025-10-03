@@ -71,13 +71,13 @@ export default function TokenPurchaseModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="mobile-modal bg-white/15 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl border border-white/30 max-w-sm sm:max-w-5xl w-full max-h-[95vh] sm:max-h-[85vh] overflow-y-auto">
-        {/* Header - Mobile Enhanced */}
-        <div className="bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl border-b border-white/20">
-          <div className="flex justify-between items-start sm:items-center">
-            <div className="flex-1 mr-2">
-              <h2 className="text-lg sm:text-2xl font-bold leading-tight">Purchase TOA Tokens</h2>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 iphone-safe-top iphone-safe-bottom">
+      <div className="iphone-modal bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 max-w-sm w-full max-h-[90vh] overflow-y-auto sm:max-w-5xl sm:max-h-[85vh]">
+        {/* Header - iPhone 12 Pro Max Optimized */}
+        <div className="bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 sm:p-6 rounded-t-2xl border-b border-white/20">
+          <div className="flex justify-between items-center">
+            <div className="flex-1 mr-3">
+              <h2 className="text-xl sm:text-2xl font-bold leading-tight">Purchase TOA Tokens</h2>
               <p className="text-green-100 mt-1 text-sm sm:text-base leading-tight">Power the closed-loop appreciation economy & earn ThankATech Points</p>
             </div>
             <button 
@@ -95,17 +95,17 @@ export default function TokenPurchaseModal({
           </div>
         </div>
 
-        {/* Token Packs - Mobile Enhanced */}
-        <div className="p-3 sm:p-6 bg-white/5 backdrop-blur-sm">
-          <div className="mobile-grid-fix grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        {/* Token Packs - iPhone 12 Pro Max Optimized */}
+        <div className="p-4 sm:p-6 bg-white/5 backdrop-blur-sm">
+          <div className="iphone-grid-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
             {TOKEN_PACKS.map((pack) => (
               <div
                 key={pack.id}
                 onClick={() => setSelectedPack(pack)}
-                className={`mobile-btn relative border-2 rounded-lg sm:rounded-xl p-3 sm:p-4 cursor-pointer transition-all duration-200 backdrop-blur-md ${
+                className={`iphone-touch-target relative border-2 rounded-2xl p-4 cursor-pointer transition-all duration-200 backdrop-blur-md active:scale-95 ${
                   selectedPack.id === pack.id
                     ? 'border-green-400/60 bg-gradient-to-br from-green-100/30 to-blue-100/30 shadow-lg scale-105 border-opacity-80'
-                    : 'border-white/30 bg-white/10 hover:border-green-300/50 hover:bg-white/20 hover:shadow-md hover:scale-102'
+                    : 'border-white/30 bg-white/10 hover:border-green-300/50 hover:bg-white/20 hover:shadow-md'
                 }`}
               >
                 {/* Popular/Best Value Badges */}
@@ -180,15 +180,15 @@ export default function TokenPurchaseModal({
             </div>
           </div>
 
-          {/* Purchase Button & Security */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+          {/* Purchase Button & Security - iPhone 12 Pro Max Optimized */}
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/20">
             <button
               onClick={handlePurchase}
               disabled={isProcessing}
-              className={`w-full max-w-md mx-auto py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200 backdrop-blur-md border border-white/30 ${
+              className={`iphone-btn-primary w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-200 backdrop-blur-md border border-white/30 active:scale-95 ${
                 isProcessing
                   ? 'bg-gray-300/50 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600/90 to-blue-800/90 hover:from-blue-700/90 hover:to-blue-900/90 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                  : 'bg-gradient-to-r from-blue-600/90 to-blue-800/90 hover:from-blue-700/90 hover:to-blue-900/90 text-white shadow-lg hover:shadow-xl'
               }`}
             >
               {isProcessing ? (

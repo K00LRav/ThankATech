@@ -56,8 +56,8 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* FAQ Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="text-center mb-8">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="text-center mb-6">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             Frequently Asked Questions
           </h2>
@@ -68,11 +68,13 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
           {faqData.map((faq, index) => (
             <div 
               key={index}
-              className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden"
+              className={`bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden ${
+                index === 8 ? 'md:col-start-1 md:col-end-3 md:max-w-md md:mx-auto' : ''
+              }`}
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full text-left p-6 hover:bg-white/5 transition-colors duration-200 flex justify-between items-center"
+                className="w-full text-left p-4 hover:bg-white/5 transition-colors duration-200 flex justify-between items-center"
               >
                 <span className="font-semibold text-white pr-4">{faq.question}</span>
                 <span className={`text-blue-400 transition-transform duration-200 ${expandedFAQ === index ? 'rotate-180' : ''}`}>
@@ -80,7 +82,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
                 </span>
               </button>
               {expandedFAQ === index && (
-                <div className="px-6 pb-6">
+                <div className="px-4 pb-4">
                   <p className="text-gray-300 text-sm leading-relaxed">{faq.answer}</p>
                 </div>
               )}
@@ -91,12 +93,12 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
       {/* Main Footer Content */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="grid md:grid-cols-4 gap-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="grid md:grid-cols-4 gap-6">
             
             {/* Company Info */}
             <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
                   <span className="text-xl font-bold">🔧</span>
                 </div>
@@ -104,7 +106,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
                   ThankATech
                 </h3>
               </div>
-              <p className="text-gray-300 mb-4 leading-relaxed">
+              <p className="text-gray-300 mb-3 leading-relaxed">
                 Revolutionary closed-loop appreciation economy connecting customers with skilled technicians. Earn ThankATech Points for every appreciation, convert points to TOA tokens, creating endless cycles of gratitude across industries!
               </p>
               <div className="flex gap-4">
@@ -136,7 +138,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-400">Quick Links</h4>
+              <h4 className="text-lg font-semibold mb-3 text-blue-400">Quick Links</h4>
               <ul className="space-y-3">
                 <li><Link href="/" className="text-gray-300 hover:text-white transition-colors">Find Technicians</Link></li>
                 <li>
@@ -153,8 +155,8 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
             {/* Support */}
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-blue-400">Support</h4>
-              <ul className="space-y-3">
+              <h4 className="text-lg font-semibold mb-3 text-blue-400">Support</h4>
+              <ul className="space-y-2">
                 <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Support</Link></li>
                 <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">Help Center</Link></li>
                 <li><a href="mailto:support@thankatech.com" className="text-gray-300 hover:text-white transition-colors">Report an Issue</a></li>
@@ -166,8 +168,8 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
 
       {/* Bottom Bar */}
       <div className="border-t border-white/10 bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-2">
             <div className="text-gray-400 text-sm">
               © 2025 ThankATech. All rights reserved. Built with ❤️ for amazing technicians.
             </div>

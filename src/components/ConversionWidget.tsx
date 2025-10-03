@@ -81,20 +81,20 @@ export default function ConversionWidget({ userId }: ConversionWidgetProps) {
                           pointsToConvert % CONVERSION_SYSTEM.pointsToTOARate === 0;
 
   return (
-    <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-          <span className="text-2xl">⚡</span>
+    <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-4 sm:p-6 iphone-card">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+        <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+          <span className="text-xl sm:text-2xl">⚡</span>
           Convert Points to TOA
         </h3>
-        <div className="text-sm text-purple-200">
+        <div className="text-xs sm:text-sm text-purple-200">
           Rate: {CONVERSION_SYSTEM.pointsToTOARate} points = 1 TOA
         </div>
       </div>
       
       <div className="space-y-6">
-        {/* Status Display */}
-        <div className="grid grid-cols-3 gap-4 text-center">
+        {/* Status Display - iPhone 12 Pro Max Optimized */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
           <div className="bg-white/5 rounded-lg p-4">
             <div className="text-2xl font-bold text-purple-300">{conversionStatus.availablePoints}</div>
             <div className="text-xs text-purple-200">ThankATech Points</div>

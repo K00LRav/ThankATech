@@ -602,15 +602,15 @@ export default function ModernDashboard() {
     );
   }
 
-  // Modern Header Component - matches main page design
+  // iPhone 12 Pro Max Optimized Header Component
   const DashboardHeader = () => (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <header className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-2xl mb-8">
-        <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="text-xl font-bold">🔧</span>
+    <div className="max-w-md mx-auto px-3 py-4 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-8">
+      <header className="flex justify-between items-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 iphone-nav">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer iphone-touch-target">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="text-base sm:text-xl font-bold">🔧</span>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
+          <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
             ThankATech
           </span>
         </Link>
@@ -654,10 +654,10 @@ export default function ModernDashboard() {
     </div>
   );
 
-  // Simplified Navigation (only 3 main sections) - matches main page styling
+  // iPhone 12 Pro Max Optimized Navigation
   const NavigationTabs = () => (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <nav className="flex space-x-8 bg-black/10 backdrop-blur-sm rounded-2xl p-4 mb-6">
+    <div className="max-w-md mx-auto px-3 sm:max-w-7xl sm:px-4 lg:px-8">
+      <nav className="flex space-x-2 sm:space-x-8 bg-black/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-2 sm:p-4 mb-4 sm:mb-6 overflow-x-auto">
         {[
           { id: 'overview', label: 'Dashboard', icon: '🏠' },
           { id: 'activity', label: 'Activity', icon: '📊' },
@@ -666,14 +666,14 @@ export default function ModernDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveView(tab.id as any)}
-            className={`flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+            className={`flex items-center gap-2 py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl transition-all duration-200 flex-shrink-0 iphone-touch-target ${
               activeView === tab.id
                 ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
-            <span>{tab.icon}</span>
-            <span className="font-medium">{tab.label}</span>
+            <span className="text-base">{tab.icon}</span>
+            <span className="font-medium text-sm sm:text-base">{tab.label}</span>
           </button>
         ))}
       </nav>
@@ -1752,13 +1752,13 @@ export default function ModernDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-4 iphone-safe-top iphone-safe-bottom">
       {/* Clean background without animated elements */}
 
       <DashboardHeader />
       <NavigationTabs />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="max-w-md mx-auto px-3 sm:max-w-7xl sm:px-4 lg:px-8">
         {renderView()}
       </main>
 

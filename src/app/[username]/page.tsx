@@ -103,21 +103,21 @@ export default function TechnicianProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden iphone-safe-top iphone-safe-bottom">
+      {/* Animated Background Elements - Hidden on mobile for performance */}
+      <div className="absolute inset-0 overflow-hidden hidden sm:block">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
-      {/* Header */}
-      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Header - iPhone 12 Pro Max Optimized */}
+      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg iphone-nav">
+        <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer" prefetch={false}>
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-xl font-bold">🔧</span>
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer iphone-touch-target" prefetch={false}>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-base sm:text-xl font-bold">🔧</span>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
                 ThankATech
@@ -132,20 +132,20 @@ export default function TechnicianProfile() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Profile Card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden mb-8">
+      {/* Main Content - iPhone 12 Pro Max Optimized */}
+      <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-6xl sm:px-4 lg:px-8 sm:py-12">
+        {/* Hero Profile Card - iPhone 12 Pro Max Optimized */}
+        <div className="bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden mb-6 sm:mb-8 iphone-card">
           {/* Profile Header with Enhanced Glassmorphism */}
-          <div className="relative bg-gradient-to-r from-blue-600/60 via-cyan-600/60 to-blue-800/60 backdrop-blur-xl p-8">
+          <div className="relative bg-gradient-to-r from-blue-600/60 via-cyan-600/60 to-blue-800/60 backdrop-blur-xl p-4 sm:p-8">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/20 rounded-full blur-xl"></div>
             
-            <div className="relative flex flex-col lg:flex-row items-center gap-8">
-              {/* Enhanced Profile Image */}
+            <div className="relative flex flex-col sm:flex-row lg:flex-row items-center gap-4 sm:gap-8">
+              {/* Enhanced Profile Image - iPhone 12 Pro Max Optimized */}
               <div className="relative group">
-                <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white/40 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm shadow-2xl group-hover:scale-105 transition-transform duration-300">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white/40 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm shadow-2xl group-hover:scale-105 transition-transform duration-300">
                   {technician.image ? (
                     <Image
                       src={technician.image}

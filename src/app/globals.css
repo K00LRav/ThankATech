@@ -28,6 +28,39 @@ body {
   font-family: var(--font-geist-sans), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", Arial, Helvetica, sans-serif;
 }
 
+/* Smooth scroll snapping for mobile - gentler approach */
+@media (max-width: 768px) {
+  html {
+    scroll-snap-type: y proximity;
+    scroll-behavior: smooth;
+  }
+  
+  /* Define snap points for major sections */
+  .snap-section {
+    scroll-snap-align: start;
+  }
+  
+  /* Header section */
+  header, .hero-section {
+    scroll-snap-align: start;
+  }
+  
+  /* Categories section */
+  .categories-section {
+    scroll-snap-align: start;
+  }
+  
+  /* Profile cards section - less aggressive snapping */
+  .profiles-section {
+    scroll-snap-align: start;
+  }
+  
+  /* Footer section */
+  footer {
+    scroll-snap-align: start;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -219,22 +252,143 @@ body {
   }
 }
 
-/* iPhone 12 Pro Max specific (390px width) */
-@media (max-width: 390px) {
-  /* Extra tight spacing for very narrow screens */
-  .card-container {
-    margin: 0 0.25rem;
+/* iPhone 12 Pro Max specific optimizations (428x926 viewport) */
+@media (max-width: 428px) {
+  /* iPhone 12 Pro Max viewport optimization */
+  .iphone-12-pro-max {
+    min-height: 926px;
+    width: 100%;
+    max-width: 428px;
+    margin: 0 auto;
   }
   
-  /* Smaller text for iPhone 12 Pro Max */
+  /* Safe area handling for iPhone 12 Pro Max */
+  .iphone-safe-top {
+    padding-top: env(safe-area-inset-top, 44px);
+  }
+  
+  .iphone-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 34px);
+  }
+  
+  .iphone-safe-left {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  
+  .iphone-safe-right {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  
+  /* Dynamic Island and status bar spacing */
+  .iphone-header-spacing {
+    margin-top: 44px;
+    padding-top: 1rem;
+  }
+  
+  /* Extra tight spacing for very narrow screens */
+  .card-container {
+    margin: 0 0.5rem;
+    padding: 1rem;
+  }
+  
+  /* Optimized text hierarchy for iPhone 12 Pro Max */
   h1 {
-    font-size: 1.5rem;
-    line-height: 2rem;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 800;
   }
   
   h2 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 700;
+  }
+  
+  h3 {
     font-size: 1.125rem;
     line-height: 1.5rem;
+    font-weight: 600;
+  }
+  
+  /* iPhone 12 Pro Max specific touch targets */
+  .iphone-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+  }
+  
+  /* Optimized card layout for iPhone 12 Pro Max */
+  .iphone-card {
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+  
+  /* Enhanced button styling for iPhone */
+  .iphone-btn-primary {
+    background: linear-gradient(135deg, #007AFF 0%, #0056D6 100%);
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 22px;
+    color: white;
+    border: none;
+    min-height: 50px;
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
+  }
+  
+  .iphone-btn-secondary {
+    background: rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 22px;
+    color: #007AFF;
+    min-height: 50px;
+  }
+  
+  /* iPhone 12 Pro Max navigation */
+  .iphone-nav {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 8px 16px;
+  }
+  
+  /* iPhone 12 Pro Max modal optimization */
+  .iphone-modal {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: calc(100vh - 44px);
+    overflow-y: auto;
+    background: white;
+    box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* iPhone 12 Pro Max grid system */
+  .iphone-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+  
+  .iphone-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding: 0 1rem;
   }
   
   /* Compact navigation for narrow screens */
