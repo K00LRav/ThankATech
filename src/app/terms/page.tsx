@@ -40,7 +40,7 @@ export default function Terms() {
             Terms of Service
           </h1>
           <p className="text-gray-300 text-lg">
-            Last updated: September 27, 2025
+            Last updated: October 2, 2025
           </p>
         </div>
 
@@ -105,6 +105,45 @@ export default function Terms() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-bold text-red-400 mb-4">Platform Administration and Oversight</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                ThankATech maintains administrative oversight of the platform to ensure quality, security, and compliance:
+              </p>
+              
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Administrative Rights</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Account Management:</strong> ThankATech may review, suspend, or terminate user accounts for Terms violations</li>
+                  <li><strong>Content Moderation:</strong> We reserve the right to review, edit, or remove user-generated content</li>
+                  <li><strong>Data Access:</strong> Authorized personnel may access user data for support, security, and compliance purposes</li>
+                  <li><strong>Transaction Oversight:</strong> We monitor payments and tips for fraud prevention and compliance</li>
+                  <li><strong>Platform Statistics:</strong> We collect and analyze platform usage data for operational improvements</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Administrative Tools and Functions</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>User Support:</strong> Password reset assistance and account recovery services</li>
+                  <li><strong>Email Communications:</strong> Ability to send platform updates, notifications, and support messages</li>
+                  <li><strong>Data Management:</strong> Database maintenance, backup, and recovery operations</li>
+                  <li><strong>Security Monitoring:</strong> Fraud detection, security incident response, and system monitoring</li>
+                  <li><strong>Compliance Reporting:</strong> Generation of reports for legal and regulatory requirements</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Data Protection and Privacy</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  All administrative access to user data is governed by our Privacy Policy and is limited to authorized 
+                  personnel for legitimate business purposes including customer support, fraud prevention, and legal compliance.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-bold text-pink-400 mb-4">Technician Responsibilities</h2>
             <div className="space-y-4">
               <p className="text-gray-300 leading-relaxed">If you register as a technician, you agree to:</p>
@@ -136,8 +175,38 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-purple-400 mb-4">Payments, Tips, and Platform Fees</h2>
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">Points System, TOA Tokens, and Platform Fees</h2>
             <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">ThankATech Points System</h3>
+                <p className="text-gray-300 leading-relaxed mb-2">
+                  ThankATech operates a points-based appreciation system where users can earn and display points:
+                </p>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Earning Points:</strong> Users receive points when they receive appreciation through our platform</li>
+                  <li><strong>Point Display:</strong> Points are displayed on user profiles as a measure of community appreciation</li>
+                  <li><strong>No Cash Value:</strong> Points have no monetary value and cannot be redeemed for cash or services</li>
+                  <li><strong>Recognition System:</strong> Points serve as a reputation and recognition mechanism within the ThankATech community</li>
+                  <li><strong>Point Calculation:</strong> Points are awarded based on appreciation received from other users</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">TOA (Token of Appreciation) System</h3>
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10 mb-4">
+                  <p className="text-gray-300 leading-relaxed mb-2">
+                    <strong>TOA Tokens</strong> are digital tokens that can be purchased and sent to technicians as appreciation:
+                  </p>
+                  <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                    <li><strong>Token Purchase:</strong> Customers can purchase TOA tokens through secure payment processing</li>
+                    <li><strong>Token Value:</strong> Each TOA token has a predetermined monetary value set by ThankATech</li>
+                    <li><strong>Token Transfer:</strong> TOA tokens can be sent to technicians as digital appreciation</li>
+                    <li><strong>Token Redemption:</strong> Technicians can convert received TOA tokens to monetary payouts</li>
+                    <li><strong>Transaction Record:</strong> All TOA token transactions are recorded and receipted</li>
+                  </ul>
+                </div>
+              </div>
+
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Service Payments</h3>
                 <p className="text-gray-300 leading-relaxed">
@@ -149,13 +218,14 @@ export default function Terms() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Tips and Appreciation Payments</h3>
                 <p className="text-gray-300 leading-relaxed mb-2">
-                  Tips sent through our platform are processed securely using Stripe, Inc. as our payment processor:
+                  Tips and TOA tokens sent through our platform are processed securely using Stripe, Inc. as our payment processor:
                 </p>
                 <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                  <li><strong>Payment Processing:</strong> All tip transactions are handled by Stripe with bank-level security</li>
+                  <li><strong>Payment Processing:</strong> All tip and TOA token transactions are handled by Stripe with bank-level security</li>
                   <li><strong>Supported Payment Methods:</strong> Credit cards, debit cards, and other methods supported by Stripe</li>
                   <li><strong>Transaction Security:</strong> PCI DSS Level 1 compliance and end-to-end encryption</li>
                   <li><strong>Receipt Generation:</strong> Automatic receipts provided for all transactions</li>
+                  <li><strong>Token Conversion:</strong> TOA tokens are converted to monetary value for payout processing</li>
                 </ul>
               </div>
 
@@ -163,7 +233,7 @@ export default function Terms() {
                 <h3 className="text-lg font-semibold text-white mb-2">Platform Fee Structure</h3>
                 <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                   <p className="text-gray-300 leading-relaxed mb-2">
-                    <strong>Flat Platform Fee:</strong> $0.99 per tip transaction
+                    <strong>Flat Platform Fee:</strong> $0.99 per tip or TOA token transaction
                   </p>
                   <p className="text-gray-300 leading-relaxed mb-2">This fee covers:</p>
                   <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
@@ -173,6 +243,8 @@ export default function Terms() {
                     <li>Fraud protection and transaction monitoring</li>
                     <li>Compliance with financial regulations (PCI DSS, AML, KYC)</li>
                     <li>Data security and privacy protection</li>
+                    <li>Points system maintenance and recognition features</li>
+                    <li>TOA token system infrastructure and processing</li>
                   </ul>
                 </div>
               </div>
@@ -203,10 +275,12 @@ export default function Terms() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Technician Payouts</h3>
                 <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                  <li>Technicians receive tips minus the $0.99 platform fee</li>
+                  <li>Technicians receive tips and TOA token values minus the $0.99 platform fee</li>
                   <li>Payouts are processed according to Stripe&apos;s standard schedule</li>
-                  <li>Technicians are responsible for tax reporting on received tips</li>
+                  <li>Technicians are responsible for tax reporting on received tips and TOA token payments</li>
                   <li>Valid bank account information required for payouts</li>
+                  <li>Points earned are separate from monetary payouts and have no cash value</li>
+                  <li>TOA tokens are converted to their monetary equivalent for payout processing</li>
                 </ul>
               </div>
 

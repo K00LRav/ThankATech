@@ -12,6 +12,7 @@ import SignIn from '../components/SignIn';
 import ForgotPassword from '../components/ForgotPassword';
 import TokenSendModal from '../components/TokenSendModal';
 import TokenPurchaseModal from '../components/TokenPurchaseModal';
+import UniversalHeader from '../components/UniversalHeader';
 import Footer from '../components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -54,6 +55,194 @@ interface Technician {
   distance?: number;
   isNearby?: boolean;
 }
+
+// Main Page Header Component with Mobile Hamburger Menu
+const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, onLogout }: {
+  currentUser: any;
+  onSignIn: () => void;
+  onRegister: () => void;
+  onTokenPurchase: () => void;
+  onLogout: () => void;
+}) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <>
+      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg">
+        <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo - Always Visible */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer" prefetch={false}>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-base sm:text-xl font-bold">🔧</span>
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
+                ThankATech
+              </span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden sm:flex gap-3 sm:gap-4 items-center">
+              {currentUser ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                  >
+                    Dashboard
+                  </Link>
+                  
+                  {currentUser?.photoURL && (
+                    <Image 
+                      src={currentUser.photoURL} 
+                      alt="Profile" 
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full border-2 border-white/20"
+                    />
+                  )}
+
+                  {currentUser?.userType === 'customer' && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center px-2 py-1 bg-blue-500/20 rounded-lg text-xs">
+                        <span className="text-blue-300">⚡{currentUser?.points || 0}</span>
+                      </div>
+                      <button
+                        onClick={onTokenPurchase}
+                        className="flex items-center px-2 py-1 bg-purple-600/80 rounded-lg text-xs hover:bg-purple-600 transition-colors"
+                      >
+                        <span className="text-white">🪙 TOA</span>
+                      </button>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={onLogout}
+                    className="px-3 py-2 bg-red-500/20 text-red-200 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={onSignIn}
+                    className="text-gray-300 hover:text-blue-400 transition-colors font-medium text-sm sm:text-base px-3 py-2"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={onRegister}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                  >
+                    Join
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="sm:hidden p-2 text-white hover:text-blue-400 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden bg-white/10 backdrop-blur-xl border-t border-white/20">
+            <div className="max-w-md mx-auto px-3 py-4 space-y-3">
+              {currentUser ? (
+                <>
+                  <div className="flex items-center gap-3 pb-3 border-b border-white/20">
+                    {currentUser?.photoURL ? (
+                      <Image 
+                        src={currentUser.photoURL} 
+                        alt="Profile" 
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full border-2 border-white/20"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
+                        <span className="text-white font-medium">
+                          {currentUser.name?.charAt(0) || 'U'}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-white font-medium">Welcome, {currentUser.name?.split(' ')[0] || 'User'}!</p>
+                      {currentUser?.points && currentUser.points > 0 && (
+                        <p className="text-blue-300 text-sm">⚡ {currentUser.points} Points</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    📊 Dashboard
+                  </Link>
+
+                  <Link
+                    href="/profile"
+                    className="block w-full px-4 py-3 bg-white/10 text-white rounded-lg font-medium text-center hover:bg-white/20 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    👤 Profile
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-3 bg-red-500/20 text-red-200 rounded-lg font-medium text-center hover:bg-red-500/30 transition-colors"
+                  >
+                    🚪 Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => {
+                      onSignIn();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-3 bg-white/10 text-white rounded-lg font-medium text-center hover:bg-white/20 transition-colors"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onRegister();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
+                  >
+                    Join ThankATech
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+    </>
+  );
+};
 
 export default function Home() {
   const [profiles, setProfiles] = useState<Technician[]>([]);
@@ -792,93 +981,23 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
       {/* Clean background without animated elements */}
       <div className="relative">
-        {/* Header - Clean Mobile Design */}
-        <header className="flex justify-between items-center p-3 sm:p-6 bg-slate-800/80 backdrop-blur-sm border border-slate-600/30 rounded-lg sm:rounded-2xl mb-6 sm:mb-8 shadow-lg snap-section hero-section">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer" prefetch={false}>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-              <span className="text-base sm:text-xl font-bold text-white">🔧</span>
-            </div>
-            <span className="text-lg sm:text-2xl font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
-              ThankATech
-            </span>
-          </Link>
+        {/* Header - Universal Design with Mobile Hamburger Menu */}
+        <MainPageHeader 
+          currentUser={currentUser}
+          onSignIn={() => setShowSignIn(true)}
+          onRegister={() => setShowRegistration(true)}
+          onTokenPurchase={() => setShowTokenPurchaseModal(true)}
+          onLogout={() => {
+            setCurrentUser(null);
+            setThankYouMessage('Logged out successfully.');
+            setShowThankYou(true);
+            setTimeout(() => setShowThankYou(false), 3000);
+          }}
+        />
 
-          {/* Navigation */}
-          <div className="flex gap-3 sm:gap-4 items-center">
-            {currentUser ? (
-              <>
-                {/* Dashboard */}
-                <Link
-                  href="/dashboard"
-                  className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                >
-                  <span className="hidden sm:inline">Dashboard</span>
-                  <span className="sm:hidden">📊</span>
-                </Link>
-                
-                {/* Profile */}
-                {currentUser?.photoURL && (
-                  <Image 
-                    src={currentUser.photoURL} 
-                    alt="Profile" 
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full border-2 border-white/20"
-                  />
-                )}
-
-                {/* Points & Tokens */}
-                {currentUser?.userType === 'customer' && (
-                  <div className="hidden sm:flex items-center gap-2">
-                    <div className="flex items-center px-2 py-1 bg-blue-500/20 rounded-lg text-xs">
-                      <span className="text-blue-300">⚡{currentUser?.points || 0}</span>
-                    </div>
-                    <button
-                      onClick={() => setShowTokenPurchaseModal(true)}
-                      className="flex items-center px-2 py-1 bg-purple-600/80 rounded-lg text-xs hover:bg-purple-600 transition-colors"
-                    >
-                      <span className="text-white">🪙 TOA</span>
-                    </button>
-                  </div>
-                )}
-                
-                {/* Logout */}
-                <button
-                  onClick={() => {
-                    setCurrentUser(null);
-                    setThankYouMessage('Logged out successfully.');
-                    setShowThankYou(true);
-                    setTimeout(() => setShowThankYou(false), 3000);
-                  }}
-                  className="px-3 py-2 bg-red-500/20 text-red-200 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
-                >
-                  <span className="sm:hidden">🚪</span>
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  onClick={() => setShowSignIn(true)}
-                  className="text-gray-300 hover:text-blue-400 transition-colors font-medium text-sm sm:text-base px-3 py-2"
-                >
-                  Sign In
-                </button>
-                <button 
-                  onClick={() => setShowRegistration(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                >
-                  Join
-                </button>
-              </>
-            )}
-          </div>
-        </header>
-
-        {/* Hero Section - Mobile Enhanced */}
-        <div className="text-center mb-6 sm:mb-8 px-3 sm:px-4">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-3 sm:mb-4 leading-tight">
+        <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-12">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-3 sm:mb-4 leading-tight">
             🛠 Meet Your Local Tech Heroes
           </h1>
           <p className="text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed">
@@ -1501,10 +1620,10 @@ export default function Home() {
       {/* Spacer before footer */}
       <div className="h-6 sm:h-8"></div>
 
-      {/* Comprehensive Footer */}
-      <Footer onOpenRegistration={() => setShowRegistration(true)} />
-      
-    </div>
+          {/* Comprehensive Footer */}
+          <Footer onOpenRegistration={() => setShowRegistration(true)} />
+        </main>
+      </div>
 
       {/* Registration Modal */}
       {showRegistration && (

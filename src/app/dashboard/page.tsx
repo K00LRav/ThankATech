@@ -1,1387 +1,526 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { formatCurrency } from '@/lib/stripe';
-import { logger } from '@/lib/logger';
-import { auth, db, migrateTechnicianProfile, getTechnicianTransactions, getClientTransactions, authHelpers, getTechnician, getClient } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { User } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  deleteDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  orderBy,
+  limit as firestoreLimit
+} from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, Firestore, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import Image from 'next/image';
-import PayoutModal from '@/components/PayoutModal';
-import ConversionWidget from '@/components/ConversionWidget';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
-import { 
-  getEnhancedTechnicianTransactions, 
-  getEnhancedClientTransactions,
-  DashboardTransaction,
-  DashboardStats
-} from '@/lib/enhanced-dashboard-service';
-import { 
-  EnhancedTransactionCard, 
-  EnhancedTransactionList, 
-  EnhancedStatsOverview 
-} from '@/components/EnhancedTransactionComponents';
-import '@/lib/adminUtils';
+import PayoutModal from '@/components/PayoutModal';
+import UniversalHeader from '@/components/UniversalHeader';
 
-// Modern Dashboard with Improved UX
-// Key improvements:
-// 1. Simplified navigation (3 main sections instead of 8+ tabs)
-// 2. Hero section with primary actions prominently displayed
-// 3. Better visual hierarchy and spacing
-// 4. Responsive design with mobile-first approach
-// 5. Progressive disclosure - show important info first
-// 6. Action-oriented design with clear CTAs
-
+// Types
 interface UserProfile {
   id: string;
   name: string;
   email: string;
-  uniqueId?: string;
-  username?: string;
-  userType: 'technician' | 'client';
-  businessName?: string;
-  category?: string;
-  title?: string;
-  photoURL?: string;
-  
-  // TOA Business Model - ThankATech Points System
-  points?: number;
-  toaBalance?: number;
-  totalPointsEarned?: number;
-  totalPointsSpent?: number;
-  
-  // Thank You System
-  totalThankYous?: number;
-  totalThankYousSent?: number;
-  
-  // TOA Token System
-  totalToaReceived?: number;
-  totalToaSent?: number;
-  totalToaValue?: number;
-  
-  // Conversion System
-  dailyConversions?: number;
-  lastConversionDate?: string;
-  totalConversions?: number;
-  
-  // Profile data
-  location?: string;
-  bio?: string;
-  website?: string;
+  userType: 'client' | 'technician';
   phone?: string;
-  availabilityStatus?: 'available' | 'busy' | 'offline';
-  hourlyRate?: number | string; // Can be number or string like "$75-$110"
-  completedJobs?: number;
-  responseTime?: number;
-  specialties?: string[] | string;
-  certifications?: string[] | string;
-  experience?: number | string; // Can be number or string like "15 years"
-  profileViews?: number;
-  favoriteTechnicians?: string[];
-  
-  // Additional technician-specific fields
   businessAddress?: string;
   businessPhone?: string;
-  businessEmail?: string;
-  serviceArea?: string;
-  availability?: string;
   about?: string;
-  
-  // Legacy fields (deprecated - use TOA system)
-  totalTips?: number;
-  totalTipAmount?: number;
+  username?: string;
+  tokenBalance?: number;
+  points?: number;
 }
 
 interface Transaction {
   id: string;
   amount: number;
-  clientId?: string;
-  clientName?: string;
-  technicianId?: string;
+  timestamp: any;
+  fromName?: string;
+  toName?: string;
   technicianName?: string;
-  toTechnicianId?: string; // For new tokenTransactions format
-  date: string;
-  timestamp?: any;
-  status: 'completed' | 'pending' | 'cancelled';
-  type?: 'toa' | 'thankyou' | 'thank_you' | 'toa_token';
-  pointsAwarded?: number;
-  message?: string;
-  dollarValue?: number;
-  technicianPayout?: number;
-  platformFee?: number;
-  conversionId?: string;
-  originalCurrency?: string;
-  exchangeRate?: number;
-  fees?: number;
-  taxes?: number;
 }
 
+// Enhanced Header Component specifically for Dashboard
+function DashboardHeader({ user, userProfile, onSignOut }: { 
+  user: User | null; 
+  userProfile: UserProfile | null; 
+  onSignOut: () => void;
+}) {
+  return (
+    <UniversalHeader
+      currentUser={userProfile ? {
+        id: userProfile.id,
+        name: userProfile.name,
+        email: userProfile.email,
+        photoURL: user?.photoURL || undefined,
+        userType: userProfile.userType === 'technician' ? 'technician' : 'client',
+        points: userProfile.points
+      } : undefined}
+      onSignOut={onSignOut}
+    />
+  );
+}
+
+// Main Dashboard Component
 export default function ModernDashboard() {
-  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  // Enhanced transaction data
-  const [enhancedTransactions, setEnhancedTransactions] = useState<DashboardTransaction[]>([]);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [isLoadingEnhanced, setIsLoadingEnhanced] = useState(false);
-  
-  // Simplified navigation - only 3 main views
-  const [activeView, setActiveView] = useState<'overview' | 'activity' | 'settings'>('overview');
-  
-  // Modal states
-  const [showPayoutModal, setShowPayoutModal] = useState(false);
-  const [showConversionWidget, setShowConversionWidget] = useState(false);
-  
-  // Profile editing states
+  const [loading, setLoading] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  
-  // Profile picture states
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [photoUploadMessage, setPhotoUploadMessage] = useState<string | null>(null);
-  
-  // Delete account states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  const { earnings, loading: earningsLoading } = useTechnicianEarnings(user?.uid);
+  const [tipTransactions, setTipTransactions] = useState<Transaction[]>([]);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
 
-  // Auth state management - using same system as main page
+  // Use earnings hook for technicians
+  const { earnings, loading: earningsLoading } = useTechnicianEarnings(userProfile?.userType === 'technician' ? userProfile?.id || null : null);
+
   useEffect(() => {
-    const unsubscribe = authHelpers.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in, get their complete profile data
-        try {
-          // Try to get user data from either technicians or users collection
-          let userData: any = await getTechnician(firebaseUser.uid);
-          if (!userData) {
-            userData = await getClient(firebaseUser.uid);
-          }
-
-          if (userData) {
-            const completeUser = {
-              id: userData.id,
-              uid: firebaseUser.uid,
-              name: userData.name || userData.displayName || firebaseUser.displayName,
-              email: userData.email || firebaseUser.email,
-              displayName: userData.displayName || firebaseUser.displayName,
-              photoURL: userData.photoURL || firebaseUser.photoURL,
-              userType: userData.userType || 'client'
-            };
-            
-            setUser(completeUser);
-            await loadUserProfile(firebaseUser.uid, completeUser);
-          } else {
-            // Firebase user exists but no profile data, create basic user object
-            const basicUser = {
-              id: firebaseUser.uid,
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-              userType: 'client'
-            };
-            
-            setUser(basicUser);
-            await loadUserProfile(firebaseUser.uid, basicUser);
-          }
-        } catch (error) {
-          logger.error('Error loading user data:', error);
-          setError('Failed to load user data');
-        }
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        await loadUserProfile(currentUser.uid);
       } else {
-        setUser(null);
-        setUserProfile(null);
-        setTransactions([]);
+        router.push('/');
       }
-      setIsLoading(false);
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
-  const loadUserProfile = async (userId: string, existingUserData?: any) => {
+  const loadUserProfile = async (userId: string) => {
     try {
-      // If we already have user data from auth, use it as base
-      if (existingUserData) {
-        const profileData = { 
-          ...existingUserData, 
-          id: userId,
-          userType: existingUserData.userType || 'client'
-        };
-        setUserProfile(profileData);
-        
-        // Load transactions after profile is loaded
-        await loadTransactions(userId, profileData);
-        return;
-      }
-
-      // Fallback to loading from Firestore (legacy logic)
-      let userData: UserProfile | null = null;
-      
-      // First, try to get user from users collection
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
-        userData = userDoc.data() as UserProfile;
-      }
-      
-      // If no userType is set, try to determine from technicians collection
-      if (userData && !userData.userType) {
-        const techDoc = await getDoc(doc(db, 'technicians', userId));
-        if (techDoc.exists()) {
-          // User exists in technicians collection, set as technician
-          userData.userType = 'technician';
-          // Update the users collection with correct userType
-          await updateDoc(doc(db, 'users', userId), { userType: 'technician' });
-          logger.info('Updated user type to technician for:', userId);
-        } else {
-          // Default to client if not found in technicians
-          userData.userType = 'client';
-          await updateDoc(doc(db, 'users', userId), { userType: 'client' });
-          logger.info('Updated user type to client for:', userId);
-        }
-      }
-      
-      if (userData) {
-        const profileData = { ...userData, id: userId };
-        setUserProfile(profileData);
+        const profile = { id: userId, ...userDoc.data() } as UserProfile;
+        setUserProfile(profile);
+        setEditedProfile(profile);
         
-        // Load transactions after profile is loaded
-        await loadTransactions(userId, profileData);
-      } else {
-        // Try migrating technician profile if user doesn't exist in users collection
-        const migratedProfile = await migrateTechnicianProfile(userId);
-        if (migratedProfile) {
-          const profileData = { ...migratedProfile, id: userId, userType: 'technician' as const };
-          setUserProfile(profileData);
-          await loadTransactions(userId, profileData);
-        }
+        // Load transactions based on user type
+        await loadTransactions(userId, profile.userType);
       }
     } catch (error) {
-      logger.error('Error loading user profile:', error);
-      setError('Failed to load profile');
+      console.error('Error loading user profile:', error);
     }
   };
 
-  const loadTransactions = async (userId: string, profile?: UserProfile) => {
+  const loadTransactions = async (userId: string, userType: string) => {
     try {
-      const currentProfile = profile || userProfile;
-      if (!currentProfile) return;
+      let transactionsQuery;
       
-      let transactionData: Transaction[] = [];
-      
-      if (currentProfile.userType === 'technician') {
-        transactionData = await getTechnicianTransactions(userId, currentProfile.email, currentProfile.uniqueId);
-      } else {
-        transactionData = await getClientTransactions(userId, currentProfile.email);
-      }
-      
-      setTransactions(transactionData);
-      
-      // Load enhanced transactions
-      await loadEnhancedTransactions(userId, currentProfile.userType);
-      
-    } catch (error) {
-      logger.error('Error loading transactions:', error);
-    }
-  };
-
-  const loadEnhancedTransactions = async (userId: string, userType: 'technician' | 'client') => {
-    setIsLoadingEnhanced(true);
-    try {
       if (userType === 'technician') {
-        const { transactions, stats } = await getEnhancedTechnicianTransactions(userId, 50);
-        setEnhancedTransactions(transactions);
-        setDashboardStats(stats);
+        // Load tips received by this technician
+        transactionsQuery = query(
+          collection(db, 'transactions'),
+          where('technicianId', '==', userId),
+          where('type', '==', 'tip'),
+          orderBy('timestamp', 'desc'),
+          firestoreLimit(10)
+        );
       } else {
-        const { transactions, stats } = await getEnhancedClientTransactions(userId, 50);
-        setEnhancedTransactions(transactions);
-        setDashboardStats(stats);
+        // Load tips sent by this client
+        transactionsQuery = query(
+          collection(db, 'transactions'),
+          where('fromUserId', '==', userId),
+          where('type', '==', 'tip'),
+          orderBy('timestamp', 'desc'),
+          firestoreLimit(10)
+        );
       }
+
+      const snapshot = await getDocs(transactionsQuery);
+      const transactions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as object)
+      })) as Transaction[];
+      
+      setTipTransactions(transactions);
     } catch (error) {
-      console.error('Error loading enhanced transactions:', error);
-    } finally {
-      setIsLoadingEnhanced(false);
+      console.error('Error loading transactions:', error);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setEditedProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!userProfile?.id) return;
+
+    try {
+      await updateDoc(doc(db, 'users', userProfile.id), editedProfile);
+      setUserProfile({ ...userProfile, ...editedProfile });
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Error saving profile. Please try again.');
     }
   };
 
   const handleSignOut = async () => {
     try {
-      // Clear Firebase auth
       await signOut(auth);
-      
-      // Clear local storage
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Clear user state
-      setUser(null);
-      setUserProfile(null);
-      setIsLoading(false);
-      
-      // Force redirect to home page
-      window.location.href = '/';
-      
+      router.push('/');
     } catch (error) {
-      logger.error('Sign out error:', error);
-      // Even if signOut fails, clear local data
-      localStorage.clear();
-      sessionStorage.clear();
-      setUser(null);
-      setUserProfile(null);
-      window.location.href = '/';
-    }
-  };
-
-  // Profile editing functions
-  const handleEditProfile = () => {
-    setEditedProfile({
-      name: userProfile?.name || '',
-      username: userProfile?.username || '',
-      businessName: userProfile?.businessName || '',
-      category: userProfile?.category || '',
-      bio: userProfile?.bio || '',
-      location: userProfile?.location || '',
-      phone: userProfile?.phone || '',
-      website: userProfile?.website || '',
-    });
-    setIsEditingProfile(true);
-    setSaveMessage(null);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditingProfile(false);
-    setEditedProfile({});
-    setSaveMessage(null);
-  };
-
-  const handleSaveProfile = async () => {
-    if (!userProfile) return;
-    
-    setIsSaving(true);
-    setSaveMessage(null);
-    
-    try {
-      // If technician is updating username, validate it
-      if (userProfile.userType === 'technician' && editedProfile.username !== undefined) {
-        const username = editedProfile.username.toLowerCase().trim();
-        
-        // Validate format
-        if (username.length < 3 || username.length > 20) {
-          throw new Error('Username must be between 3 and 20 characters');
-        }
-        
-        if (!/^[a-z0-9_-]+$/.test(username)) {
-          throw new Error('Username can only contain lowercase letters, numbers, hyphens, and underscores');
-        }
-        
-        // Check if username is already taken (skip if it's the current username)
-        const currentUsername = userProfile.username?.toLowerCase().trim();
-        if (username !== currentUsername) {
-          const q = query(
-            collection(db, 'users'),
-            where('username', '==', username)
-          );
-          const snapshot = await getDocs(q);
-          
-          // Make sure it's not the current user's document
-          if (!snapshot.empty && snapshot.docs[0].id !== userProfile.id) {
-            throw new Error(`Username "${username}" is already taken`);
-          }
-        }
-        
-        // Normalize username
-        editedProfile.username = username;
-      }
-      
-      const updatedData = {
-        ...editedProfile,
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Update users collection
-      await updateDoc(doc(db, 'users', userProfile.id), updatedData);
-      
-      // If user is a technician, also update technicians collection
-      if (userProfile.userType === 'technician') {
-        try {
-          await updateDoc(doc(db, 'technicians', userProfile.id), updatedData);
-          logger.info('Updated technician profile in technicians collection');
-        } catch (techError) {
-          // If technician document doesn't exist, this is okay
-          // The user might not have been migrated to technicians collection yet
-          logger.warn('Could not update technicians collection:', techError);
-        }
-      }
-      
-      // Update local state
-      setUserProfile({ ...userProfile, ...editedProfile });
-      setIsEditingProfile(false);
-      setSaveMessage('Profile updated successfully!');
-      
-      // Clear message after 3 seconds
-      setTimeout(() => setSaveMessage(null), 3000);
-    } catch (error: any) {
-      logger.error('Error saving profile:', error);
-      const errorMessage = error?.message || 'Failed to save profile. Please try again.';
-      setSaveMessage(`❌ ${errorMessage}`);
-      
-      // Keep error message visible longer
-      setTimeout(() => setSaveMessage(null), 5000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setEditedProfile(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!userProfile || !event.target.files || event.target.files.length === 0) return;
-    
-    const file = event.target.files[0];
-    
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setPhotoUploadMessage('❌ Please select an image file');
-      setTimeout(() => setPhotoUploadMessage(null), 3000);
-      return;
-    }
-    
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setPhotoUploadMessage('❌ Image must be smaller than 5MB');
-      setTimeout(() => setPhotoUploadMessage(null), 3000);
-      return;
-    }
-    
-    setIsUploadingPhoto(true);
-    setPhotoUploadMessage(null);
-    
-    try {
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-      const { storage } = await import('@/lib/firebase');
-      
-      if (!storage) {
-        throw new Error('Storage not configured');
-      }
-      
-      // Create a unique filename
-      const timestamp = Date.now();
-      const fileName = `profile-photos/${userProfile.id}/${timestamp}-${file.name}`;
-      const storageRef = ref(storage, fileName);
-      
-      // Upload file
-      await uploadBytes(storageRef, file);
-      
-      // Get download URL
-      const photoURL = await getDownloadURL(storageRef);
-      
-      // Update user profile in both collections
-      await updateDoc(doc(db, 'users', userProfile.id), {
-        photoURL,
-        updatedAt: new Date().toISOString()
-      });
-      
-      if (userProfile.userType === 'technician') {
-        try {
-          await updateDoc(doc(db, 'technicians', userProfile.id), {
-            photoURL,
-            updatedAt: new Date().toISOString()
-          });
-        } catch (error) {
-          // Technician doc might not exist, that's okay
-        }
-      }
-      
-      // Update local state
-      setUserProfile({ ...userProfile, photoURL });
-      setPhotoUploadMessage('✅ Profile picture updated successfully!');
-      
-      // Clear message after 3 seconds
-      setTimeout(() => setPhotoUploadMessage(null), 3000);
-    } catch (error: any) {
-      logger.error('Error uploading photo:', error);
-      const errorMessage = error?.message || 'Failed to upload photo';
-      setPhotoUploadMessage(`❌ ${errorMessage}`);
-      setTimeout(() => setPhotoUploadMessage(null), 5000);
-    } finally {
-      setIsUploadingPhoto(false);
+      console.error('Error signing out:', error);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!userProfile || !user) return;
-    
-    // Verify user typed "DELETE" exactly
-    if (deleteConfirmText !== 'DELETE') {
-      alert('Please type "DELETE" exactly to confirm');
-      return;
-    }
-    
+    if (!userProfile?.id || deleteConfirmText !== 'DELETE') return;
+
     setIsDeleting(true);
-    
     try {
-      const { deleteUser } = await import('firebase/auth');
+      // Delete user document
+      await deleteDoc(doc(db, 'users', userProfile.id));
       
-      // Delete user data from Firestore
-      await updateDoc(doc(db, 'users', userProfile.id), {
-        deleted: true,
-        deletedAt: new Date().toISOString(),
-        deletedEmail: userProfile.email
-      });
-      
-      // If technician, mark as deleted in technicians collection
-      if (userProfile.userType === 'technician') {
-        try {
-          await updateDoc(doc(db, 'technicians', userProfile.id), {
-            deleted: true,
-            deletedAt: new Date().toISOString()
-          });
-        } catch (error) {
-          // Technician doc might not exist
-        }
+      // Delete user account
+      if (user) {
+        await user.delete();
       }
       
-      // Delete Firebase Auth user
-      await deleteUser(user);
-      
-      // Clear local storage and redirect
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/';
-    } catch (error: any) {
+      router.push('/');
+    } catch (error) {
       console.error('Error deleting account:', error);
-      
-      // Check if re-authentication is needed
-      if (error.code === 'auth/requires-recent-login') {
-        alert('For security, please sign out and sign back in, then try deleting your account again.');
-      } else {
-        alert('Failed to delete account. Please try again or contact support.');
-      }
-      
+      alert('Error deleting account. Please try again.');
       setIsDeleting(false);
-      setShowDeleteConfirm(false);
     }
   };
 
-  if (isLoading) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  // Show loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-center">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (!user || !userProfile) {
+  // Show error state
+  if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Access Denied</h2>
-          <p className="text-slate-300 mb-6">Please log in to access your dashboard.</p>
-          <Link
-            href="/"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 text-center">
+          <p className="text-white mb-4">Error loading profile</p>
+          <button
+            onClick={() => router.push('/')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
-            Go to Home
-          </Link>
+            Go Home
+          </button>
         </div>
       </div>
     );
   }
 
-  // iPhone 12 Pro Max Optimized Header Component
-  const DashboardHeader = () => (
-    <div className="max-w-md mx-auto px-3 py-4 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-8">
-      <header className="flex justify-between items-center p-3 sm:p-6 bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 iphone-nav">
-        <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer iphone-touch-target">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="text-base sm:text-xl font-bold">🔧</span>
-          </div>
-          <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
-            ThankATech
-          </span>
-        </Link>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      {/* Beautiful Animated Background - Like Profile Page */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-blue-700/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-blue-800/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
 
-        <div className="flex gap-4 items-center">
-          {/* Points Badge */}
-          {userProfile.points && userProfile.points > 0 && (
-            <div className="bg-green-500/20 border border-green-500/30 rounded-full px-3 py-1 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-green-300 text-sm font-medium">{userProfile.points} Points</span>
+      <DashboardHeader 
+        user={user} 
+        userProfile={userProfile} 
+        onSignOut={handleSignOut} 
+      />
+      
+      {/* Single Page Layout - Beautiful & Unified */}
+      <main className="relative max-w-6xl mx-auto px-4 py-8 space-y-8">
+        
+        {/* Hero Section - Welcome & Quick Stats */}
+        <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                Welcome back, {userProfile.name?.split(' ')[0] || 'User'}! 👋
+              </h1>
+              <p className="text-blue-200 mt-1">
+                {userProfile.userType === 'technician' 
+                  ? 'Manage your business and track your earnings' 
+                  : 'Your activity dashboard and account overview'
+                }
+              </p>
+            </div>
+            {userProfile.userType === 'technician' && earnings && (
+              <div className="flex gap-4">
+                <div className="bg-green-500/20 border border-green-500/30 rounded-lg px-4 py-3 text-center">
+                  <p className="text-green-300 text-sm font-medium">Available</p>
+                  <p className="text-green-400 text-xl font-bold">{formatCurrency(earnings.availableBalance)}</p>
+                </div>
+                <button
+                  onClick={() => setShowPayoutModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Request Payout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid - Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {userProfile.userType === 'technician' && earnings && (
+            <>
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Total Earned</p>
+                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings)}</p>
+                  </div>
+                  <div className="bg-green-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Tips Received</p>
+                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings * 0.7)}</p>
+                  </div>
+                  <div className="bg-blue-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">🎯</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Service Earnings</p>
+                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings * 0.3)}</p>
+                  </div>
+                  <div className="bg-purple-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">🔧</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Available Balance</p>
+                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.availableBalance)}</p>
+                  </div>
+                  <div className="bg-yellow-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">💳</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {userProfile.userType === 'client' && (
+            <>
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Tips Sent</p>
+                    <p className="text-white text-2xl font-bold">{tipTransactions.length}</p>
+                  </div>
+                  <div className="bg-green-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">💝</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Total Tipped</p>
+                    <p className="text-white text-2xl font-bold">
+                      {formatCurrency(tipTransactions.reduce((sum, tip) => sum + tip.amount, 0))}
+                    </p>
+                  </div>
+                  <div className="bg-blue-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">🎁</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Tokens Purchased</p>
+                    <p className="text-white text-2xl font-bold">{userProfile.tokenBalance || 0}</p>
+                  </div>
+                  <div className="bg-purple-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">🪙</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-300 text-sm font-medium">Account Status</p>
+                    <p className="text-white text-2xl font-bold">Active</p>
+                  </div>
+                  <div className="bg-green-500/20 p-3 rounded-lg">
+                    <span className="text-2xl">✅</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <h2 className="text-xl font-bold text-white mb-6">Recent Activity</h2>
+          
+          {tipTransactions.length > 0 ? (
+            <div className="space-y-4">
+              {tipTransactions.slice(0, 5).map((transaction, index) => (
+                <div key={index} className="flex items-center justify-between py-3 px-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/20 p-2 rounded-lg">
+                      <span className="text-lg">
+                        {userProfile.userType === 'technician' ? '💰' : '🎁'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">
+                        {userProfile.userType === 'technician' 
+                          ? `Tip received from ${transaction.fromName || 'Client'}`
+                          : `Tip sent to ${transaction.toName || transaction.technicianName || 'Technician'}`
+                        }
+                      </p>
+                      <p className="text-slate-400 text-sm">
+                        {new Date(transaction.timestamp?.toDate ? transaction.timestamp.toDate() : transaction.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white font-bold">{formatCurrency(transaction.amount)}</p>
+                    <p className={`text-xs ${userProfile.userType === 'technician' ? 'text-green-400' : 'text-blue-400'}`}>
+                      {userProfile.userType === 'technician' ? 'Received' : 'Sent'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="bg-slate-600/50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">📊</span>
+              </div>
+              <p className="text-slate-300 mb-2">No recent activity</p>
+              <p className="text-slate-400 text-sm">
+                {userProfile.userType === 'technician' 
+                  ? 'Tips and earnings will appear here once you start receiving them.'
+                  : 'Your tip history will appear here once you start sending tips.'
+                }
+              </p>
             </div>
           )}
+        </div>
 
-          {/* User Profile Section */}
-          <div className="flex items-center space-x-3">
-            {userProfile.photoURL ? (
-              <Image 
-                src={userProfile.photoURL}
-                alt={userProfile.name}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full border-2 border-white/20"
-              />
-            ) : (
-              <div className="w-8 h-8 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
-                <span className="text-white text-sm font-medium">
-                  {userProfile.name?.charAt(0) || 'U'}
-                </span>
-              </div>
-            )}
-            <span className="text-gray-300">Welcome, {userProfile.name?.split(' ')[0] || 'User'}!</span>
+        {/* Account Settings - Single Unified Section */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Account Settings</h2>
             <button
-              onClick={handleSignOut}
-              className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-200 rounded-lg text-sm hover:bg-red-500/30 transition-all duration-200"
+              onClick={isEditingProfile ? handleSaveProfile : () => setIsEditingProfile(true)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isEditingProfile 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
-              Logout
+              {isEditingProfile ? '💾 Save Changes' : '✏️ Edit Profile'}
             </button>
           </div>
-        </div>
-      </header>
-    </div>
-  );
 
-  // iPhone 12 Pro Max Optimized Navigation
-  const NavigationTabs = () => (
-    <div className="max-w-md mx-auto px-3 sm:max-w-7xl sm:px-4 lg:px-8">
-      <nav className="flex space-x-2 sm:space-x-8 bg-black/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-2 sm:p-4 mb-4 sm:mb-6 overflow-x-auto">
-        {[
-          { id: 'overview', label: 'Dashboard', icon: '🏠' },
-          { id: 'activity', label: 'Activity', icon: '📊' },
-          { id: 'settings', label: 'Settings', icon: '⚙️' }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveView(tab.id as any)}
-            className={`flex items-center gap-2 py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl transition-all duration-200 flex-shrink-0 iphone-touch-target ${
-              activeView === tab.id
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
-                : 'text-slate-300 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <span className="text-base">{tab.icon}</span>
-            <span className="font-medium text-sm sm:text-base">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-
-  // Hero Section with Primary Actions
-  const HeroSection = () => (
-    <div className="bg-gradient-to-br from-blue-900/40 to-purple-900/40 backdrop-blur-xl rounded-2xl p-8 mb-8 border border-white/10">
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {userProfile.userType === 'client' 
-              ? 'Ready to Show Appreciation?' 
-              : 'Your Technician Dashboard'
-            }
-          </h1>
-          <p className="text-slate-300 text-lg mb-4">
-            {userProfile.userType === 'client' 
-              ? 'Send TOA tokens to your favorite technicians and earn ThankATech Points!'
-              : 'Track your earnings, manage your profile, and grow your business'
-            }
-          </p>
-          
-          {/* Primary CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {userProfile.userType === 'client' ? (
-              <>
-                <Link
-                  href="/"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
-                >
-                  Find Technicians
-                </Link>
-                {userProfile.points && userProfile.points >= 5 && (
-                  <button
-                    onClick={() => setShowConversionWidget(!showConversionWidget)}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                  >
-                    Convert {userProfile.points} Points to TOA
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                {userProfile.username ? (
-                  <Link
-                    href={`/${userProfile.username}`}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
-                  >
-                    View Public Profile
-                  </Link>
-                ) : (
-                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 py-3 px-6 rounded-xl text-center">
-                    Please set up your username in settings to enable public profile
-                  </div>
-                )}
-                {earnings && earnings.availableBalance > 0 && (
-                  <button
-                    onClick={() => setShowPayoutModal(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-                  >
-                    Request Payout
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Stats Cards */}
-        <div className="flex-shrink-0">
-          <div className="grid grid-cols-2 gap-4">
-            {userProfile.userType === 'client' ? (
-              <>
-                <QuickStatCard
-                  title="TOA Sent"
-                  value={userProfile.totalToaSent || 0}
-                  color="blue"
-                />
-                <QuickStatCard
-                  title="Points"
-                  value={userProfile.points || 0}
-                  color="green"
-                />
-              </>
-            ) : (
-              <>
-                <QuickStatCard
-                  title="TOA Received"
-                  value={userProfile.totalToaReceived || 0}
-                  color="purple"
-                />
-                <QuickStatCard
-                  title="Thank Yous"
-                  value={userProfile.totalThankYous || 0}
-                  color="red"
-                />
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Conversion Widget */}
-      {showConversionWidget && userProfile.points && userProfile.points >= 5 && (
-        <div className="mt-6 p-6 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Convert Points to TOA</h3>
-            <button
-              onClick={() => setShowConversionWidget(false)}
-              className="text-slate-400 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-          <ConversionWidget userId={userProfile.id} />
-        </div>
-      )}
-    </div>
-  );
-
-  // Quick Stat Card Component
-  const QuickStatCard = ({ title, value, color }: {
-    title: string;
-    value: string | number;
-    color: 'blue' | 'green' | 'purple' | 'red';
-  }) => {
-    const colorClasses = {
-      blue: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-300',
-      green: 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-300',
-      purple: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300',
-      red: 'from-red-500/20 to-red-600/10 border-red-500/30 text-red-300',
-    };
-
-    return (
-      <div className={`bg-gradient-to-br ${colorClasses[color]} backdrop-blur-lg rounded-xl p-4 border text-center`}>
-        <div className="text-2xl font-bold text-white">{value}</div>
-        <div className="text-sm font-medium">{title}</div>
-      </div>
-    );
-  };
-
-  // Main Stats Grid with Better Layout
-  const StatsGrid = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {userProfile.userType === 'client' ? (
-        <>
-          <StatCard
-            title="Total Spent"
-            value={userProfile.totalToaValue ? formatCurrency(userProfile.totalToaValue * 100) : '$0'}
-            icon="💰"
-            color="blue"
-            subtitle="On TOA tokens"
-          />
-          <StatCard
-            title="ThankATech Points"
-            value={userProfile.points || 0}
-            icon="⭐"
-            color="green"
-            subtitle={`${Math.floor((userProfile.points || 0) / 5)} TOA available`}
-            onClick={() => userProfile.points && userProfile.points >= 5 && setShowConversionWidget(true)}
-            clickable={!!(userProfile.points && userProfile.points >= 5)}
-          />
-          <StatCard
-            title="Thank Yous Sent"
-            value={userProfile.totalThankYousSent || 0}
-            icon="❤️"
-            color="red"
-            subtitle="Appreciation sent"
-          />
-          <StatCard
-            title="Favorites"
-            value={userProfile.favoriteTechnicians?.length || 0}
-            icon="🌟"
-            color="yellow"
-            subtitle="Saved technicians"
-            onClick={() => setActiveView('activity')}
-            clickable
-          />
-        </>
-      ) : (
-        <>
-          <StatCard
-            title="Total Earnings"
-            value={earnings ? formatCurrency(earnings.totalEarnings * 100) : '$0'}
-            icon="💰"
-            color="green"
-            subtitle="All time"
-          />
-          <StatCard
-            title="Available Payout"
-            value={earnings ? formatCurrency(earnings.availableBalance * 100) : '$0'}
-            icon="🏦"
-            color="blue"
-            subtitle="Ready to withdraw"
-            onClick={() => earnings && earnings.availableBalance > 0 && setShowPayoutModal(true)}
-            clickable={!!(earnings && earnings.availableBalance > 0)}
-          />
-          <StatCard
-            title="Thank Yous"
-            value={userProfile.totalThankYous || 0}
-            icon="❤️"
-            color="red"
-            subtitle="Received"
-          />
-          <StatCard
-            title="Profile Views"
-            value={userProfile.profileViews || 0}
-            icon="👁️"
-            color="purple"
-            subtitle="This month"
-          />
-        </>
-      )}
-    </div>
-  );
-
-  // Enhanced Stat Card Component
-  const StatCard = ({ title, value, icon, color, subtitle, clickable, onClick }: {
-    title: string;
-    value: string | number;
-    icon: string;
-    color: string;
-    subtitle: string;
-    clickable?: boolean;
-    onClick?: () => void;
-  }) => {
-    const colorClasses = {
-      blue: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-300',
-      green: 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-300',
-      yellow: 'from-yellow-500/20 to-yellow-600/10 border-yellow-500/30 text-yellow-300',
-      red: 'from-red-500/20 to-red-600/10 border-red-500/30 text-red-300',
-      purple: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 text-purple-300',
-    };
-
-    return (
-      <div
-        className={`bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} backdrop-blur-lg rounded-xl p-6 border transition-all duration-200 ${
-          clickable ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : ''
-        }`}
-        onClick={clickable ? onClick : undefined}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-2xl">{icon}</span>
-          {clickable && <span className="text-xs opacity-50">Click to view</span>}
-        </div>
-        <div className="text-2xl font-bold text-white mb-1">{value}</div>
-        <h3 className="font-semibold text-white/90 mb-1">{title}</h3>
-        <p className="text-sm opacity-75">{subtitle}</p>
-      </div>
-    );
-  };
-
-  // Recent Activity Section
-  const RecentActivity = () => (
-    <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-          <button
-            onClick={() => setActiveView('activity')}
-            className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
-          >
-            View All →
-          </button>
-        </div>
-      </div>
-
-      <div className="divide-y divide-white/10">
-        {transactions.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📝</span>
-            </div>
-            <p className="text-slate-300 mb-2">No activity yet</p>
-            <p className="text-slate-400 text-sm">Your recent TOA transactions will appear here</p>
-          </div>
-        ) : (
-          transactions.slice(0, 5).map((transaction) => (
-            <div key={transaction.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  (transaction.type === 'toa_token' || transaction.type === 'toa') ? 'bg-blue-500/20' : 
-                  transaction.type === 'thank_you' ? 'bg-green-500/20' : 'bg-red-500/20'
-                }`}>
-                  <span className={
-                    (transaction.type === 'toa_token' || transaction.type === 'toa') ? 'text-blue-400' : 
-                    transaction.type === 'thank_you' ? 'text-green-400' : 'text-red-400'
-                  }>
-                    {(transaction.type === 'toa_token' || transaction.type === 'toa') ? '💰' : 
-                     transaction.type === 'thank_you' ? '🙏' : '❤️'}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-medium text-white">
-                    {transaction.toTechnicianId === '' ? 
-                      'Token Purchase' :
-                      userProfile.userType === 'client' 
-                        ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                        : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
-                    }
-                  </p>
-                  <p className="text-sm text-slate-400">{transaction.date}</p>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                {(transaction.type === 'toa' || transaction.type === 'toa_token') && transaction.amount && (
-                  <p className={`font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
-                    {userProfile.userType === 'client' ? '-' : '+'}
-                    {formatCurrency(transaction.amount * 100)}
-                  </p>
-                )}
-                {(transaction.pointsAwarded && transaction.pointsAwarded > 0) && (
-                  <p className="text-blue-400 font-medium text-sm">
-                    +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
-                  </p>
-                )}
-                {/* Debug: Show if transaction should have points but doesn't */}
-                {!transaction.pointsAwarded && (transaction.type === 'thankyou' || transaction.type === 'thank_you') && (
-                  <p className="text-red-400 font-medium text-xs">
-                    DEBUG: Missing +1 Point (type: {transaction.type})
-                  </p>
-                )}
-                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                  transaction.status === 'completed' 
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {transaction.status}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  // Render different views based on activeView
-  const renderView = () => {
-    switch (activeView) {
-      case 'overview':
-        return (
-          <div className="space-y-6">
-            <HeroSection />
-            {dashboardStats && userProfile ? (
-              <EnhancedStatsOverview stats={dashboardStats} userType={userProfile.userType} />
-            ) : (
-              <StatsGrid />
-            )}
-            {enhancedTransactions.length > 0 && userProfile ? (
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <EnhancedTransactionList 
-                  transactions={enhancedTransactions} 
-                  userType={userProfile.userType} 
-                  maxItems={5}
-                  showHeader={true}
-                />
-              </div>
-            ) : (
-              <RecentActivity />
-            )}
-          </div>
-        );
-      
-      case 'activity':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Activity History</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 text-sm">Filter:</span>
-                <select className="bg-white/10 border border-white/20 rounded-lg px-3 py-1 text-white text-sm">
-                  <option value="all">All Activity</option>
-                  <option value="toa">TOA Tokens</option>
-                  <option value="thankyou">Thank Yous</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-              {enhancedTransactions.length > 0 && userProfile ? (
-                <EnhancedTransactionList 
-                  transactions={enhancedTransactions} 
-                  userType={userProfile.userType} 
-                  showHeader={false}
-                />
-              ) : (
-                transactions.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <div className="w-20 h-20 bg-slate-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <span className="text-4xl">📊</span>
-                    </div>
-                    <p className="text-slate-300 text-lg mb-2">No activity yet</p>
-                    <p className="text-slate-400">Your transactions and interactions will appear here</p>
-                  </div>
-                ) : (
-                  transactions.map((transaction) => (
-                    <div key={transaction.id} className="p-6 hover:bg-white/5 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            (transaction.type === 'toa' || transaction.type === 'toa_token') ? 'bg-blue-500/20' : 
-                            transaction.type === 'thank_you' ? 'bg-green-500/20' : 'bg-red-500/20'
-                          }`}>
-                            <span className={`text-xl ${
-                              (transaction.type === 'toa' || transaction.type === 'toa_token') ? 'text-blue-400' : 
-                              transaction.type === 'thank_you' ? 'text-green-400' : 'text-red-400'
-                            }`}>
-                              {(transaction.type === 'toa' || transaction.type === 'toa_token') ? '💰' : 
-                               transaction.type === 'thank_you' ? '🙏' : '❤️'}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-white">
-                              {transaction.toTechnicianId === '' ? 
-                                'Token Purchase' :
-                                userProfile.userType === 'client' 
-                                  ? `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA to' : 'Thank you to'} ${transaction.technicianName}`
-                                  : `${(transaction.type === 'toa' || transaction.type === 'toa_token') ? 'TOA from' : 'Thank you from'} ${transaction.clientName || 'Client'}`
-                              }
-                            </p>
-                            <p className="text-slate-400">{transaction.date}</p>
-                            {transaction.message && (
-                              <p className="text-sm text-slate-300 mt-1 italic">"{transaction.message}"</p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="text-right">
-                          {(transaction.type === 'toa' || transaction.type === 'toa_token') && transaction.amount && (
-                            <p className={`text-lg font-bold ${userProfile.userType === 'client' ? 'text-red-400' : 'text-green-400'}`}>
-                              {userProfile.userType === 'client' ? '-' : '+'}
-                              {formatCurrency(transaction.amount * 100)}
-                            </p>
-                          )}
-                          {(transaction.pointsAwarded && transaction.pointsAwarded > 0) && (
-                            <p className="text-blue-400 font-semibold text-sm">
-                              +{transaction.pointsAwarded} ThankATech Point{transaction.pointsAwarded !== 1 ? 's' : ''}
-                            </p>
-                          )}
-                          {/* Debug: Show if transaction should have points but doesn't */}
-                          {!transaction.pointsAwarded && (transaction.type === 'thankyou' || transaction.type === 'thank_you') && (
-                            <p className="text-red-400 font-semibold text-xs">
-                              DEBUG: Missing +1 Point (type: {transaction.type})
-                            </p>
-                          )}
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                            transaction.status === 'completed' 
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-yellow-500/20 text-yellow-400'
-                          }`}>
-                            {transaction.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )
-              )}
-            </div>
-          </div>
-        );
-      
-      case 'settings':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
-              {!isEditingProfile ? (
-                <button
-                  onClick={handleEditProfile}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  ✏️ {userProfile.userType === 'technician' ? 'Edit Business Profile' : 'Edit Profile'}
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isSaving}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    {isSaving ? '💾 Saving...' : '💾 Save Changes'}
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                    className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Save Message */}
-            {saveMessage && (
-              <div className={`p-4 rounded-lg border ${
-                saveMessage.includes('successfully') 
-                  ? 'bg-green-500/20 border-green-500/30 text-green-300'
-                  : 'bg-red-500/20 border-red-500/30 text-red-300'
-              }`}>
-                {saveMessage}
-              </div>
-            )}
-            
-            {/* Profile Picture Section - Compact */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 max-w-md mx-auto">
-              <h3 className="text-lg font-semibold text-white mb-4 text-center">Profile Picture</h3>
-              
-              {photoUploadMessage && (
-                <div className={`p-3 rounded-lg mb-4 text-sm ${
-                  photoUploadMessage.includes('✅') 
-                    ? 'bg-green-500/20 border border-green-500/30 text-green-300'
-                    : 'bg-red-500/20 border border-red-500/30 text-red-300'
-                }`}>
-                  {photoUploadMessage}
-                </div>
-              )}
-              
-              <div className="flex flex-col items-center gap-4">
-                {userProfile.photoURL ? (
-                  <Image 
-                    src={userProfile.photoURL}
-                    alt={userProfile.name}
-                    width={120}
-                    height={120}
-                    className="w-30 h-30 rounded-full border-4 border-white/20 object-cover"
-                  />
-                ) : (
-                  <div className="w-30 h-30 bg-slate-600/50 rounded-full flex items-center justify-center border-4 border-white/20">
-                    <span className="text-white text-4xl font-bold">
-                      {userProfile.name?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                )}
-                
-                <div className="text-center">
-                  <label 
-                    htmlFor="photo-upload" 
-                    className={`cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors inline-block ${
-                      isUploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isUploadingPhoto ? '⏳ Uploading...' : '📸 Change Photo'}
-                  </label>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    disabled={isUploadingPhoto}
-                    className="hidden"
-                  />
-                  <p className="text-xs text-slate-400 mt-2">
-                    JPG, PNG or GIF. Max 5MB.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Profile Information */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-lg font-semibold text-white">Profile Information</h3>
-                  {userProfile.userType === 'technician' && (
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full border border-blue-500/30">
-                      Enhanced
-                    </span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <div className="space-y-6">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
                     {isEditingProfile ? (
                       <input
                         type="text"
                         value={editedProfile.name || ''}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                        placeholder="Enter your name"
+                        placeholder="Your full name"
                       />
                     ) : (
                       <input
                         type="text"
-                        value={userProfile.name}
+                        value={userProfile.name || 'Not set'}
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
                         readOnly
                       />
                     )}
                   </div>
-                  
+
                   {userProfile.userType === 'technician' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">
-                          Username {!userProfile.username && <span className="text-red-400">(Required for public profile)</span>}
-                        </label>
-                        {isEditingProfile ? (
-                          <div>
-                            <input
-                              type="text"
-                              value={editedProfile.username || ''}
-                              onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
-                              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                              placeholder="e.g., johndoe, tech-expert"
-                              pattern="[a-z0-9_-]+"
-                            />
-                            <p className="text-xs text-slate-400 mt-1">
-                              3-20 characters. Letters, numbers, hyphens, and underscores only. This will be your profile URL: thankatech.com/<span className="text-blue-400">{editedProfile.username || 'username'}</span>
-                            </p>
-                          </div>
-                        ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Username</label>
+                      {isEditingProfile ? (
+                        <div>
+                          <input
+                            type="text"
+                            value={editedProfile.username || ''}
+                            onChange={(e) => handleInputChange('username', e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                            placeholder="Choose a unique username"
+                          />
+                          <p className="text-xs text-slate-400 mt-1">
+                            This will be your public profile URL: thankatech.com/{editedProfile.username || 'username'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
                           <input
                             type="text"
                             value={userProfile.username || 'Not set'}
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
                             readOnly
                           />
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Name</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="text"
-                            value={editedProfile.businessName || ''}
-                            onChange={(e) => handleInputChange('businessName', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="Enter your business name"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.businessName || ''}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-                    </>
-                  )}
-                  
-                  {userProfile.userType === 'client' && userProfile.businessName && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Business Name</label>
-                      {isEditingProfile ? (
-                        <input
-                          type="text"
-                          value={editedProfile.businessName || ''}
-                          onChange={(e) => handleInputChange('businessName', e.target.value)}
-                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                          placeholder="Enter your business name"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={userProfile.businessName || 'Not set'}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                          readOnly
-                        />
+                          {userProfile.username && (
+                            <p className="text-xs text-blue-400 mt-1">
+                              Public profile: thankatech.com/{userProfile.username}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Bio</label>
-                    {isEditingProfile ? (
-                      <textarea
-                        value={editedProfile.bio || ''}
-                        onChange={(e) => handleInputChange('bio', e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                        placeholder="Tell people about yourself..."
-                        rows={3}
-                      />
-                    ) : (
-                      <textarea
-                        value={userProfile.bio || 'No bio set'}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                        readOnly
-                        rows={3}
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Location</label>
-                    {isEditingProfile ? (
-                      <input
-                        type="text"
-                        value={editedProfile.location || ''}
-                        onChange={(e) => handleInputChange('location', e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                        placeholder="City, State"
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        value={userProfile.location || 'Not set'}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                        readOnly
-                      />
-                    )}
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Phone</label>
@@ -1391,383 +530,204 @@ export default function ModernDashboard() {
                         value={editedProfile.phone || ''}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                        placeholder="(555) 123-4567"
+                        placeholder="Your phone number"
                       />
                     ) : (
                       <input
-                        type="text"
+                        type="tel"
                         value={userProfile.phone || 'Not set'}
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
                         readOnly
                       />
                     )}
                   </div>
-
-                  {userProfile.userType === 'technician' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Website</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="url"
-                            value={editedProfile.website || ''}
-                            onChange={(e) => handleInputChange('website', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="https://yourwebsite.com"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.website || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Service Area</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="text"
-                            value={editedProfile.serviceArea || ''}
-                            onChange={(e) => handleInputChange('serviceArea', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., Atlanta Metro - 25 mile radius"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.serviceArea || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Hourly Rate</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="text"
-                            value={editedProfile.hourlyRate || ''}
-                            onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., $75-$110"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.hourlyRate || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Years of Experience</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="text"
-                            value={editedProfile.experience || ''}
-                            onChange={(e) => handleInputChange('experience', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., 15 years"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.experience || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Certifications</label>
-                        {isEditingProfile ? (
-                          <textarea
-                            value={editedProfile.certifications || ''}
-                            onChange={(e) => handleInputChange('certifications', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., Licensed & Insured, EPA Certified, CompTIA A+"
-                            rows={2}
-                          />
-                        ) : (
-                          <textarea
-                            value={userProfile.certifications || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                            rows={2}
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Service Specialties</label>
-                        {isEditingProfile ? (
-                          <textarea
-                            value={editedProfile.specialties || ''}
-                            onChange={(e) => handleInputChange('specialties', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., Smart Home Systems, Panel Upgrades, LED Lighting"
-                            rows={2}
-                          />
-                        ) : (
-                          <textarea
-                            value={userProfile.specialties || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                            rows={2}
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Availability Schedule</label>
-                        {isEditingProfile ? (
-                          <textarea
-                            value={editedProfile.availability || ''}
-                            onChange={(e) => handleInputChange('availability', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="e.g., Monday-Friday 8AM-6PM, Weekend consultations available"
-                            rows={2}
-                          />
-                        ) : (
-                          <textarea
-                            value={userProfile.availability || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                            rows={2}
-                          />
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
 
-              {/* Account Information & Actions */}
-              <div className="space-y-6">
-                {/* Account Info */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Account Information</h3>
+              {/* Account Information */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-lg font-semibold text-white mb-4">Account Information</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={userProfile.email}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                      readOnly
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Email cannot be changed</p>  
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">User Type</label>
+                    <input
+                      type="text"
+                      value={userProfile.userType}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white capitalize"
+                      readOnly
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Account type cannot be changed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Business Information - Technicians Only */}
+              {userProfile.userType === 'technician' && (
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                  <h3 className="text-lg font-semibold text-white mb-4">Business Information</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                      <input
-                        type="email"
-                        value={userProfile.email}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                        readOnly
-                      />
-                      <p className="text-xs text-slate-400 mt-1">Email cannot be changed</p>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Business Address</label>
+                      {isEditingProfile ? (
+                        <textarea
+                          value={editedProfile.businessAddress || ''}
+                          onChange={(e) => handleInputChange('businessAddress', e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                          placeholder="123 Business St, City, State ZIP"
+                          rows={2}
+                        />
+                      ) : (
+                        <textarea
+                          value={userProfile.businessAddress || 'Not set'}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                          readOnly
+                          rows={2}
+                        />
+                      )}
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1">User Type</label>
-                      <input
-                        type="text"
-                        value={userProfile.userType}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white capitalize"
-                        readOnly
-                      />
-                      <p className="text-xs text-slate-400 mt-1">Account type cannot be changed</p>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Business Phone</label>
+                      {isEditingProfile ? (
+                        <input
+                          type="tel"
+                          value={editedProfile.businessPhone || ''}
+                          onChange={(e) => handleInputChange('businessPhone', e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                          placeholder="Business phone number"
+                        />
+                      ) : (
+                        <input
+                          type="tel"
+                          value={userProfile.businessPhone || 'Not set'}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                          readOnly
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Professional Summary</label>
+                      {isEditingProfile ? (
+                        <textarea
+                          value={editedProfile.about || ''}
+                          onChange={(e) => handleInputChange('about', e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
+                          placeholder="Tell clients about your services and experience..."
+                          rows={4}
+                        />
+                      ) : (
+                        <textarea
+                          value={userProfile.about || 'No professional summary set'}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
+                          readOnly
+                          rows={4}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Business Information - Technicians Only */}
-                {userProfile.userType === 'technician' && (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Business Information</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Address</label>
-                        {isEditingProfile ? (
-                          <textarea
-                            value={editedProfile.businessAddress || ''}
-                            onChange={(e) => handleInputChange('businessAddress', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="123 Business St, City, State ZIP"
-                            rows={2}
-                          />
-                        ) : (
-                          <textarea
-                            value={userProfile.businessAddress || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                            rows={2}
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Phone</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="tel"
-                            value={editedProfile.businessPhone || ''}
-                            onChange={(e) => handleInputChange('businessPhone', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="(555) 123-4567"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.businessPhone || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Business Email</label>
-                        {isEditingProfile ? (
-                          <input
-                            type="email"
-                            value={editedProfile.businessEmail || ''}
-                            onChange={(e) => handleInputChange('businessEmail', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="business@example.com"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={userProfile.businessEmail || 'Not set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Professional Summary</label>
-                        {isEditingProfile ? (
-                          <textarea
-                            value={editedProfile.about || ''}
-                            onChange={(e) => handleInputChange('about', e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                            placeholder="Describe your professional background and expertise..."
-                            rows={4}
-                          />
-                        ) : (
-                          <textarea
-                            value={userProfile.about || 'No professional summary set'}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white"
-                            readOnly
-                            rows={4}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Account Actions */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Account Actions</h3>
-                  <div className="space-y-3">
-                    {userProfile.userType === 'technician' && userProfile.username ? (
-                      <Link
-                        href={`/${userProfile.username}`}
-                        className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
-                      >
-                        👁️ View Public Profile
-                      </Link>
-                    ) : userProfile.userType === 'technician' ? (
-                      <div className="block w-full bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-center">
-                        ⚠️ Set up username to enable public profile
-                      </div>
-                    ) : null}
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              {/* Account Actions */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-lg font-semibold text-white mb-4">Account Actions</h3>
+                <div className="space-y-3">
+                  {userProfile.userType === 'technician' && userProfile.username ? (
+                    <Link
+                      href={`/${userProfile.username}`}
+                      className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center"
                     >
-                      🚪 Sign Out
-                    </button>
-                    
-                    {/* Delete Account Section */}
-                    <div className="pt-4 border-t border-white/10">
-                      {!showDeleteConfirm ? (
-                        <button
-                          onClick={() => setShowDeleteConfirm(true)}
-                          className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 font-medium py-2 px-4 rounded-lg transition-colors"
-                        >
-                          🗑️ Delete Account
-                        </button>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
-                            <h4 className="text-red-300 font-semibold mb-2">⚠️ Warning</h4>
-                            <p className="text-red-200 text-sm mb-3">
-                              This action is permanent and cannot be undone. All your data will be deleted.
-                            </p>
-                            <p className="text-white text-sm mb-2 font-medium">
-                              Type <span className="bg-red-900/50 px-2 py-1 rounded font-mono">DELETE</span> to confirm:
-                            </p>
-                            <input
-                              type="text"
-                              value={deleteConfirmText}
-                              onChange={(e) => setDeleteConfirmText(e.target.value)}
-                              placeholder="Type DELETE here"
-                              className="w-full bg-white/10 border border-red-500/30 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:border-red-400 focus:outline-none mb-3"
+                      👁️ View Public Profile
+                    </Link>
+                  ) : userProfile.userType === 'technician' ? (
+                    <div className="block w-full bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-center">
+                      ⚠️ Set up username to enable public profile
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    🚪 Sign Out
+                  </button>
+                  
+                  {/* Delete Account Section */}
+                  <div className="pt-4 border-t border-white/10">
+                    {!showDeleteConfirm ? (
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        🗑️ Delete Account
+                      </button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+                          <h4 className="text-red-300 font-semibold mb-2">⚠️ Warning</h4>
+                          <p className="text-red-200 text-sm mb-3">
+                            This action is permanent and cannot be undone. All your data will be deleted.
+                          </p>
+                          <p className="text-white text-sm mb-2 font-medium">
+                            Type <span className="bg-red-900/50 px-2 py-1 rounded font-mono">DELETE</span> to confirm:
+                          </p>
+                          <input
+                            type="text"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            placeholder="Type DELETE here"
+                            className="w-full bg-white/10 border border-red-500/30 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:border-red-400 focus:outline-none mb-3"
+                            disabled={isDeleting}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleDeleteAccount}
+                              disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                              className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                            >
+                              {isDeleting ? 'Deleting...' : 'Delete My Account'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowDeleteConfirm(false);
+                                setDeleteConfirmText('');
+                              }}
                               disabled={isDeleting}
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleDeleteAccount}
-                                disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                              >
-                                {isDeleting ? 'Deleting...' : 'Delete My Account'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setShowDeleteConfirm(false);
-                                  setDeleteConfirmText('');
-                                }}
-                                disabled={isDeleting}
-                                className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                              >
-                                Cancel
-                              </button>
-                            </div>
+                              className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-4 iphone-safe-top iphone-safe-bottom">
-      {/* Clean background without animated elements */}
-
-      <DashboardHeader />
-      <NavigationTabs />
-      
-      <main className="max-w-md mx-auto px-3 sm:max-w-7xl sm:px-4 lg:px-8">
-        {renderView()}
+        </div>
       </main>
 
-      {/* Modals */}
-      {showPayoutModal && earnings && (
+      {/* Payout Modal */}
+      {showPayoutModal && (
         <PayoutModal
           isOpen={showPayoutModal}
           onClose={() => setShowPayoutModal(false)}
-          availableBalance={earnings.availableBalance}
+          availableBalance={earnings?.availableBalance || 0}
           technicianId={userProfile.id}
           onPayoutSuccess={() => {
             setShowPayoutModal(false);

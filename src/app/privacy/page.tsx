@@ -40,7 +40,7 @@ export default function Privacy() {
             Privacy Policy
           </h1>
           <p className="text-gray-300 text-lg">
-            Last updated: September 27, 2025
+            Last updated: October 2, 2025
           </p>
         </div>
 
@@ -67,6 +67,8 @@ export default function Privacy() {
                   <li>Profile photos and business images</li>
                   <li>Location data (with your permission)</li>
                   <li>Payment information (processed securely)</li>
+                  <li>Points and recognition data</li>
+                  <li>TOA token transaction history</li>
                 </ul>
               </div>
               <div>
@@ -86,7 +88,9 @@ export default function Privacy() {
             <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4">
               <li>To provide and maintain our services</li>
               <li>To facilitate connections between customers and technicians</li>
-              <li>To process payments and transactions</li>
+              <li>To process payments, tips, and TOA token transactions</li>
+              <li>To calculate and display points for community recognition</li>
+              <li>To manage TOA token purchases, transfers, and payouts</li>
               <li>To send you important updates and notifications</li>
               <li>To improve our platform and user experience</li>
               <li>To ensure platform safety and prevent fraud</li>
@@ -141,6 +145,54 @@ export default function Privacy() {
           </section>
 
           <section>
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">Regional Privacy Rights</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">European Union (GDPR) Rights</h3>
+                <p className="text-gray-300 leading-relaxed mb-2">
+                  If you are located in the European Union, you have additional rights under the General Data Protection Regulation (GDPR):
+                </p>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Lawful Basis:</strong> We process your data based on consent, contract performance, or legitimate interests</li>
+                  <li><strong>Right to Object:</strong> You can object to processing based on legitimate interests</li>
+                  <li><strong>Data Protection Officer:</strong> Contact us at privacy@thankatech.com for GDPR-related inquiries</li>
+                  <li><strong>Supervisory Authority:</strong> You have the right to lodge a complaint with your local data protection authority</li>
+                  <li><strong>Data Retention:</strong> We retain data only as long as necessary for the stated purposes</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">California (CCPA) Rights</h3>
+                <p className="text-gray-300 leading-relaxed mb-2">
+                  If you are a California resident, you have rights under the California Consumer Privacy Act (CCPA):
+                </p>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Right to Know:</strong> Request information about personal information we collect, use, and disclose</li>
+                  <li><strong>Right to Delete:</strong> Request deletion of your personal information</li>
+                  <li><strong>Right to Opt-Out:</strong> We do not sell personal information, but you can opt-out if this changes</li>
+                  <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights</li>
+                  <li><strong>Authorized Agent:</strong> You may designate an authorized agent to make requests on your behalf</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Exercising Your Rights</h3>
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <p className="text-gray-300 leading-relaxed mb-2">
+                    To exercise any of these rights, please contact us:
+                  </p>
+                  <ul className="text-gray-300 space-y-1">
+                    <li><strong>Email:</strong> <a href="mailto:privacy@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">privacy@thankatech.com</a></li>
+                    <li><strong>Subject Line:</strong> Include "Privacy Rights Request" in your email</li>
+                    <li><strong>Response Time:</strong> We will respond within 30 days of receiving your request</li>
+                    <li><strong>Verification:</strong> We may need to verify your identity before processing requests</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
             <h2 className="text-2xl font-bold text-blue-400 mb-4">Cookies and Tracking</h2>
             <p className="text-gray-300 leading-relaxed mb-4">
               We use cookies and similar tracking technologies to enhance your experience on our platform:
@@ -151,6 +203,45 @@ export default function Privacy() {
               <li>Preference cookies to remember your settings</li>
               <li>You can control cookie preferences in your browser settings</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-cyan-400 mb-4">Mobile Applications (Future Considerations)</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                If we develop mobile applications in the future, additional data collection and privacy considerations may apply:
+              </p>
+              
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Mobile Device Permissions</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li><strong>Location Services:</strong> With your permission, to help find nearby technicians</li>
+                  <li><strong>Camera Access:</strong> To upload profile photos and business images</li>
+                  <li><strong>Push Notifications:</strong> To send important updates and messages</li>
+                  <li><strong>Contacts:</strong> Only with explicit permission, to facilitate connections</li>
+                  <li><strong>Storage:</strong> To save app data and preferences locally</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Mobile-Specific Data Collection</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Device identifiers and mobile advertising IDs</li>
+                  <li>App usage analytics and crash reports</li>
+                  <li>Device type, operating system, and app version</li>
+                  <li>Network information and connection status</li>
+                  <li>App store interaction data (downloads, updates)</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Mobile Privacy Controls</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  You will always have control over mobile permissions and can modify them through your device settings. 
+                  We will request permissions only when necessary for specific features and will explain why each permission is needed.
+                </p>
+              </div>
+            </div>
           </section>
 
           <section>
@@ -186,9 +277,11 @@ export default function Privacy() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Payment Data Usage</h3>
                 <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                  <li>Processing TOA token purchases and payouts to technicians</li>
+                  <li>Processing tip payments and TOA token purchases and payouts to technicians</li>
                   <li>Calculating and collecting platform fees</li>
                   <li>Generating receipts and transaction records</li>
+                  <li>Managing points calculation and display for community recognition</li>
+                  <li>Processing TOA token conversions and monetary payouts</li>
                   <li>Fraud detection and prevention</li>
                   <li>Compliance with financial regulations (AML, KYC)</li>
                   <li>Resolving payment disputes and chargebacks</li>
