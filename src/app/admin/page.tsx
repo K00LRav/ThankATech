@@ -100,6 +100,11 @@ export default function AdminPage() {
     message: 'This is a test email sent from the ThankATech admin panel.'
   });
 
+  // Brevo status states
+  const [brevoStatus, setBrevoStatus] = useState<any>(null);
+  const [isCheckingBrevo, setIsCheckingBrevo] = useState(false);
+  const [brevoError, setBrevoError] = useState<string>('');
+
   // Username utility functions
   const isUsernameTaken = async (username: string): Promise<boolean> => {
     try {
@@ -338,6 +343,29 @@ export default function AdminPage() {
     setIsSendingReset(false);
   };
 
+  // Brevo status checking
+  const checkBrevoStatus = async () => {
+    if (isCheckingBrevo) return;
+    
+    setIsCheckingBrevo(true);
+    setBrevoError('');
+    
+    try {
+      const response = await fetch('/api/brevo-status');
+      const data = await response.json();
+      
+      if (data.success) {
+        setBrevoStatus(data.data);
+      } else {
+        setBrevoError(data.error || 'Failed to fetch Brevo status');
+      }
+    } catch (error: any) {
+      setBrevoError(`Network error: ${error.message}`);
+    } finally {
+      setIsCheckingBrevo(false);
+    }
+  };
+
   // Email testing
   const testEmailDelivery = async () => {
     if (isTestingEmail) return;
@@ -354,7 +382,7 @@ export default function AdminPage() {
       
       setEmailTestResults(prev => prev + `📧 Sending test email to: ${testEmailData.to}\n`);
       
-      const response = await fetch('/api/test-admin-email', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -543,6 +571,48 @@ export default function AdminPage() {
             >
               {isSendingReset ? 'Sending...' : 'Send Password Reset'}
             </button>
+          </div>
+        </div>
+
+        {/* Brevo SMTP Status */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <h3 className="text-lg font-bold text-white mb-4">📊 Brevo SMTP Status</h3>
+          <div className="space-y-4">
+            <button
+              onClick={checkBrevoStatus}
+              disabled={isCheckingBrevo}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 text-white py-2 px-4 rounded-lg transition-colors"
+            >
+              {isCheckingBrevo ? 'Checking...' : 'Check Brevo Status'}
+            </button>
+            
+            {brevoError && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3">
+                <p className="text-red-200 text-sm">❌ {brevoError}</p>
+              </div>
+            )}
+            
+            {brevoStatus && (
+              <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+                <div className="space-y-2 text-sm">
+                  <h4 className="font-semibold text-green-200">Account Information:</h4>
+                  <p className="text-green-100">📧 Email: {brevoStatus.account?.email || 'N/A'}</p>
+                  <p className="text-green-100">👤 Name: {brevoStatus.account?.firstName} {brevoStatus.account?.lastName}</p>
+                  <p className="text-green-100">🏢 Company: {brevoStatus.account?.companyName || 'N/A'}</p>
+                  <p className="text-green-100">📋 Plan: {brevoStatus.account?.plan || 'N/A'}</p>
+                  <p className="text-green-100">💳 Credits: {brevoStatus.account?.credits || 'N/A'}</p>
+                  
+                  {brevoStatus.senders && brevoStatus.senders.senders && (
+                    <div className="mt-3">
+                      <h4 className="font-semibold text-green-200">Verified Senders:</h4>
+                      {brevoStatus.senders.senders.map((sender: any, index: number) => (
+                        <p key={index} className="text-green-100">✅ {sender.email} ({sender.name})</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
