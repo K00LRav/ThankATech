@@ -244,9 +244,9 @@ export default function Home() {
       filtered = filtered.filter(technician => {
         // Basic fields search
         const basicMatch = 
-          technician.name.toLowerCase().includes(searchTerm) ||
-          technician.category.toLowerCase().includes(searchTerm) ||
-          technician.title.toLowerCase().includes(searchTerm) ||
+          technician.name?.toLowerCase().includes(searchTerm) ||
+          technician.category?.toLowerCase().includes(searchTerm) ||
+          technician.title?.toLowerCase().includes(searchTerm) ||
           technician.businessName?.toLowerCase().includes(searchTerm) ||
           technician.businessAddress?.toLowerCase().includes(searchTerm) ||
           technician.serviceArea?.toLowerCase().includes(searchTerm);
@@ -258,9 +258,9 @@ export default function Home() {
         const mappedCategoryId = mapLegacyCategoryToNew(techCategory);
         const categoryObj = getCategoryById(mappedCategoryId);
         
-        if (categoryObj) {
+        if (categoryObj && categoryObj.subcategories) {
           return categoryObj.subcategories.some(sub => 
-            sub.toLowerCase().includes(searchTerm)  
+            sub?.toLowerCase().includes(searchTerm)  
           );
         }
         
@@ -370,7 +370,7 @@ export default function Home() {
     
     uniqueExistingCategories.forEach(existingCat => {
       if (existingCat && !TECHNICIAN_CATEGORIES.some(cat => 
-        cat.id === existingCat || cat.name.toLowerCase() === existingCat.toLowerCase()
+        cat.id === existingCat || cat.name?.toLowerCase() === existingCat?.toLowerCase()
       )) {
         // This is a legacy category, add it
         categories.push({
