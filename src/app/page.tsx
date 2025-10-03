@@ -196,14 +196,6 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
                     📊 Dashboard
                   </Link>
 
-                  <Link
-                    href="/profile"
-                    className="block w-full px-4 py-3 bg-white/10 text-white rounded-lg font-medium text-center hover:bg-white/20 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    👤 Profile
-                  </Link>
-
                   <button
                     onClick={() => {
                       onLogout();
