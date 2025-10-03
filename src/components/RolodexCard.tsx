@@ -44,7 +44,8 @@ export function RolodexCard({
   onSendTOA, 
   showActions = true
 }: RolodexCardProps) {
-  // Removed expandedCard state - keeping it simple
+  // State for expandable description on mobile
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Achievement badges based on ThankATech Points and community engagement
   const getAchievementBadges = () => {
@@ -102,11 +103,11 @@ export function RolodexCard({
       
       {/* Main Glass Card - iPhone 12 Pro Max Optimized */}
       <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:bg-white/15 overflow-hidden z-10 mobile-touch-feedback">
-        {/* Category Badge - iPhone 12 Pro Max Optimized */}
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-lg">
+        {/* Category Badge - Adjusted for better spacing from info icon */}
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-2 py-1 sm:px-3 sm:py-1.5 shadow-lg max-w-[120px] sm:max-w-none">
             <span className="text-sm sm:text-base lg:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
-            <span className="text-white text-xs sm:text-sm font-medium">
+            <span className="text-white text-xs sm:text-sm font-medium truncate">
               {formatCategory(technician.category)}
             </span>
           </div>
@@ -115,8 +116,8 @@ export function RolodexCard({
         {/* Card Content */}
         <div className="relative p-6 sm:p-8 h-full min-h-[20rem] sm:min-h-[24rem]">
           <div className="flex flex-col h-full">
-            {/* Header Section */}
-            <div className="flex items-start space-x-4 mb-4">
+            {/* Header Section - Extra top margin for category badge clearance */}
+            <div className="flex items-start space-x-4 mb-4 mt-4 sm:mt-4">
               {/* Profile Image */}
               <div className="relative">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
@@ -138,8 +139,36 @@ export function RolodexCard({
 
               {/* Name and Essential Info */}
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold text-white">{technician.name}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">{technician.name}</h2>
+                  {technician.username && (
+                    <a 
+                      href={`/${technician.username}`}
+                      className="group relative"
+                      title="View Full Profile"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 flex items-center justify-center transition-all duration-200 hover:scale-110">
+                        <span className="text-white/70 hover:text-white text-xs">ℹ️</span>
+                      </div>
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                        View Full Profile
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </a>
+                  )}
+                </div>
                 <p className="text-base sm:text-lg text-blue-200 font-semibold mt-1">{technician.businessName || technician.title}</p>
+                
+                {/* Certified badge directly under name */}
+                {technician.certifications && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center gap-1 bg-white/90 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200 shadow-sm">
+                      <span className="text-green-600">✓</span>
+                      <span>Certified</span>
+                    </span>
+                  </div>
+                )}
                 
                 {/* Distance if available */}
                 {technician.distance !== undefined && (
@@ -155,9 +184,18 @@ export function RolodexCard({
                   </div>
                 )}
                 
-                {/* Achievement badge - optimized positioning */}
-                {achievementBadges.length > 0 && (
-                  <div className="mt-1.5">
+                {/* Achievement and Experience badges */}
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {/* Experience badge */}
+                  {technician.experience && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-blue-100 text-blue-800 border-blue-300 shadow-sm">
+                      <span className="text-xs">⚡</span>
+                      <span className="text-xs">{technician.experience.replace(/[^\d]+/, '') + ' yrs'}</span>
+                    </span>
+                  )}
+                  
+                  {/* Achievement badge */}
+                  {achievementBadges.length > 0 && (
                     <span 
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
                       title={`Achievement: ${achievementBadges[0].text}`}
@@ -165,61 +203,60 @@ export function RolodexCard({
                       <span className="text-xs">{achievementBadges[0].icon}</span>
                       <span className="hidden sm:inline text-xs">{achievementBadges[0].text}</span>
                     </span>
-                    {achievementBadges.length > 1 && (
-                      <span className="text-xs text-gray-300 ml-1.5">+{achievementBadges.length - 1}</span>
-                    )}
-                  </div>
-                )}
+                  )}
+                  
+                  {/* Additional achievements indicator */}
+                  {achievementBadges.length > 1 && (
+                    <span className="text-xs text-gray-300">+{achievementBadges.length - 1}</span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Essential Info Only - Streamlined for customers */}
             <div className="space-y-3">
-              {/* Brief About */}
+              {/* Brief About - Expandable on mobile */}
               <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
-                <p className="text-sm text-gray-800 leading-relaxed line-clamp-2">
-                  {technician.about ? 
-                    technician.about.substring(0, 120) + (technician.about.length > 120 ? '...' : '') :
-                    `Professional ${formatCategory(technician.category)} with expertise in quality service delivery.`
-                  }
-                </p>
+                {(() => {
+                  const aboutText = technician.about || `Professional ${formatCategory(technician.category)} with expertise in quality service delivery.`;
+                  const isLong = aboutText.length > 120;
+                  const shouldTruncate = isLong && !isDescriptionExpanded;
+                  
+                  return (
+                    <div>
+                      <p className={`text-sm text-gray-800 leading-relaxed ${shouldTruncate ? 'line-clamp-2' : ''}`}>
+                        {shouldTruncate ? aboutText.substring(0, 120) + '...' : aboutText}
+                      </p>
+                      {isLong && (
+                        <button
+                          onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                          className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 flex items-center gap-1 sm:hidden"
+                        >
+                          {isDescriptionExpanded ? (
+                            <>
+                              <span>Show less</span>
+                              <span className="text-xs">▲</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Read more</span>
+                              <span className="text-xs">▼</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* Key Details - Only most important info */}
-              <div className="grid grid-cols-2 gap-2">
-                {technician.experience && (
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 border border-white/20 shadow-sm">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-blue-600 text-xs">⚡</span>
-                      <span className="text-xs text-gray-800 font-medium">
-                        {technician.experience.replace(/[^\d]+/, '') + ' yrs'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {technician.certifications && (
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 border border-white/20 shadow-sm">
-                    <div className="flex items-center space-x-1">
-                      <span className="text-green-600 text-xs">✓</span>
-                      <span className="text-xs text-gray-800 font-medium">Certified</span>
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* View Profile Link */}
-              <div className="text-center">
-                <a 
-                  href={technician.username ? `/${technician.username}` : '#'}
-                  className="text-xs text-blue-300 hover:text-blue-100 transition-colors duration-200 underline"
-                >
-                  View Full Profile →
-                </a>
-              </div>
+
+
             </div>
 
             {/* Bottom Section */}
-            <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200/50">
+            <div className="mt-auto pt-2 sm:pt-3">
               <div className="flex items-center justify-center gap-3 flex-wrap">
                 <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full px-4 py-2 shadow-lg border border-emerald-400/20">
                   <div className="flex items-center space-x-2">
@@ -235,11 +272,6 @@ export function RolodexCard({
                     <span className="text-sm opacity-90">TOA</span>
                   </div>
                 </div>
-                {technician.certifications && (
-                  <div className="bg-blue-100 text-blue-700 rounded-full px-3 py-1.5 shadow-sm">
-                    <span className="text-sm font-medium">✓ Certified</span>
-                  </div>
-                )}
               </div>
             </div>
 
