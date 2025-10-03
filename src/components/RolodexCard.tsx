@@ -155,18 +155,18 @@ export function RolodexCard({
                   </div>
                 )}
                 
-                {/* Achievement badge */}
+                {/* Achievement badge - optimized positioning */}
                 {achievementBadges.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-1.5">
                     <span 
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
                       title={`Achievement: ${achievementBadges[0].text}`}
                     >
-                      <span>{achievementBadges[0].icon}</span>
-                      <span className="hidden sm:inline">{achievementBadges[0].text}</span>
+                      <span className="text-xs">{achievementBadges[0].icon}</span>
+                      <span className="hidden sm:inline text-xs">{achievementBadges[0].text}</span>
                     </span>
                     {achievementBadges.length > 1 && (
-                      <span className="text-xs text-gray-300 ml-2">+{achievementBadges.length - 1} more</span>
+                      <span className="text-xs text-gray-300 ml-1.5">+{achievementBadges.length - 1}</span>
                     )}
                   </div>
                 )}
@@ -243,23 +243,26 @@ export function RolodexCard({
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Brand-aligned hierarchy */}
             {showActions && (onThankYou || onSendTOA) && (
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full max-w-sm mx-auto mt-6">
+              <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4">
+                {/* PRIMARY ACTION: Say Thank You - Hero button */}
                 {onThankYou && (
                   <button 
                     onClick={onThankYou}
-                    className="group flex items-center justify-center space-x-2 px-4 py-3 sm:px-6 sm:py-4 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transform hover:-translate-y-0.5 min-h-[48px] flex-1 border border-blue-400/20"
+                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-500/30 transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-blue-400/30"
                   >
-                    <span className="font-semibold text-white text-sm">🙏 Say Thank You</span>
+                    <span className="font-bold text-white text-base">🙏 Say Thank You</span>
                   </button>
                 )}
+                
+                {/* SECONDARY ACTION: Send TOA - Subtle option */}
                 {onSendTOA && (
                   <button 
                     onClick={onSendTOA}
-                    className="group flex items-center justify-center space-x-2 px-4 py-3 sm:px-6 sm:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 min-h-[48px] flex-1 border border-emerald-400/20"
+                    className="group flex items-center justify-center space-x-2 px-3 py-2 bg-transparent hover:bg-white/5 rounded-lg transition-all duration-300 min-h-[36px] w-full border border-white/20 hover:border-white/30"
                   >
-                    <span className="font-semibold text-white text-sm">💝 Send TOA</span>
+                    <span className="font-normal text-white/70 hover:text-white/90 text-sm">💝 Send TOA</span>
                   </button>
                 )}
               </div>
