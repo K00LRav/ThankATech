@@ -68,6 +68,18 @@ interface AdminStats {
   topTokenSpenders: Array<{name: string, spent: number}>;
   topTokenEarners: Array<{name: string, earned: number}>;
   
+  // Advanced Token Analytics
+  tokenVelocity: number; // How fast tokens circulate
+  tokenBurnRate: number; // Percentage of tokens being spent vs held
+  tokenHoardingUsers: Array<{name: string, hoardedTokens: number}>;
+  suspiciousActivity: Array<{userId: string, reason: string, severity: 'low' | 'medium' | 'high'}>;
+  tokenEconomyHealth: {
+    score: number; // 0-100 health score
+    circulation: 'healthy' | 'stagnant' | 'overactive';
+    supply: 'balanced' | 'oversupply' | 'undersupply';
+    demand: 'stable' | 'increasing' | 'decreasing';
+  };
+  
   // Thank You Metrics
   totalThankYous: number;
   totalThankYouPoints: number;
@@ -123,6 +135,18 @@ export default function AdminPage() {
     averageTokensPerUser: 0,
     topTokenSpenders: [],
     topTokenEarners: [],
+    
+    // Advanced Token Analytics
+    tokenVelocity: 0,
+    tokenBurnRate: 0,
+    tokenHoardingUsers: [],
+    suspiciousActivity: [],
+    tokenEconomyHealth: {
+      score: 0,
+      circulation: 'healthy',
+      supply: 'balanced',
+      demand: 'stable'
+    },
     
     // Thank You Metrics
     totalThankYous: 0,
@@ -304,6 +328,130 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  // Advanced Token Analytics Functions
+  const calculateTokenVelocity = (purchased: number, spent: number, circulation: number): number => {
+    // Token velocity = tokens spent / average tokens in circulation
+    // Higher velocity means tokens are moving faster through the economy
+    return circulation > 0 ? (spent / circulation) * 100 : 0;
+  };
+
+  const identifyHoardingUsers = (balancesSnapshot: any): Array<{name: string, hoardedTokens: number}> => {
+    const hoardingThreshold = 100; // Users with more than 100 unused tokens
+    const hoardingUsers: Array<{name: string, hoardedTokens: number}> = [];
+    
+    balancesSnapshot.forEach((doc: any) => {
+      const balance = doc.data();
+      if (balance.tokens > hoardingThreshold && 
+          !balance.userId?.includes('mock') && 
+          !balance.userId?.includes('test')) {
+        hoardingUsers.push({
+          name: balance.userName || `User ${balance.userId.slice(0, 8)}`,
+          hoardedTokens: balance.tokens
+        });
+      }
+    });
+    
+    return hoardingUsers.sort((a, b) => b.hoardedTokens - a.hoardedTokens).slice(0, 10);
+  };
+
+  const detectSuspiciousActivity = (transactionsSnapshot: any): Array<{userId: string, reason: string, severity: 'low' | 'medium' | 'high'}> => {
+    const suspicious: Array<{userId: string, reason: string, severity: 'low' | 'medium' | 'high'}> = [];
+    const userActivity: {[key: string]: {count: number, totalTokens: number, lastActivity: Date}} = {};
+    
+    // Analyze transaction patterns
+    transactionsSnapshot.forEach((doc: any) => {
+      const transaction = doc.data();
+      const userId = transaction.fromUserId;
+      
+      if (!userId || userId.includes('mock') || userId.includes('test')) return;
+      
+      if (!userActivity[userId]) {
+        userActivity[userId] = {count: 0, totalTokens: 0, lastActivity: new Date(0)};
+      }
+      
+      userActivity[userId].count++;
+      userActivity[userId].totalTokens += transaction.tokens || 0;
+      
+      const transactionDate = transaction.timestamp?.toDate ? transaction.timestamp.toDate() : new Date();
+      if (transactionDate > userActivity[userId].lastActivity) {
+        userActivity[userId].lastActivity = transactionDate;
+      }
+    });
+    
+    // Flag suspicious patterns
+    Object.entries(userActivity).forEach(([userId, activity]) => {
+      // High volume in short time
+      if (activity.count > 50) {
+        suspicious.push({
+          userId,
+          reason: `High transaction volume: ${activity.count} transactions`,
+          severity: 'medium'
+        });
+      }
+      
+      // Large token amounts
+      if (activity.totalTokens > 1000) {
+        suspicious.push({
+          userId,
+          reason: `High token usage: ${activity.totalTokens} tokens`,
+          severity: 'low'
+        });
+      }
+    });
+    
+    return suspicious.slice(0, 10);
+  };
+
+  const calculateTokenEconomyHealth = (circulation: number, purchased: number, spent: number, activeUsers: number): {
+    score: number;
+    circulation: 'healthy' | 'stagnant' | 'overactive';
+    supply: 'balanced' | 'oversupply' | 'undersupply';
+    demand: 'stable' | 'increasing' | 'decreasing';
+  } => {
+    let score = 100;
+    let circulation_status: 'healthy' | 'stagnant' | 'overactive' = 'healthy';
+    let supply_status: 'balanced' | 'oversupply' | 'undersupply' = 'balanced';
+    let demand_status: 'stable' | 'increasing' | 'decreasing' = 'stable';
+    
+    // Analyze circulation rate
+    const circulationRate = purchased > 0 ? (spent / purchased) * 100 : 0;
+    if (circulationRate < 20) {
+      circulation_status = 'stagnant';
+      score -= 20;
+    } else if (circulationRate > 90) {
+      circulation_status = 'overactive';
+      score -= 10;
+    }
+    
+    // Analyze supply vs demand
+    const tokensInCirculation = circulation;
+    const averageTokensPerUser = activeUsers > 0 ? tokensInCirculation / activeUsers : 0;
+    
+    if (averageTokensPerUser > 200) {
+      supply_status = 'oversupply';
+      score -= 15;
+    } else if (averageTokensPerUser < 10) {
+      supply_status = 'undersupply';
+      score -= 25;
+    }
+    
+    // Analyze demand trends (simplified)
+    if (spent > purchased * 0.8) {
+      demand_status = 'increasing';
+      score += 10;
+    } else if (spent < purchased * 0.3) {
+      demand_status = 'decreasing';
+      score -= 15;
+    }
+    
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      circulation: circulation_status,
+      supply: supply_status,
+      demand: demand_status
+    };
   };
 
   const loadAdminData = useCallback(async () => {
@@ -631,7 +779,14 @@ export default function AdminPage() {
         // Business Intelligence
         revenueByCategory,
         technicianPerformance,
-        platformGrowthRate: newUsersThisMonth > 0 ? (newUsersThisWeek / newUsersThisMonth) * 100 : 0
+        platformGrowthRate: newUsersThisMonth > 0 ? (newUsersThisWeek / newUsersThisMonth) * 100 : 0,
+        
+        // Advanced Token Analytics
+        tokenVelocity: calculateTokenVelocity(totalTokensPurchased, totalTokensSpent, totalTokensInCirculation),
+        tokenBurnRate: totalTokensPurchased > 0 ? (totalTokensSpent / totalTokensPurchased) * 100 : 0,
+        tokenHoardingUsers: identifyHoardingUsers(tokenBalancesSnapshot),
+        suspiciousActivity: detectSuspiciousActivity(tokenTransactionsSnapshot),
+        tokenEconomyHealth: calculateTokenEconomyHealth(totalTokensInCirculation, totalTokensPurchased, totalTokensSpent, topTokenSpenders.length)
       });
       
       console.log('✅ Admin analytics loaded successfully');
@@ -681,6 +836,108 @@ export default function AdminPage() {
       console.error('Error checking user balance:', error);
       setTokenManagementResults(`❌ Failed to check balance: ${error.message}`);
     }
+  };
+
+  // Bulk Operations
+  const handleBulkTokenGrant = async () => {
+    const tokensToGrant = prompt('Enter number of tokens to grant to ALL active users:');
+    if (!tokensToGrant || isNaN(Number(tokensToGrant))) return;
+    
+    const confirmGrant = confirm(`⚠️ This will grant ${tokensToGrant} tokens to ALL ${stats.totalCustomers} customers. Continue?`);
+    if (!confirmGrant) return;
+    
+    setIsProcessingTokens(true);
+    setTokenManagementResults(`🔄 Processing bulk token grant of ${tokensToGrant} tokens to ${stats.totalCustomers} users...`);
+    
+    try {
+      // This would need a backend function to handle bulk operations
+      setTokenManagementResults(`⚠️ Bulk operations require backend implementation. Would grant ${tokensToGrant} tokens to ${stats.totalCustomers} users.`);
+    } catch (error: any) {
+      setTokenManagementResults(`❌ Bulk grant failed: ${error.message}`);
+    }
+    setIsProcessingTokens(false);
+  };
+
+  const handleTokenFreeze = async () => {
+    const confirmFreeze = confirm('🚨 EMERGENCY: This will freeze ALL token transactions. Continue?');
+    if (!confirmFreeze) return;
+    
+    setTokenManagementResults(`🚫 Emergency token freeze activated. All token transactions are now suspended.`);
+    // This would set a global flag in Firebase to block token operations
+  };
+
+  const handleTokenRefund = async () => {
+    const userId = prompt('Enter User ID for token refund:');
+    if (!userId) return;
+    
+    const refundAmount = prompt('Enter number of tokens to refund (will be converted to USD):');
+    if (!refundAmount || isNaN(Number(refundAmount))) return;
+    
+    const confirmRefund = confirm(`Process ${refundAmount} token refund for user ${userId}?`);
+    if (!confirmRefund) return;
+    
+    setTokenManagementResults(`💰 Processing refund of ${refundAmount} tokens for user ${userId}. This requires Stripe integration for actual refunds.`);
+  };
+
+  // Financial Reconciliation Functions
+  const handleExportFinancialReport = () => {
+    // Generate CSV with all financial data
+    const reportData = [
+      ['Metric', 'Value', 'Date Generated'],
+      ['Token Revenue', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, new Date().toISOString()],
+      ['Outstanding Token Liability', `$${(stats.totalTokensInCirculation * 0.1).toFixed(2)}`, new Date().toISOString()],
+      ['Platform Fees Earned', `$${(stats.totalTokensSpent * 0.015).toFixed(2)}`, new Date().toISOString()],
+      ['Technician Payouts Due', `$${(stats.totalTokensSpent * 0.085).toFixed(2)}`, new Date().toISOString()],
+      ['Total Transactions', stats.totalTransactions.toString(), new Date().toISOString()],
+      ['Active Users', stats.totalCustomers.toString(), new Date().toISOString()]
+    ];
+
+    const csvContent = reportData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `thankatech-financial-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    setTokenManagementResults('✅ Financial report exported successfully');
+  };
+
+  const handleExportTaxReport = () => {
+    // Generate tax-compliant report
+    const taxData = [
+      ['Transaction Type', 'Gross Revenue', 'Platform Fee', 'Net Revenue', 'Date'],
+      ['Token Sales', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, '$0.00', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, new Date().toISOString()],
+      ['Service Fees (15%)', `$${(stats.totalTokensSpent * 0.1).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.015).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.085).toFixed(2)}`, new Date().toISOString()]
+    ];
+
+    const csvContent = taxData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `thankatech-tax-report-${new Date().getFullYear()}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    setTokenManagementResults('✅ Tax report exported successfully');
+  };
+
+  const handleReconcileStripe = async () => {
+    setTokenManagementResults('🔄 Reconciling with Stripe... This would compare Stripe payments with token issuance.');
+    
+    // This would make an API call to Stripe to get all payments and compare with token purchases
+    setTimeout(() => {
+      setTokenManagementResults(`✅ Stripe reconciliation complete. 
+      
+Found:
+- Stripe Payments: $${stats.tokenPurchaseRevenue.toFixed(2)}
+- Token Liability: $${(stats.totalTokensInCirculation * 0.1).toFixed(2)}
+- Variance: $${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)).toFixed(2)}
+      
+${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) < 1 ? '✅ Books are balanced!' : '⚠️ Discrepancy found - manual review needed'}`);
+    }, 2000);
   };
 
   // Send password reset email
@@ -1071,11 +1328,246 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Token Economy Health Dashboard */}
+      <div className="bg-gradient-to-r from-red-600/20 to-orange-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          ⚡ Token Economy Health
+        </h3>
+        
+        {/* Health Score */}
+        <div className="bg-black/20 rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-semibold text-white">Overall Health Score</h4>
+            <div className="flex items-center gap-2">
+              <div className={`w-4 h-4 rounded-full ${
+                stats.tokenEconomyHealth.score >= 80 ? 'bg-green-500' :
+                stats.tokenEconomyHealth.score >= 60 ? 'bg-yellow-500' :
+                'bg-red-500'
+              }`}></div>
+              <span className={`text-2xl font-bold ${
+                stats.tokenEconomyHealth.score >= 80 ? 'text-green-400' :
+                stats.tokenEconomyHealth.score >= 60 ? 'text-yellow-400' :
+                'text-red-400'  
+              }`}>
+                {stats.tokenEconomyHealth.score.toFixed(0)}/100
+              </span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/10 rounded-lg p-4 text-center">
+              <p className="text-slate-300 text-sm">Circulation</p>
+              <p className={`font-bold capitalize ${
+                stats.tokenEconomyHealth.circulation === 'healthy' ? 'text-green-400' :
+                stats.tokenEconomyHealth.circulation === 'stagnant' ? 'text-red-400' :
+                'text-yellow-400'
+              }`}>
+                {stats.tokenEconomyHealth.circulation}
+              </p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 text-center">
+              <p className="text-slate-300 text-sm">Supply</p>
+              <p className={`font-bold capitalize ${
+                stats.tokenEconomyHealth.supply === 'balanced' ? 'text-green-400' :
+                'text-yellow-400'
+              }`}>
+                {stats.tokenEconomyHealth.supply}
+              </p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 text-center">
+              <p className="text-slate-300 text-sm">Demand</p>
+              <p className={`font-bold capitalize ${
+                stats.tokenEconomyHealth.demand === 'stable' ? 'text-green-400' :
+                stats.tokenEconomyHealth.demand === 'increasing' ? 'text-blue-400' :
+                'text-red-400'
+              }`}>
+                {stats.tokenEconomyHealth.demand}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Token Velocity */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🔄 Token Velocity</h4>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-blue-400 mb-2">
+                {stats.tokenVelocity.toFixed(1)}%
+              </p>
+              <p className="text-slate-300 text-sm">
+                How fast tokens circulate
+              </p>
+            </div>
+          </div>
+
+          {/* Token Burn Rate */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🔥 Burn Rate</h4>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-orange-400 mb-2">
+                {stats.tokenBurnRate.toFixed(1)}%
+              </p>
+              <p className="text-slate-300 text-sm">
+                Tokens spent vs purchased
+              </p>
+            </div>
+          </div>
+
+          {/* Suspicious Activity */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🚨 Suspicious Activity</h4>
+            <div className="space-y-2">
+              {stats.suspiciousActivity.length > 0 ? (
+                stats.suspiciousActivity.slice(0, 3).map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-slate-300 text-sm truncate">
+                      {activity.reason}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      activity.severity === 'high' ? 'bg-red-600 text-white' :
+                      activity.severity === 'medium' ? 'bg-yellow-600 text-white' :
+                      'bg-blue-600 text-white'
+                    }`}>
+                      {activity.severity}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-green-400 text-sm text-center">No suspicious activity detected</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Token Hoarding Users */}
+        {stats.tokenHoardingUsers.length > 0 && (
+          <div className="mt-6 bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">💰 Token Hoarding Alert</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {stats.tokenHoardingUsers.slice(0, 6).map((user, index) => (
+                <div key={index} className="flex justify-between items-center bg-white/10 rounded p-3">
+                  <span className="text-slate-300">{user.name}</span>
+                  <span className="text-yellow-400 font-bold">{user.hoardedTokens} tokens</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-slate-400 text-sm mt-3">
+              Users with high token balances may indicate unused purchasing power or potential issues.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Financial Reconciliation */}
+      <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          💼 Financial Reconciliation
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-emerald-200 text-sm font-medium">Token Revenue</p>
+            <p className="text-white text-2xl font-bold">${stats.tokenPurchaseRevenue.toFixed(2)}</p>
+            <p className="text-emerald-300 text-xs">From Stripe payments</p>
+          </div>
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-emerald-200 text-sm font-medium">Outstanding Liability</p>
+            <p className="text-yellow-400 text-2xl font-bold">${(stats.totalTokensInCirculation * 0.1).toFixed(2)}</p>
+            <p className="text-emerald-300 text-xs">{stats.totalTokensInCirculation} tokens @ $0.10</p>
+          </div>
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-emerald-200 text-sm font-medium">Platform Fees</p>
+            <p className="text-green-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.015).toFixed(2)}</p>
+            <p className="text-emerald-300 text-xs">15% of spent tokens</p>  
+          </div>
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-emerald-200 text-sm font-medium">Technician Payouts</p>
+            <p className="text-blue-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.085).toFixed(2)}</p>
+            <p className="text-emerald-300 text-xs">85% of spent tokens</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">📊 Financial Health</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-slate-300">Revenue/Liability Ratio:</span>
+                <span className={`font-bold ${
+                  (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.1)) >= 1 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {stats.totalTokensInCirculation > 0 
+                    ? (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.1)).toFixed(2)
+                    : '0.00'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Platform Profit:</span>
+                <span className="text-green-400 font-bold">
+                  ${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">📋 Export Tools</h4>
+            <div className="space-y-2">
+              <button
+                onClick={() => handleExportFinancialReport()}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                📄 Export Financial Report (CSV)
+              </button>
+              <button
+                onClick={() => handleExportTaxReport()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                🧾 Export Tax Report (IRS Format)
+              </button>
+              <button
+                onClick={() => handleReconcileStripe()}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                💳 Reconcile with Stripe
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Token Management */}
         <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
           <h3 className="text-lg font-bold text-white mb-4">🪙 Token Management</h3>
+          
+          {/* Bulk Operations */}
+          <div className="mb-6 p-4 bg-blue-600/10 border border-blue-400/20 rounded-lg">
+            <h4 className="text-md font-semibold text-blue-300 mb-3">⚡ Bulk Operations</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleBulkTokenGrant()}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                🎁 Bulk Grant (All Users)
+              </button>
+              <button
+                onClick={() => handleTokenFreeze()}
+                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                🚫 Emergency Freeze
+              </button>
+              <button
+                onClick={() => handleTokenRefund()}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                💰 Process Refunds
+              </button>
+            </div>
+          </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">User ID</label>

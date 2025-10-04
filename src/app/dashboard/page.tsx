@@ -27,6 +27,10 @@ import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
 import PayoutModal from '@/components/PayoutModal';
 import UniversalHeader from '@/components/UniversalHeader';
 import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
+import TokenPurchaseModal from '@/components/TokenPurchaseModal';
+import TokenTransactionHistory from '@/components/TokenTransactionHistory';
+import { getUserTokenBalance } from '@/lib/token-firebase';
+import { formatTokens } from '@/lib/tokens';
 
 // Admin email for admin access detection
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
@@ -97,6 +101,10 @@ export default function ModernDashboard() {
   const [thankYouTransactions, setThankYouTransactions] = useState<Transaction[]>([]);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<any>(null);
+  const [activityFilter, setActivityFilter] = useState<'all' | 'tokens' | 'thank_you' | 'purchases'>('all');
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   // Use earnings hook for technicians
   const { earnings, loading: earningsLoading } = useTechnicianEarnings(userProfile?.userType === 'technician' ? userProfile?.id || null : null);
@@ -154,6 +162,9 @@ export default function ModernDashboard() {
         
         // Load transactions based on user type - use the Firebase Auth UID for transactions
         await loadTransactions(userId, profile.userType);
+        
+        // Load token balance for clients
+        await loadTokenBalance(userId);
         return;
       }
 
@@ -179,6 +190,11 @@ export default function ModernDashboard() {
         
         // Load transactions based on user type - use the Firebase Auth UID for transactions
         await loadTransactions(userId, profile.userType);
+        
+        // Load token stats for technicians (after transactions are loaded)
+        if (profile.userType === 'technician') {
+          setTimeout(() => loadTechnicianTokenStats(profile.id), 500);
+        }
         return;
       }
 
@@ -294,6 +310,35 @@ export default function ModernDashboard() {
       
     } catch (error) {
       console.error('Error loading user profile:', error);
+    }
+  };
+
+  const loadTokenBalance = async (userId: string) => {
+    try {
+      const balance = await getUserTokenBalance(userId);
+      setTokenBalance(balance);
+    } catch (error) {
+      console.error('Error loading token balance:', error);
+    }
+  };
+
+  const loadTechnicianTokenStats = async (technicianId: string) => {
+    try {
+      // Calculate token-based earnings from transactions
+      const tokenTransactions = tipTransactions.filter(t => 
+        (t.type === 'toa_token' || t.type === 'toa') && t.tokens
+      );
+      
+      const totalTokensReceived = tokenTransactions.reduce((sum, t) => sum + (t.tokens || 0), 0);
+      const totalTokenEarnings = tokenTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      
+      setTokenBalance({
+        totalTokensReceived,
+        totalTokenEarnings,
+        transactionCount: tokenTransactions.length
+      });
+    } catch (error) {
+      console.error('Error loading technician token stats:', error);
     }
   };
 
@@ -416,6 +461,13 @@ export default function ModernDashboard() {
     // Update the profile with new photo
     setUserProfile(prev => prev ? { ...prev, photoURL } : prev);
     setEditedProfile(prev => ({ ...prev, photoURL }));
+  };
+
+  const handleTokenPurchaseSuccess = (tokens: number) => {
+    // Refresh token balance after purchase
+    if (user?.uid) {
+      loadTokenBalance(user.uid);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -646,13 +698,21 @@ export default function ModernDashboard() {
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-amber-500/20 to-yellow-600/20 backdrop-blur-md rounded-xl border border-amber-400/30 p-6 hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-300">
+              <div className="bg-gradient-to-br from-purple-500/20 to-blue-600/20 backdrop-blur-md rounded-xl border border-purple-400/30 p-6 hover:from-purple-500/30 hover:to-blue-600/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-amber-200 text-sm font-medium">Tokens Purchased</p>
-                    <p className="text-white text-2xl font-bold">{userProfile.tokenBalance || 0}</p>
+                    <p className="text-purple-200 text-sm font-medium">Current TOA Balance</p>
+                    <p className="text-white text-2xl font-bold">
+                      {tokenBalance ? formatTokens(tokenBalance.tokens) : 'Loading...'}
+                    </p>
+                    <button
+                      onClick={() => setShowTokenPurchaseModal(true)}
+                      className="mt-2 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg transition-colors"
+                    >
+                      🛒 Buy More Tokens
+                    </button>
                   </div>
-                  <div className="bg-amber-500/30 p-3 rounded-lg border border-amber-400/40">
+                  <div className="bg-purple-500/30 p-3 rounded-lg border border-purple-400/40">
                     <span className="text-2xl">🪙</span>
                   </div>
                 </div>
@@ -673,13 +733,205 @@ export default function ModernDashboard() {
           )}
         </div>
 
+        {/* Token Earnings - Technician Only */}
+        {userProfile.userType === 'technician' && tokenBalance && (
+          <div className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              🪙 Token Earnings Overview
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Total Tokens Received */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Total TOA Received</h4>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-amber-400 mb-2">
+                    {tokenBalance.totalTokensReceived || 0}
+                  </p>
+                  <p className="text-slate-300 text-sm">
+                    From {tokenBalance.transactionCount || 0} transactions
+                  </p>
+                </div>
+              </div>
+
+              {/* Token Earnings */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Token Earnings</h4>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-green-400 mb-2">
+                    {formatCurrency(tokenBalance.totalTokenEarnings || 0)}
+                  </p>
+                  <p className="text-slate-300 text-sm">
+                    85% payout rate
+                  </p>
+                </div>
+              </div>
+
+              {/* Average per Transaction */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Average TOA</h4>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-blue-400 mb-2">
+                    {tokenBalance.transactionCount > 0 
+                      ? Math.round(tokenBalance.totalTokensReceived / tokenBalance.transactionCount)
+                      : 0
+                    }
+                  </p>
+                  <p className="text-slate-300 text-sm">
+                    Tokens per thank you
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Token Transaction History Preview */}
+            <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-lg p-4">
+              <h4 className="text-md font-semibold text-white mb-3">Recent Token Transactions</h4>
+              <div className="space-y-2">
+                {tipTransactions
+                  .filter(t => t.type === 'toa_token' || t.type === 'toa')
+                  .slice(0, 3)
+                  .map((transaction, index) => (
+                    <div key={index} className="flex justify-between items-center py-2 px-3 bg-white/5 rounded-lg">
+                      <div>
+                        <p className="text-white text-sm font-medium">
+                          {transaction.tokens} TOA from {transaction.fromName || 'Client'}
+                        </p>
+                        <p className="text-slate-400 text-xs">
+                          {new Date(transaction.timestamp?.toDate ? transaction.timestamp.toDate() : transaction.timestamp).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-400 font-bold text-sm">
+                          {formatCurrency(transaction.amount || 0)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').length === 0 && (
+                  <p className="text-slate-400 text-center py-4">No token transactions yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Token Management - Client Only */}
+        {userProfile.userType === 'client' && tokenBalance && (
+          <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              🪙 Token Management
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Current Balance */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Current Balance</h4>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-purple-400 mb-2">
+                    {formatTokens(tokenBalance.tokens)}
+                  </p>
+                  <p className="text-slate-300 text-sm">
+                    Available for sending
+                  </p>
+                  <button
+                    onClick={() => setShowTokenPurchaseModal(true)}
+                    className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    🛒 Purchase More Tokens
+                  </button>
+                </div>
+              </div>
+
+              {/* Purchase History */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Purchase Summary</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Total Purchased:</span>
+                    <span className="text-green-400 font-bold">
+                      {formatTokens(tokenBalance.totalPurchased)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Total Spent:</span>
+                    <span className="text-orange-400 font-bold">
+                      {formatTokens(tokenBalance.totalSpent)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-white/20">
+                    <span className="text-white font-medium">Remaining:</span>
+                    <span className="text-purple-400 font-bold">
+                      {formatTokens(tokenBalance.tokens)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Token Activity */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                <h4 className="text-lg font-semibold text-white mb-4">Quick Stats</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">TOA Sent:</span>
+                    <span className="text-blue-400 font-bold">
+                      {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').reduce((sum, t) => sum + (t.tokens || 0), 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Thank Yous:</span>
+                    <span className="text-green-400 font-bold">
+                      {tipTransactions.filter(t => t.type === 'thank_you').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Last Updated:</span>
+                    <span className="text-slate-400 text-sm">
+                      {tokenBalance.lastUpdated ? new Date(tokenBalance.lastUpdated.toDate()).toLocaleDateString() : 'Never'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Recent Activity */}
         <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-6">Recent Activity</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Recent Activity</h2>
+            <div className="flex items-center gap-2">
+              <select
+                value={activityFilter}
+                onChange={(e) => setActivityFilter(e.target.value as any)}
+                className="bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-1 focus:border-blue-400 focus:outline-none"
+              >
+                <option value="all" className="bg-slate-800">All Activity</option>
+                <option value="tokens" className="bg-slate-800">TOA Tokens</option>
+                <option value="thank_you" className="bg-slate-800">Thank Yous</option>
+                <option value="purchases" className="bg-slate-800">Purchases</option>
+              </select>
+              <button
+                onClick={() => setShowTransactionHistory(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded-lg transition-colors"
+              >
+                View All
+              </button>
+            </div>
+          </div>
           
           {tipTransactions.length > 0 ? (
             <div className="space-y-4">
-              {tipTransactions.slice(0, 8).map((transaction, index) => {
+              {tipTransactions
+                .filter(transaction => {
+                  if (activityFilter === 'all') return true;
+                  if (activityFilter === 'tokens') return transaction.type === 'toa_token' || transaction.type === 'toa';
+                  if (activityFilter === 'thank_you') return transaction.type === 'thank_you';
+                  if (activityFilter === 'purchases') return transaction.type === 'token_purchase';
+                  return true;
+                })
+                .slice(0, 8)
+                .map((transaction, index) => {
                 // Determine transaction display based on type
                 const getTransactionDisplay = () => {
                   const isReceived = userProfile.userType === 'technician';
@@ -743,9 +995,14 @@ export default function ModernDashboard() {
                         <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-400 mt-1">
                           <span>📅 {timestamp.toLocaleDateString()}</span>
                           <span>🕐 {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          {transaction.tokens && (
+                            <span className="bg-purple-600/20 px-2 py-1 rounded text-purple-300">
+                              {transaction.tokens} TOA
+                            </span>
+                          )}
                         </div>
                         {transaction.message && (
-                          <p className="text-slate-300 text-xs mt-1 italic">"{transaction.message}"</p>
+                          <p className="text-slate-300 text-xs mt-1 italic line-clamp-2">"{transaction.message}"</p>
                         )}
                       </div>
                     </div>
@@ -1077,6 +1334,26 @@ export default function ModernDashboard() {
           onPayoutSuccess={() => {
             setShowPayoutModal(false);
           }}
+        />
+      )}
+
+      {/* Token Purchase Modal */}
+      {showTokenPurchaseModal && userProfile?.userType === 'client' && (
+        <TokenPurchaseModal
+          isOpen={showTokenPurchaseModal}
+          onClose={() => setShowTokenPurchaseModal(false)}
+          userId={user?.uid || ''}
+          onPurchaseSuccess={handleTokenPurchaseSuccess}
+        />
+      )}
+
+      {/* Token Transaction History */}
+      {showTransactionHistory && userProfile && (
+        <TokenTransactionHistory
+          isOpen={showTransactionHistory}
+          onClose={() => setShowTransactionHistory(false)}
+          userId={user?.uid || ''}
+          userType={userProfile.userType === 'technician' ? 'technician' : 'client'}
         />
       )}
     </div>
