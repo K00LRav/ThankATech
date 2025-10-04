@@ -1,10 +1,10 @@
 rules_version = '2';
 
-// Firestore Security Rules for ThankATech
+// ThankATech Firestore Security Rules - Production Ready
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
+    // Helper functions for security
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -13,119 +13,164 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    function isValidUsername(username) {
-      return username.size() >= 3 
-             && username.size() <= 20 
-             && username.matches('^[a-z0-9_-]+$');
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
-    // Users collection - new unified structure
-    match /users/{userId} {
-      // Anyone authenticated can read user profiles (for browsing technicians)
-      allow read: if isAuthenticated();
-      
-      // Users can create their own profile during registration
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      
-      // Users can only update their own profile
-      allow update: if isOwner(userId) 
-                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['userType', 'authUid', 'uniqueId']))
-                    && (request.resource.data.username == resource.data.username 
-                        || isValidUsername(request.resource.data.username));
-      
-      // Users can soft-delete their own profile
-      allow delete: if isOwner(userId);
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
     
-    // Technicians collection (legacy - for backward compatibility)
-    match /technicians/{techId} {
-      // Anyone authenticated can read technician profiles
-      allow read: if isAuthenticated();
-      
-      // Technicians can create/update their own profile
-      allow create, update: if isOwner(techId);
-      
-      // Technicians can delete their own profile
-      allow delete: if isOwner(techId);
-    }
-    
-    // Clients collection (legacy - for backward compatibility)
+    // Clients collection
     match /clients/{clientId} {
-      // Anyone authenticated can read client profiles
+      // Anyone authenticated can read basic client info (for displaying sender info)
       allow read: if isAuthenticated();
       
-      // Clients can create/update their own profile
-      allow create, update: if isOwner(clientId);
+      // Users can create their own client profile
+      allow create: if isAuthenticated() 
+                    && request.auth.uid == resource.id
+                    && request.resource.data.authUid == request.auth.uid
+                    && isValidEmail(request.resource.data.email);
       
-      // Clients can delete their own profile
+      // Users can only update their own client profile
+      allow update: if isOwner(clientId) 
+                    && request.resource.data.authUid == resource.data.authUid  // Can't change authUid
+                    && request.resource.data.email == resource.data.email;     // Can't change email
+      
+      // Users can deactivate their own profile
       allow delete: if isOwner(clientId);
     }
     
-    // Thank Yous collection
-    match /thankYous/{thankYouId} {
-      // Anyone authenticated can read (for viewing thank you history)
+    // Technicians collection
+    match /technicians/{techId} {
+      // Anyone authenticated can read technician profiles (for browsing)
       allow read: if isAuthenticated();
       
-      // Only authenticated users can create thank yous
-      // Validate that sender is the authenticated user
+      // Users can create their own technician profile
+      allow create: if isAuthenticated() 
+                    && request.auth.uid == resource.id
+                    && request.resource.data.authUid == request.auth.uid
+                    && isValidEmail(request.resource.data.email);
+      
+      // Technicians can update their own profile (except sensitive fields)
+      allow update: if isOwner(techId) 
+                    && request.resource.data.authUid == resource.data.authUid     // Can't change authUid
+                    && request.resource.data.email == resource.data.email        // Can't change email
+                    && request.resource.data.totalThankYous == resource.data.totalThankYous; // Can't manually change counter
+      
+      // Technicians can deactivate their own profile
+      allow delete: if isOwner(techId);
+    }
+    
+    // Admins collection
+    match /admins/{adminId} {
+      // Only admins can read admin profiles
+      allow read: if isAdmin();
+      
+      // Only existing admins can create new admin profiles
+      allow create: if isAdmin();
+      
+      // Admins can update their own profile
+      allow update: if isOwner(adminId) && isAdmin();
+      
+      // No deletion of admin profiles
+      allow delete: if false;
+    }
+    
+    // Token Transactions collection (main transaction log)
+    match /tokenTransactions/{transactionId} {
+      // Users can read transactions they're involved in
+      allow read: if isAuthenticated() && 
+                  (resource.data.fromUserId == request.auth.uid || 
+                   resource.data.toTechnicianId == request.auth.uid);
+      
+      // Only authenticated users can create token transactions
       allow create: if isAuthenticated() 
                     && request.resource.data.fromUserId == request.auth.uid
-                    && request.resource.data.technicianId != request.auth.uid;  // Prevent self-thanking
+                    && (request.resource.data.type == 'thank_you' || 
+                        request.resource.data.type == 'toa' ||
+                        request.resource.data.type == 'token_purchase')
+                    && request.resource.data.tokens > 0
+                    && request.resource.data.toTechnicianId != request.auth.uid; // Prevent self-transactions
       
-      // No updates or deletes (thank yous are permanent)
+      // Admins can read all transactions
+      allow read: if isAdmin();
+      
+      // No updates or deletes (transactions are immutable)
       allow update, delete: if false;
     }
     
-    // Tips collection
-    match /tips/{tipId} {
-      // Anyone authenticated can read their own tips
-      allow read: if isAuthenticated() 
-                  && (resource.data.customerId == request.auth.uid 
-                      || resource.data.technicianId == request.auth.uid);
-      
-      // Only authenticated users can create tips
-      // Validate that sender is the authenticated user
-      allow create: if isAuthenticated() 
-                    && request.resource.data.customerId == request.auth.uid
-                    && request.resource.data.technicianId != request.auth.uid;  // Prevent self-tipping
-      
-      // No updates or deletes (tips are permanent)
-      allow update, delete: if false;
-    }
-    
-    // Token balances
+    // Token Balances collection (user balances)
     match /tokenBalances/{userId} {
       // Users can read their own balance
       allow read: if isOwner(userId);
       
-      // System/server-side only can write
+      // Admins can read all balances
+      allow read: if isAdmin();
+      
+      // Only server-side functions or admins can modify balances
+      // This prevents direct manipulation of token counts
+      allow write: if isAdmin();
+    }
+    
+    // Email Logs collection (for debugging email issues)
+    match /emailLogs/{logId} {
+      // Users can read their own email logs
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all email logs
+      allow read: if isAdmin();
+      
+      // Only system can write email logs
       allow write: if false;
     }
     
-    // Token transactions
-    match /tokenTransactions/{transactionId} {
-      // Users can read transactions they're involved in
-      allow read: if isAuthenticated() 
-                  && (resource.data.fromUserId == request.auth.uid 
-                      || resource.data.toUserId == request.auth.uid);
+    // Stripe Payments collection (payment records)
+    match /stripePayments/{paymentId} {
+      // Users can read their own payment records
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
       
-      // System/server-side only can write
+      // Admins can read all payment records
+      allow read: if isAdmin();
+      
+      // Only system can write payment records (via webhooks)
       allow write: if false;
     }
     
-    // Daily limits
-    match /dailyThankYouLimits/{userId} {
-      // Users can read their own limits
-      allow read: if isOwner(userId);
+    // System Logs collection (for debugging and monitoring)
+    match /systemLogs/{logId} {
+      // Only admins can read system logs
+      allow read: if isAdmin();
       
-      // Users can create/update their own limits
-      allow create, update: if isOwner(userId);
-      
-      // Don't allow delete (keep history)
-      allow delete: if false;
+      // Only system can write logs
+      allow write: if false;
     }
     
-    // Deny all other access by default
+    // Profile Photos in Storage (handled by storage.rules)
+    // But we can track metadata here
+    match /profilePhotoMetadata/{userId} {
+      // Users can read/write their own photo metadata
+      allow read, write: if isOwner(userId);
+      
+      // Admins can read all photo metadata
+      allow read: if isAdmin();
+    }
+    
+    // User Sessions (for security tracking)
+    match /userSessions/{sessionId} {
+      // Users can read their own sessions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all sessions
+      allow read: if isAdmin();
+      
+      // System manages sessions
+      allow write: if false;
+    }
+    
+    // EXPLICIT DENY: All other collections are blocked by default
+    // This prevents access to any undefined collections
     match /{document=**} {
       allow read, write: if false;
     }

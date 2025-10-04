@@ -11,14 +11,19 @@ service firebase.storage {
       
       // Allow write only if:
       // 1. User is authenticated
-      // 2. File is under 5MB
-      // 3. File is an image
+      // 2. User is the technician (can only upload to own folder)
+      // 3. File is under 2MB (reduced for performance)
+      // 4. File is a valid image type
+      // 5. Filename is reasonable (prevent path injection)
       allow write: if request.auth != null 
-                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
-                   && request.resource.contentType.matches('image/.*');  // Only images
+                   && request.auth.uid == technicianId
+                   && request.resource.size < 2 * 1024 * 1024  // Max 2MB
+                   && request.resource.contentType.matches('image/(jpeg|png|gif|webp)')  // Specific image types
+                   && fileName.matches('^[a-zA-Z0-9._-]+\\.(jpg|jpeg|png|gif|webp)$');  // Safe filename
       
-      // Allow delete for authenticated users
-      allow delete: if request.auth != null;
+      // Allow delete only for own files
+      allow delete: if request.auth != null 
+                    && request.auth.uid == technicianId;
     }
     
     // Client profile photos
@@ -28,14 +33,19 @@ service firebase.storage {
       
       // Allow write only if:
       // 1. User is authenticated
-      // 2. File is under 5MB
-      // 3. File is an image
+      // 2. User is the client (can only upload to own folder)
+      // 3. File is under 2MB
+      // 4. File is a valid image type
+      // 5. Filename is reasonable
       allow write: if request.auth != null 
-                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
-                   && request.resource.contentType.matches('image/.*');  // Only images
+                   && request.auth.uid == clientId
+                   && request.resource.size < 2 * 1024 * 1024  // Max 2MB
+                   && request.resource.contentType.matches('image/(jpeg|png|gif|webp)')  // Specific image types
+                   && fileName.matches('^[a-zA-Z0-9._-]+\\.(jpg|jpeg|png|gif|webp)$');  // Safe filename
       
-      // Allow delete for authenticated users
-      allow delete: if request.auth != null;
+      // Allow delete only for own files
+      allow delete: if request.auth != null 
+                    && request.auth.uid == clientId;
     }
     
     // Legacy profile photos path (for backwards compatibility)
