@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import UniversalHeader from '@/components/UniversalHeader';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -63,23 +64,7 @@ export default function Contact() {
         </div>
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
-            <span className="text-xl font-bold">🔧</span>
-          </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            ThankATech
-          </span>
-        </Link>
-        <Link 
-          href="/"
-          className="px-6 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white hover:bg-white/20 transition-all duration-200 font-medium"
-        >
-          Back to Home
-        </Link>
-      </header>
+      <UniversalHeader currentPath="/contact" />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-6xl mx-auto px-6 py-12">

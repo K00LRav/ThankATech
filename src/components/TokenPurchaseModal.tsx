@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { TOKEN_PACKS, formatPrice, formatTokens } from '@/lib/tokens';
 import { getUserTokenBalance, addTokensToBalance } from '@/lib/token-firebase';
 
@@ -72,9 +73,9 @@ export default function TokenPurchaseModal({
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 iphone-safe-top iphone-safe-bottom">
-      <div className="iphone-modal bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 max-w-sm w-full max-h-[90vh] overflow-y-auto sm:max-w-5xl sm:max-h-[85vh]">
-        {/* Header - iPhone 12 Pro Max Optimized */}
-        <div className="bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white p-4 sm:p-6 rounded-t-2xl border-b border-white/20">
+      <div className="iphone-modal bg-white/15 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 max-w-sm w-full max-h-[90vh] overflow-y-auto sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl sm:max-h-[85vh]">
+        {/* Header - iPhone 12 Pro Max Optimized with Signature Amber Theme */}
+        <div className="bg-gradient-to-r from-amber-500/90 to-yellow-600/90 backdrop-blur-md text-white p-4 sm:p-6 rounded-t-2xl border-b border-amber-300/30">
           <div className="flex justify-between items-center">
             <div className="flex-1 mr-3">
               <h2 className="text-xl sm:text-2xl font-bold leading-tight">Purchase TOA Tokens</h2>
@@ -95,61 +96,194 @@ export default function TokenPurchaseModal({
           </div>
         </div>
 
-        {/* Token Packs - iPhone 12 Pro Max Optimized */}
-        <div className="p-4 sm:p-6 bg-white/5 backdrop-blur-sm">
-          <div className="iphone-grid-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
-            {TOKEN_PACKS.map((pack) => (
+        {/* Token Packs - 5-column desktop, 2x2+1 mobile */}
+        <div className="p-2 sm:p-6 bg-white/5 backdrop-blur-sm">
+          {/* Desktop: 5-column grid | Mobile: 2x2 grid for first 4 */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-1.5 sm:gap-3 lg:gap-4 mb-2 sm:mb-4 lg:mb-0">
+            {TOKEN_PACKS.slice(0, 4).map((pack) => (
               <div
                 key={pack.id}
                 onClick={() => setSelectedPack(pack)}
-                className={`iphone-touch-target relative border-2 rounded-2xl p-4 cursor-pointer transition-all duration-200 backdrop-blur-md active:scale-95 ${
+                className={`iphone-touch-target relative border-2 rounded-lg sm:rounded-2xl p-1.5 sm:p-3 lg:p-4 cursor-pointer transition-all duration-200 backdrop-blur-md active:scale-95 ${
                   selectedPack.id === pack.id
-                    ? 'border-green-400/60 bg-gradient-to-br from-green-100/30 to-blue-100/30 shadow-lg scale-105 border-opacity-80'
-                    : 'border-white/30 bg-white/10 hover:border-green-300/50 hover:bg-white/20 hover:shadow-md'
+                    ? 'border-amber-400/60 bg-gradient-to-br from-amber-100/30 to-yellow-100/30 shadow-lg shadow-amber-400/25 scale-105 border-opacity-80'
+                    : 'border-white/30 bg-white/10 hover:border-amber-300/50 hover:bg-white/20 hover:shadow-md'
                 }`}
               >
-                {/* Popular/Best Value Badges */}
+                {/* Popular/Best Value Badges - Ultra Mobile Optimized */}
                 {pack.popular && (
-                  <div className="absolute -top-2 left-4 bg-gradient-to-r from-orange-500/90 to-red-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-md border border-white/20">
-                    🔥 POPULAR
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-orange-500/90 to-red-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    🔥 <span className="hidden sm:inline">POPULAR</span>
                   </div>
                 )}
                 {pack.bestValue && (
-                  <div className="absolute -top-2 left-4 bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-md border border-white/20">
-                    💎 BEST VALUE
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    💎 <span className="hidden sm:inline">BEST VALUE</span>
                   </div>
                 )}
                 
                 <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{pack.name}</div>
-                  <div className="text-3xl font-bold text-blue-700 my-2">
+                  <div className="text-xs sm:text-base lg:text-lg font-bold text-gray-900 leading-tight">{pack.name}</div>
+                  <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-700 my-0.5 sm:my-2">
                     {formatTokens(pack.tokens)}
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900">
                     {formatPrice(pack.price)}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 leading-tight">
                     {formatPrice(Math.round(pack.pricePerToken))} per TOA
                   </div>
                   
                   {pack.popular && (
-                    <div className="text-sm text-blue-600 font-medium mt-2">
-                      Save 50% per token!
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% per token!</span>
                     </div>
                   )}
                   {pack.bestValue && (
-                    <div className="text-sm text-blue-700 font-medium mt-2">
-                      Save 50% vs Starter Pack
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% vs Starter Pack</span>
                     </div>
                   )}
                   {pack.id === 'bulk' && (
-                    <div className="text-sm text-blue-600 font-medium mt-2">
-                      Save 60% vs Starter Pack
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 60%!</span>
+                      <span className="hidden sm:inline">Save 60% vs Starter Pack</span>
                     </div>
                   )}
                   {pack.id === 'premium' && (
-                    <div className="text-sm text-blue-700 font-medium mt-2">
-                      Save 66% vs Starter Pack
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 66%!</span>
+                      <span className="hidden sm:inline">Save 66% vs Starter Pack</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {/* 5th pack - Hidden on mobile (will show below), visible on desktop */}
+            {TOKEN_PACKS.slice(4).map((pack) => (
+              <div
+                key={pack.id}
+                onClick={() => setSelectedPack(pack)}
+                className={`hidden lg:block iphone-touch-target relative border-2 rounded-lg sm:rounded-2xl p-1.5 sm:p-3 lg:p-4 cursor-pointer transition-all duration-200 backdrop-blur-md active:scale-95 ${
+                  selectedPack.id === pack.id
+                    ? 'border-amber-400/60 bg-gradient-to-br from-amber-100/30 to-yellow-100/30 shadow-lg shadow-amber-400/25 scale-105 border-opacity-80'
+                    : 'border-white/30 bg-white/10 hover:border-amber-300/50 hover:bg-white/20 hover:shadow-md'
+                }`}
+              >
+                {/* Popular/Best Value Badges - Ultra Mobile Optimized */}
+                {pack.popular && (
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-orange-500/90 to-red-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    🔥 <span className="hidden sm:inline">POPULAR</span>
+                  </div>
+                )}
+                {pack.bestValue && (
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    💎 <span className="hidden sm:inline">BEST VALUE</span>
+                  </div>
+                )}
+                
+                <div className="text-center">
+                  <div className="text-xs sm:text-base lg:text-lg font-bold text-gray-900 leading-tight">{pack.name}</div>
+                  <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-700 my-0.5 sm:my-2">
+                    {formatTokens(pack.tokens)}
+                  </div>
+                  <div className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900">
+                    {formatPrice(pack.price)}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 leading-tight">
+                    {formatPrice(Math.round(pack.pricePerToken))} per TOA
+                  </div>
+                  
+                  {pack.popular && (
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% per token!</span>
+                    </div>
+                  )}
+                  {pack.bestValue && (
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% vs Starter Pack</span>
+                    </div>
+                  )}
+                  {pack.id === 'bulk' && (
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 60%!</span>
+                      <span className="hidden sm:inline">Save 60% vs Starter Pack</span>
+                    </div>
+                  )}
+                  {pack.id === 'premium' && (
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 66%!</span>
+                      <span className="hidden sm:inline">Save 66% vs Starter Pack</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* 5th Pack - Centered at bottom on mobile only */}
+          <div className="flex justify-center mb-3 sm:mb-6 lg:hidden">
+            {TOKEN_PACKS.slice(4).map((pack) => (
+              <div
+                key={pack.id}
+                onClick={() => setSelectedPack(pack)}
+                className={`iphone-touch-target relative border-2 rounded-lg sm:rounded-2xl p-1.5 sm:p-3 lg:p-4 cursor-pointer transition-all duration-200 backdrop-blur-md active:scale-95 w-[48%] sm:w-64 ${
+                  selectedPack.id === pack.id
+                    ? 'border-amber-400/60 bg-gradient-to-br from-amber-100/30 to-yellow-100/30 shadow-lg shadow-amber-400/25 scale-105 border-opacity-80'
+                    : 'border-white/30 bg-white/10 hover:border-amber-300/50 hover:bg-white/20 hover:shadow-md'
+                }`}
+              >
+                {/* Popular/Best Value Badges - Ultra Mobile Optimized */}
+                {pack.popular && (
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-orange-500/90 to-red-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    🔥 <span className="hidden sm:inline">POPULAR</span>
+                  </div>
+                )}
+                {pack.bestValue && (
+                  <div className="absolute -top-1 sm:-top-2 left-1 sm:left-4 bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-md text-white text-xs font-bold px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-md border border-white/20">
+                    💎 <span className="hidden sm:inline">BEST VALUE</span>
+                  </div>
+                )}
+                
+                <div className="text-center">
+                  <div className="text-xs sm:text-base lg:text-lg font-bold text-gray-900 leading-tight">{pack.name}</div>
+                  <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-700 my-0.5 sm:my-2">
+                    {formatTokens(pack.tokens)}
+                  </div>
+                  <div className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900">
+                    {formatPrice(pack.price)}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 leading-tight">
+                    {formatPrice(Math.round(pack.pricePerToken))} per TOA
+                  </div>
+                  
+                  {pack.popular && (
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% per token!</span>
+                    </div>
+                  )}
+                  {pack.bestValue && (
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 50%!</span>
+                      <span className="hidden sm:inline">Save 50% vs Starter Pack</span>
+                    </div>
+                  )}
+                  {pack.id === 'bulk' && (
+                    <div className="text-xs sm:text-sm text-blue-600 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 60%!</span>
+                      <span className="hidden sm:inline">Save 60% vs Starter Pack</span>
+                    </div>
+                  )}
+                  {pack.id === 'premium' && (
+                    <div className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5 sm:mt-2 leading-tight">
+                      <span className="sm:hidden">Save 66%!</span>
+                      <span className="hidden sm:inline">Save 66% vs Starter Pack</span>
                     </div>
                   )}
                 </div>
@@ -157,27 +291,17 @@ export default function TokenPurchaseModal({
             ))}
           </div>
 
-          {/* How ThankATech Points & TOA Work */}
-          <div className="bg-gradient-to-r from-blue-100/20 to-green-100/20 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/30">
-            <h3 className="font-bold text-gray-900 mb-3 text-center">💫 ThankATech Closed-Loop Economy</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-800">
-              <div className="flex flex-col items-center text-center p-2">
-                <span className="text-blue-500 text-xl mb-1">✨</span>
-                <span><strong>Earn Points</strong><br/>Both get 1 point per thank you</span>
-              </div>
-              <div className="flex flex-col items-center text-center p-2">
-                <span className="text-green-500 text-xl mb-1">🔄</span>
-                <span><strong>Convert Points</strong><br/>5 Points = 1 TOA token</span>
-              </div>
-              <div className="flex flex-col items-center text-center p-2">
-                <span className="text-orange-500 text-xl mb-1">🧡</span>
-                <span><strong>Send TOA</strong><br/>5-50 tokens = real money</span>
-              </div>
-              <div className="flex flex-col items-center text-center p-2">
-                <span className="text-purple-500 text-xl mb-1">💰</span>
-                <span><strong>Get Paid</strong><br/>85% to tech, 15% platform</span>
-              </div>
-            </div>
+          {/* Simple info with link to learn more */}
+          <div className="text-center mb-3 sm:mb-4">
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              💫 Fuel the closed-loop appreciation economy
+            </p>
+            <Link 
+              href="/about" 
+              className="text-xs text-blue-600 hover:text-blue-800 underline transition-colors"
+            >
+              Learn how it works
+            </Link>
           </div>
 
           {/* Purchase Button & Security - iPhone 12 Pro Max Optimized */}
@@ -185,10 +309,10 @@ export default function TokenPurchaseModal({
             <button
               onClick={handlePurchase}
               disabled={isProcessing}
-              className={`iphone-btn-primary w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-200 backdrop-blur-md border border-white/30 active:scale-95 ${
+              className={`iphone-btn-primary w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-200 backdrop-blur-md border border-emerald-300/30 active:scale-95 ${
                 isProcessing
                   ? 'bg-gray-300/50 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600/90 to-blue-800/90 hover:from-blue-700/90 hover:to-blue-900/90 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-gradient-to-r from-emerald-600/90 to-emerald-800/90 hover:from-emerald-700/90 hover:to-emerald-900/90 text-white shadow-lg hover:shadow-xl hover:shadow-emerald-500/25'
               }`}
             >
               {isProcessing ? (

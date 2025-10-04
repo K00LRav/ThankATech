@@ -17,6 +17,7 @@ declare module '@/lib/firebase' {
   export function sendThankYou(technicianId: string, userId: string, message?: string): Promise<any>;
   export function sendTip(technicianId: string, userId: string, amount: number, message?: string): Promise<any>;
   export function uploadTechnicianPhoto(technicianId: string, photoFile: File): Promise<string>;
+  export function uploadClientPhoto(clientId: string, photoFile: File): Promise<string>;
   export function migrateTechnicianProfile(uid: string): Promise<any>;
   export function deleteUserProfile(uid: string, userType: string): Promise<void>;
   export function getTechnicianTransactions(technicianId: string, technicianEmail: string, technicianUniqueId?: string): Promise<any[]>;

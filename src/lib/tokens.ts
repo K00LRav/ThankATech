@@ -25,11 +25,14 @@ export interface TokenTransaction {
   id: string;
   fromUserId: string;
   toTechnicianId: string;
+  fromName?: string; // Name of the person sending
+  toName?: string; // Name of the recipient  
+  technicianName?: string; // Technician name (for compatibility)
   tokens: number;
   message: string;
   isRandomMessage: boolean;
   timestamp: Date;
-  type: 'thank_you' | 'thankyou' | 'appreciation' | 'toa';
+  type: 'thank_you' | 'thankyou' | 'appreciation' | 'toa' | 'toa_token' | 'token_purchase';
   // TOA Business Model fields
   dollarValue?: number; // Total dollar value (tokens * customerPaysPerTOA)
   technicianPayout?: number; // 85% payout to technician

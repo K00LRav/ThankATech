@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+// Force dynamic rendering for this page since it uses Firebase Auth
+export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, COLLECTIONS } from '@/lib/firebase';
 import { 
   doc, 
   getDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   collection, 
@@ -22,13 +26,17 @@ import Link from 'next/link';
 import { useTechnicianEarnings } from '@/hooks/useTechnicianEarnings';
 import PayoutModal from '@/components/PayoutModal';
 import UniversalHeader from '@/components/UniversalHeader';
+import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
+
+// Admin email for admin access detection
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
 
 // Types
 interface UserProfile {
   id: string;
   name: string;
   email: string;
-  userType: 'client' | 'technician';
+  userType: 'client' | 'technician' | 'admin';
   phone?: string;
   businessAddress?: string;
   businessPhone?: string;
@@ -36,6 +44,7 @@ interface UserProfile {
   username?: string;
   tokenBalance?: number;
   points?: number;
+  photoURL?: string;
 }
 
 interface Transaction {
@@ -45,6 +54,10 @@ interface Transaction {
   fromName?: string;
   toName?: string;
   technicianName?: string;
+  type?: string;
+  pointsAwarded?: number;
+  tokens?: number;
+  message?: string;
 }
 
 // Enhanced Header Component specifically for Dashboard
@@ -64,6 +77,7 @@ function DashboardHeader({ user, userProfile, onSignOut }: {
         points: userProfile.points
       } : undefined}
       onSignOut={onSignOut}
+      currentPath="/dashboard"
     />
   );
 }
@@ -80,6 +94,8 @@ export default function ModernDashboard() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [tipTransactions, setTipTransactions] = useState<Transaction[]>([]);
+  const [thankYouTransactions, setThankYouTransactions] = useState<Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   // Use earnings hook for technicians
@@ -89,7 +105,7 @@ export default function ModernDashboard() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        await loadUserProfile(currentUser.uid);
+        await loadUserProfile(currentUser.uid, currentUser);
       } else {
         router.push('/');
       }
@@ -99,17 +115,183 @@ export default function ModernDashboard() {
     return () => unsubscribe();
   }, [router]);
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, authUser?: User) => {
     try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
+
+      
+      // First, check if this is an admin user in the admins collection
+      const adminsQuery = query(collection(db, COLLECTIONS.ADMINS), where('authUid', '==', userId));
+      const adminSnapshot = await getDocs(adminsQuery);
+      console.log('� Admins collection results:', adminSnapshot.size, 'documents found');
+      
+      if (!adminSnapshot.empty) {
+        const adminDoc = adminSnapshot.docs[0];
+        const adminData = adminDoc.data();
+        console.log('� Admin user found in admins collection:', adminData.email);
+        console.log('� Redirecting to admin panel...');
+        router.push('/admin');
+        return;
+      }
+      
+      const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', userId));
+      const clientSnapshot = await getDocs(clientsQuery);
+      console.log('👥 Clients collection results:', clientSnapshot.size, 'documents found');
+      
+      if (!clientSnapshot.empty) {
+        const clientDoc = clientSnapshot.docs[0];
+        const clientData = clientDoc.data();
+        const profile = { 
+          id: clientDoc.id, 
+          name: clientData.name || clientData.displayName || 'User',
+          email: clientData.email,
+          userType: 'client' as const,
+          points: clientData.points || 0,
+          ...clientData 
+        } as UserProfile;
+        
+        setUserProfile(profile);
+        setEditedProfile(profile);
+        
+        // Load transactions based on user type - use the Firebase Auth UID for transactions
+        await loadTransactions(userId, profile.userType);
+        return;
+      }
+
+      // Try to find user in technicians collection
+      const techsQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', userId));
+      const techSnapshot = await getDocs(techsQuery);
+      console.log('🔧 Technicians collection results:', techSnapshot.size, 'documents found');
+      
+      if (!techSnapshot.empty) {
+        const techDoc = techSnapshot.docs[0];
+        const techData = techDoc.data();
+        const profile = { 
+          id: techDoc.id, 
+          name: techData.name || techData.displayName || 'Technician',
+          email: techData.email,
+          userType: 'technician',
+          points: techData.points || 0,
+          ...techData 
+        } as UserProfile;
+        
+        setUserProfile(profile);
+        setEditedProfile(profile);
+        
+        // Load transactions based on user type - use the Firebase Auth UID for transactions
+        await loadTransactions(userId, profile.userType);
+        return;
+      }
+
+      // Finally check users collection for existing admin/special users
+      const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
       if (userDoc.exists()) {
         const profile = { id: userId, ...userDoc.data() } as UserProfile;
+        
+        // Check if this is an admin user by userType in database
+        if (profile.userType === 'admin') {
+          router.push('/admin');
+          return;
+        }
+        
         setUserProfile(profile);
         setEditedProfile(profile);
         
         // Load transactions based on user type
         await loadTransactions(userId, profile.userType);
+        return;
       }
+      
+      // Fallback: Try searching by email (for legacy users or those missing authUid)
+      const userEmail = authUser?.email || user?.email;
+      if (userEmail) {
+        console.log('🔄 Fallback: Searching by email for legacy users...');
+        
+        // Search admins by email first
+        const adminsByEmailQuery = query(collection(db, COLLECTIONS.ADMINS), where('email', '==', userEmail));
+        const adminsByEmailSnapshot = await getDocs(adminsByEmailQuery);
+        console.log('👑 Admins by email results:', adminsByEmailSnapshot.size, 'documents found');
+        
+        if (!adminsByEmailSnapshot.empty) {
+          const adminDoc = adminsByEmailSnapshot.docs[0];
+          const adminData = adminDoc.data();
+          
+          // Update the document with the current authUid for future lookups
+          console.log('📝 Updating admin document with authUid:', userId);
+          await updateDoc(doc(db, COLLECTIONS.ADMINS, adminDoc.id), { authUid: userId });
+          
+          console.log('🔐 Admin user found by email, redirecting to admin panel...');
+          router.push('/admin');
+          return;
+        }
+        
+        // Search clients by email
+        const clientsByEmailQuery = query(collection(db, COLLECTIONS.CLIENTS), where('email', '==', userEmail));
+        const clientsByEmailSnapshot = await getDocs(clientsByEmailQuery);
+        console.log('📧 Clients by email results:', clientsByEmailSnapshot.size, 'documents found');
+        
+        if (!clientsByEmailSnapshot.empty) {
+          const clientDoc = clientsByEmailSnapshot.docs[0];
+          const clientData = clientDoc.data();
+          
+          // Update the document with the current authUid for future lookups
+          console.log('📝 Updating client document with authUid:', userId);
+          await updateDoc(doc(db, COLLECTIONS.CLIENTS, clientDoc.id), { authUid: userId });
+          
+          const profile = { 
+            id: clientDoc.id, 
+            name: clientData.name || clientData.displayName || 'User',
+            email: clientData.email,
+            userType: 'client' as const,
+            points: clientData.points || 0,
+            ...clientData 
+          } as UserProfile;
+          
+          setUserProfile(profile);
+          setEditedProfile(profile);
+          await loadTransactions(userId, profile.userType);
+          return;
+        }
+        
+        // Search technicians by email
+        const techsByEmailQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('email', '==', userEmail));
+        const techsByEmailSnapshot = await getDocs(techsByEmailQuery);
+        console.log('🔧 Technicians by email results:', techsByEmailSnapshot.size, 'documents found');
+        
+        if (!techsByEmailSnapshot.empty) {
+          const techDoc = techsByEmailSnapshot.docs[0];
+          const techData = techDoc.data();
+          
+          // Update the document with the current authUid for future lookups
+          console.log('📝 Updating technician document with authUid:', userId);
+          await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, techDoc.id), { authUid: userId });
+          
+          const profile = { 
+            id: techDoc.id, 
+            name: techData.name || techData.displayName || 'Technician',
+            email: techData.email,
+            userType: 'technician',
+            points: techData.points || 0,
+            ...techData 
+          } as UserProfile;
+          
+          setUserProfile(profile);
+          setEditedProfile(profile);
+          await loadTransactions(userId, profile.userType);
+          return;
+        }
+      }
+      
+      // Still no user found - this is likely a Google sign-in user who hasn't completed registration
+      console.error('❌ User document not found in any collection (clients, technicians, users)');
+      console.log('🔍 Checked collections for userId:', userId);
+      console.log('📧 Checked collections for email:', authUser?.email || user?.email);
+      console.log('💡 This might be a Google sign-in user who hasn\'t completed registration yet');
+      
+      // Sign out the user and redirect to registration
+      console.log('🚪 Signing out user to allow re-registration...');
+      await signOut(auth);
+      router.push('/');
+      
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
@@ -117,11 +299,76 @@ export default function ModernDashboard() {
 
   const loadTransactions = async (userId: string, userType: string) => {
     try {
-      let transactionsQuery;
+      // Load NEW tokenTransactions (ThankYou points and TOA tokens)
+      let tokenTransactionsQuery;
       
       if (userType === 'technician') {
-        // Load tips received by this technician
-        transactionsQuery = query(
+        // Load transactions received by this technician
+        tokenTransactionsQuery = query(
+          collection(db, 'tokenTransactions'),
+          where('toTechnicianId', '==', userId),
+          orderBy('timestamp', 'desc'),
+          firestoreLimit(20)
+        );
+      } else {
+        // Load transactions sent by this client + token purchases
+        tokenTransactionsQuery = query(
+          collection(db, 'tokenTransactions'),
+          where('fromUserId', '==', userId),
+          orderBy('timestamp', 'desc'),
+          firestoreLimit(20)
+        );
+      }
+
+      const tokenSnapshot = await getDocs(tokenTransactionsQuery);
+      const tokenTransactions = await Promise.all(
+        tokenSnapshot.docs.map(async (docSnapshot) => {
+          const data = docSnapshot.data() as any;
+          
+          // If names are missing, fetch them dynamically for better UX
+          let fromName = data.fromName;
+          let toName = data.toName;
+          
+          if (!fromName && data.fromUserId) {
+            try {
+              const userDocRef = doc(db, 'users', data.fromUserId);
+              const userDoc = await getDoc(userDocRef);
+              fromName = userDoc.exists() ? (userDoc.data() as any)?.name : null;
+            } catch (error) {
+              console.log('Could not fetch user name:', error);
+            }
+          }
+          
+          if (!toName && data.toTechnicianId) {
+            try {
+              const techDocRef = doc(db, 'technicians', data.toTechnicianId);
+              const techDoc = await getDoc(techDocRef);
+              toName = techDoc.exists() ? (techDoc.data() as any)?.name : null;
+            } catch (error) {
+              console.log('Could not fetch technician name:', error);
+            }
+          }
+          
+          return {
+            id: docSnapshot.id,
+            amount: data.dollarValue || 0,
+            timestamp: data.timestamp,
+            type: data.type || 'unknown',
+            fromName: fromName || 'Customer',
+            toName: toName || 'Technician', 
+            technicianName: toName || 'Technician',
+            pointsAwarded: data.pointsAwarded || 0,
+            tokens: data.tokens || 0,
+            message: data.message || ''
+          };
+        })
+      );
+
+      // Also load LEGACY transactions for backward compatibility
+      let legacyTransactionsQuery;
+      
+      if (userType === 'technician') {
+        legacyTransactionsQuery = query(
           collection(db, 'transactions'),
           where('technicianId', '==', userId),
           where('type', '==', 'tip'),
@@ -129,8 +376,7 @@ export default function ModernDashboard() {
           firestoreLimit(10)
         );
       } else {
-        // Load tips sent by this client
-        transactionsQuery = query(
+        legacyTransactionsQuery = query(
           collection(db, 'transactions'),
           where('fromUserId', '==', userId),
           where('type', '==', 'tip'),
@@ -139,13 +385,21 @@ export default function ModernDashboard() {
         );
       }
 
-      const snapshot = await getDocs(transactionsQuery);
-      const transactions = snapshot.docs.map(doc => ({
+      const legacySnapshot = await getDocs(legacyTransactionsQuery);
+      const legacyTransactions = legacySnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as object)
       })) as Transaction[];
-      
-      setTipTransactions(transactions);
+
+      // Combine and sort all transactions by timestamp
+      const allTransactions = [...tokenTransactions, ...legacyTransactions].sort((a, b) => {
+        const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+        const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+        return bTime.getTime() - aTime.getTime();
+      });
+
+      setTipTransactions(allTransactions.slice(0, 15)); // Show most recent 15 transactions
+      setAllTransactions(allTransactions);
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
@@ -158,11 +412,19 @@ export default function ModernDashboard() {
     }));
   };
 
+  const handlePhotoUploaded = (photoURL: string) => {
+    // Update the profile with new photo
+    setUserProfile(prev => prev ? { ...prev, photoURL } : prev);
+    setEditedProfile(prev => ({ ...prev, photoURL }));
+  };
+
   const handleSaveProfile = async () => {
-    if (!userProfile?.id) return;
+    if (!userProfile?.id || !userProfile?.userType) return;
 
     try {
-      await updateDoc(doc(db, 'users', userProfile.id), editedProfile);
+      // Use the correct collection based on user type
+      const collectionName = userProfile.userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.CLIENTS;
+      await updateDoc(doc(db, collectionName, userProfile.id), editedProfile);
       setUserProfile({ ...userProfile, ...editedProfile });
       setIsEditingProfile(false);
     } catch (error) {
@@ -290,49 +552,51 @@ export default function ModernDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {userProfile.userType === 'technician' && earnings && (
             <>
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <div className="bg-gradient-to-br from-emerald-500/20 to-teal-600/20 backdrop-blur-lg rounded-xl border border-emerald-400/30 p-6 hover:from-emerald-500/30 hover:to-teal-600/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Total Earned</p>
+                    <p className="text-emerald-200 text-sm font-medium">ThankYou Points</p>
+                    <p className="text-white text-2xl font-bold">{userProfile.points || 0}</p>
+                  </div>
+                  <div className="bg-emerald-500/30 p-3 rounded-lg border border-emerald-400/40">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-emerald-500/20 to-green-600/20 backdrop-blur-lg rounded-xl border border-emerald-400/30 p-6 hover:from-emerald-500/30 hover:to-green-600/30 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-emerald-200 text-sm font-medium">Thank Yous Received</p>
+                    <p className="text-white text-2xl font-bold">
+                      {tipTransactions.filter(t => t.type === 'thank_you').length}
+                    </p>
+                  </div>
+                  <div className="bg-emerald-500/30 p-3 rounded-lg border border-emerald-400/40">
+                    <span className="text-2xl">🙏</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-amber-500/20 to-yellow-600/20 backdrop-blur-md rounded-xl border border-amber-400/30 p-6 hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-amber-200 text-sm font-medium">TOA Earnings</p>
                     <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings)}</p>
                   </div>
-                  <div className="bg-green-500/20 p-3 rounded-lg">
+                  <div className="bg-amber-500/30 p-3 rounded-lg border border-amber-400/40">
                     <span className="text-2xl">💰</span>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-600/20 backdrop-blur-lg rounded-xl border border-blue-400/30 p-6 hover:from-blue-500/30 hover:to-cyan-600/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Tips Received</p>
-                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings * 0.7)}</p>
-                  </div>
-                  <div className="bg-blue-500/20 p-3 rounded-lg">
-                    <span className="text-2xl">🎯</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-300 text-sm font-medium">Service Earnings</p>
-                    <p className="text-white text-2xl font-bold">{formatCurrency(earnings.totalEarnings * 0.3)}</p>
-                  </div>
-                  <div className="bg-purple-500/20 p-3 rounded-lg">
-                    <span className="text-2xl">🔧</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-300 text-sm font-medium">Available Balance</p>
+                    <p className="text-blue-200 text-sm font-medium">Available Payout</p>
                     <p className="text-white text-2xl font-bold">{formatCurrency(earnings.availableBalance)}</p>
                   </div>
-                  <div className="bg-yellow-500/20 p-3 rounded-lg">
+                  <div className="bg-blue-500/30 p-3 rounded-lg border border-blue-400/40">
                     <span className="text-2xl">💳</span>
                   </div>
                 </div>
@@ -342,14 +606,14 @@ export default function ModernDashboard() {
           
           {userProfile.userType === 'client' && (
             <>
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <div className="bg-gradient-to-br from-emerald-500/20 to-teal-600/20 backdrop-blur-lg rounded-xl border border-emerald-400/30 p-6 hover:from-emerald-500/30 hover:to-teal-600/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Tips Sent</p>
-                    <p className="text-white text-2xl font-bold">{tipTransactions.length}</p>
+                    <p className="text-emerald-200 text-sm font-medium">ThankYou Points</p>
+                    <p className="text-white text-2xl font-bold">{userProfile.points || 0}</p>
                   </div>
-                  <div className="bg-green-500/20 p-3 rounded-lg">
-                    <span className="text-2xl">💝</span>
+                  <div className="bg-emerald-500/30 p-3 rounded-lg border border-emerald-400/40">
+                    <span className="text-2xl">⚡</span>
                   </div>
                 </div>
               </div>
@@ -357,24 +621,38 @@ export default function ModernDashboard() {
               <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Total Tipped</p>
+                    <p className="text-slate-300 text-sm font-medium">Thank Yous Sent</p>
                     <p className="text-white text-2xl font-bold">
-                      {formatCurrency(tipTransactions.reduce((sum, tip) => sum + tip.amount, 0))}
+                      {tipTransactions.filter(t => t.type === 'thank_you').length}
                     </p>
                   </div>
-                  <div className="bg-blue-500/20 p-3 rounded-lg">
-                    <span className="text-2xl">🎁</span>
+                  <div className="bg-green-500/20 p-3 rounded-lg">
+                    <span className="text-2xl"></span>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <div className="bg-gradient-to-br from-amber-500/20 to-yellow-600/20 backdrop-blur-md rounded-xl border border-amber-400/30 p-6 hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-300 text-sm font-medium">Tokens Purchased</p>
+                    <p className="text-amber-200 text-sm font-medium">TOA Tokens Sent</p>
+                    <p className="text-white text-2xl font-bold">
+                      {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').reduce((sum, t) => sum + (t.tokens || 0), 0)}
+                    </p>
+                  </div>
+                  <div className="bg-amber-500/30 p-3 rounded-lg border border-amber-400/40">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-amber-500/20 to-yellow-600/20 backdrop-blur-md rounded-xl border border-amber-400/30 p-6 hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-amber-200 text-sm font-medium">Tokens Purchased</p>
                     <p className="text-white text-2xl font-bold">{userProfile.tokenBalance || 0}</p>
                   </div>
-                  <div className="bg-purple-500/20 p-3 rounded-lg">
+                  <div className="bg-amber-500/30 p-3 rounded-lg border border-amber-400/40">
                     <span className="text-2xl">🪙</span>
                   </div>
                 </div>
@@ -401,34 +679,88 @@ export default function ModernDashboard() {
           
           {tipTransactions.length > 0 ? (
             <div className="space-y-4">
-              {tipTransactions.slice(0, 5).map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between py-3 px-4 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/20 p-2 rounded-lg">
-                      <span className="text-lg">
-                        {userProfile.userType === 'technician' ? '💰' : '🎁'}
-                      </span>
+              {tipTransactions.slice(0, 8).map((transaction, index) => {
+                // Determine transaction display based on type
+                const getTransactionDisplay = () => {
+                  const isReceived = userProfile.userType === 'technician';
+                  
+                  switch (transaction.type) {
+                    case 'thank_you':
+                      return {
+                        icon: '🙏',
+                        bgColor: 'bg-green-500/20',
+                        title: isReceived 
+                          ? `Thank you from ${transaction.fromName || 'Client'}`
+                          : `Thank you sent to ${transaction.toName || transaction.technicianName || 'Technician'}`,
+                        amount: formatCurrency(0), // Free thank you
+                        points: `+${transaction.pointsAwarded || 1} ThankATech Point${(transaction.pointsAwarded || 1) !== 1 ? 's' : ''}`
+                      };
+                    case 'toa_token':
+                    case 'toa':
+                      return {
+                        icon: '💰',
+                        bgColor: 'bg-blue-500/20',
+                        title: isReceived 
+                          ? `TOA tokens from ${transaction.fromName || 'Client'}`
+                          : `TOA sent to ${transaction.toName || transaction.technicianName || 'Technician'}`,
+                        amount: formatCurrency(transaction.amount || 0),
+                        points: transaction.pointsAwarded ? `+${transaction.pointsAwarded} ThankATech Point${transaction.pointsAwarded !== 1 ? 's' : ''}` : null
+                      };
+                    case 'token_purchase':
+                      return {
+                        icon: '🛒',
+                        bgColor: 'bg-purple-500/20',
+                        title: `Token Purchase`,
+                        amount: formatCurrency(transaction.amount || 0),
+                        points: transaction.pointsAwarded ? `+${transaction.pointsAwarded} ThankATech Point${transaction.pointsAwarded !== 1 ? 's' : ''}` : null
+                      };
+                    default:
+                      return {
+                        icon: '❤️',
+                        bgColor: 'bg-red-500/20',
+                        title: isReceived 
+                          ? `Legacy tip from ${transaction.fromName || 'Client'}`
+                          : `Legacy tip sent to ${transaction.toName || transaction.technicianName || 'Technician'}`,
+                        amount: formatCurrency(transaction.amount || 0),
+                        points: null
+                      };
+                  }
+                };
+
+                const display = getTransactionDisplay();
+                const timestamp = new Date(transaction.timestamp?.toDate ? transaction.timestamp.toDate() : transaction.timestamp);
+
+                return (
+                  <div key={transaction.id} className="flex items-center justify-between py-4 px-5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className={`${display.bgColor} p-3 rounded-xl`}>
+                        <span className="text-xl">{display.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-semibold text-sm sm:text-base">
+                          {display.title}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-400 mt-1">
+                          <span>📅 {timestamp.toLocaleDateString()}</span>
+                          <span>🕐 {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        {transaction.message && (
+                          <p className="text-slate-300 text-xs mt-1 italic">"{transaction.message}"</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-medium">
-                        {userProfile.userType === 'technician' 
-                          ? `Tip received from ${transaction.fromName || 'Client'}`
-                          : `Tip sent to ${transaction.toName || transaction.technicianName || 'Technician'}`
-                        }
-                      </p>
-                      <p className="text-slate-400 text-sm">
-                        {new Date(transaction.timestamp?.toDate ? transaction.timestamp.toDate() : transaction.timestamp).toLocaleDateString()}
+                    <div className="text-right">
+                      <p className="text-white font-bold text-sm sm:text-base">{display.amount}</p>
+                      {display.points && (
+                        <p className="text-blue-400 text-xs font-medium">{display.points}</p>
+                      )}
+                      <p className={`text-xs ${userProfile.userType === 'technician' ? 'text-green-400' : 'text-blue-400'} mt-1`}>
+                        {userProfile.userType === 'technician' ? 'Received' : 'Sent'}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-white font-bold">{formatCurrency(transaction.amount)}</p>
-                    <p className={`text-xs ${userProfile.userType === 'technician' ? 'text-green-400' : 'text-blue-400'}`}>
-                      {userProfile.userType === 'technician' ? 'Received' : 'Sent'}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -467,6 +799,19 @@ export default function ModernDashboard() {
             <div className="space-y-6">
               <div className="bg-white/5 rounded-xl p-6 border border-white/10">
                 <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
+                
+                {/* Profile Photo Upload */}
+                <div className="mb-6 flex justify-center">
+                  <ProfilePhotoUpload
+                    userId={userProfile?.id || ''}
+                    userType={userProfile?.userType === 'admin' ? 'client' : (userProfile?.userType || 'client')}
+                    currentPhotoURL={userProfile?.photoURL}
+                    userName={userProfile?.name}
+                    onPhotoUploaded={handlePhotoUploaded}
+                    size={100}
+                  />
+                </div>
+                
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>

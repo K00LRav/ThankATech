@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
-    console.log(`🧪 Direct Brevo API Test for: ${email}`);
+
     console.log(`🔑 API Key: ${process.env.BREVO_API_KEY?.substring(0, 20)}...`);
     console.log(`📧 From Email: ${process.env.EMAIL_FROM}`);
     console.log(`👤 From Name: ${process.env.EMAIL_FROM_NAME}`);

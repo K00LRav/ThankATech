@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+
+// Force dynamic rendering for this page since it uses Firebase Auth
+export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -10,6 +13,8 @@ import {
   where, 
   getDocs, 
   doc, 
+  getDoc,
+  setDoc,
   updateDoc,
   orderBy 
 } from 'firebase/firestore';
@@ -29,6 +34,7 @@ interface Technician {
   createdAt?: number;
   points?: number;
   totalTips?: number;
+  totalThankYous?: number;
 }
 
 interface Customer {
@@ -39,6 +45,8 @@ interface Customer {
   totalTipsSent?: number;
   totalSpent?: number;
   createdAt?: number;
+  totalThankYous?: number;
+  totalTips?: number;
 }
 
 interface AdminStats {
@@ -50,6 +58,38 @@ interface AdminStats {
   totalRevenue: number;
   averageTip: number;
   activeTechnicians: number;
+  
+  // Token Economy Metrics
+  totalTokensInCirculation: number;
+  totalTokensPurchased: number;
+  totalTokensSpent: number;
+  tokenPurchaseRevenue: number;
+  averageTokensPerUser: number;
+  topTokenSpenders: Array<{name: string, spent: number}>;
+  topTokenEarners: Array<{name: string, earned: number}>;
+  
+  // Thank You Metrics
+  totalThankYous: number;
+  totalThankYouPoints: number;
+  mostThankedTechnicians: Array<{name: string, thanks: number}>;
+  dailyThankYouUsage: number;
+  
+  // Transaction Analytics
+  transactionsByType: {thankYous: number, tips: number, tokenPurchases: number};
+  recentTransactionTrends: Array<{date: string, count: number, revenue: number}>;
+  popularTipAmounts: Array<{amount: number, count: number}>;
+  
+  // User Engagement
+  newUsersThisWeek: number;
+  newUsersThisMonth: number;
+  activeUsersThisWeek: number;
+  userRetentionRate: number;
+  badgeDistribution: {[key: string]: number};
+  
+  // Business Intelligence
+  revenueByCategory: Array<{category: string, revenue: number}>;
+  technicianPerformance: Array<{name: string, earnings: number, thanks: number, tips: number}>;
+  platformGrowthRate: number;
 }
 
 // Admin configuration
@@ -73,11 +113,42 @@ export default function AdminPage() {
     totalTransactions: 0,
     totalRevenue: 0,
     averageTip: 0,
-    activeTechnicians: 0
+    activeTechnicians: 0,
+    
+    // Token Economy Metrics
+    totalTokensInCirculation: 0,
+    totalTokensPurchased: 0,
+    totalTokensSpent: 0,
+    tokenPurchaseRevenue: 0,
+    averageTokensPerUser: 0,
+    topTokenSpenders: [],
+    topTokenEarners: [],
+    
+    // Thank You Metrics
+    totalThankYous: 0,
+    totalThankYouPoints: 0,
+    mostThankedTechnicians: [],
+    dailyThankYouUsage: 0,
+    
+    // Transaction Analytics
+    transactionsByType: {thankYous: 0, tips: 0, tokenPurchases: 0},
+    recentTransactionTrends: [],
+    popularTipAmounts: [],
+    
+    // User Engagement
+    newUsersThisWeek: 0,
+    newUsersThisMonth: 0,
+    activeUsersThisWeek: 0,
+    userRetentionRate: 0,
+    badgeDistribution: {},
+    
+    // Business Intelligence
+    revenueByCategory: [],
+    technicianPerformance: [],
+    platformGrowthRate: 0
   });
   
-  // Operation states
-  const [operationResults, setOperationResults] = useState<string>('');
+
   
   // Token management states
   const [tokenUserId, setTokenUserId] = useState('');
@@ -159,7 +230,19 @@ export default function AdminPage() {
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
-      // Check if user email matches admin email
+      // First check if user has admin userType in database
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.userType === 'admin') {
+          setIsAuthorized(true);
+          await loadAdminData();
+          return;
+        }
+      }
+      
+      // Fallback: Check if user email matches admin email (for initial setup)
       const isCorrectEmail = user.email?.toLowerCase() === ADMIN_EMAIL;
       
       // Check if user is authenticated via Google (Google provider ID)
@@ -174,6 +257,17 @@ export default function AdminPage() {
       
       // Admin can use either Google OR email/password authentication with correct email
       const isAdmin = isCorrectEmail && (isGoogleAuth || isEmailAuth);
+      
+      if (isAdmin && !userDoc.exists()) {
+        // Create admin user document in database
+        await setDoc(doc(db, 'users', user.uid), {
+          name: user.displayName || 'Admin',
+          email: user.email,
+          userType: 'admin',
+          points: 0,
+          createdAt: Date.now()
+        });
+      }
       
       setIsAuthorized(isAdmin);
       
@@ -214,53 +308,333 @@ export default function AdminPage() {
 
   const loadAdminData = useCallback(async () => {
     try {
-      // Load technicians
+      console.log('🔄 Loading comprehensive admin analytics...');
+      
+      // Load technicians (filter out mock/sample data)
       const techniciansRef = collection(db, 'technicians');
       const techQuery = query(techniciansRef, orderBy('createdAt', 'desc'));
       const techSnapshot = await getDocs(techQuery);
       
       const techData: Technician[] = [];
       techSnapshot.forEach((doc) => {
-        techData.push({ id: doc.id, ...doc.data() } as Technician);
+        const data = doc.data();
+        // Filter out mock/sample/test data
+        if (!data.isSample && 
+            !data.isTest && 
+            !doc.id.includes('mock') && 
+            !doc.id.includes('test') && 
+            !data.email?.includes('test') &&
+            !data.email?.includes('example.com') &&
+            !data.name?.toLowerCase().includes('test')) {
+          techData.push({ id: doc.id, ...data } as Technician);
+        }
       });
       
-      // Load customers
-      const customersRef = collection(db, 'users');
-      const customerQuery = query(customersRef, orderBy('createdAt', 'desc'));
-      const customerSnapshot = await getDocs(customerQuery);
+      // Load customers from both clients and users collections (filter out mock/sample data)
+      const clientsRef = collection(db, 'clients');
+      const clientsSnapshot = await getDocs(clientsRef);
+      const usersRef = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersRef);
       
       const customerData: Customer[] = [];
-      customerSnapshot.forEach((doc) => {
-        customerData.push({ id: doc.id, ...doc.data() } as Customer);
+      clientsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        // Filter out mock/sample/test data
+        if (!data.isSample && 
+            !data.isTest && 
+            !doc.id.includes('mock') && 
+            !doc.id.includes('test') && 
+            !data.email?.includes('test') &&
+            !data.email?.includes('example.com') &&
+            !data.name?.toLowerCase().includes('test')) {
+          customerData.push({ id: doc.id, ...data } as Customer);
+        }
+      });
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.userType !== 'admin' && 
+            !userData.isSample && 
+            !userData.isTest && 
+            !doc.id.includes('mock') && 
+            !doc.id.includes('test') && 
+            !userData.email?.includes('test') &&
+            !userData.email?.includes('example.com') &&
+            !userData.name?.toLowerCase().includes('test')) {
+          customerData.push({ id: doc.id, ...userData } as Customer);
+        }
       });
       
-      // Load transactions for stats
+      // Load all token transactions
+      const tokenTransactionsRef = collection(db, 'tokenTransactions');
+      const tokenTransactionsSnapshot = await getDocs(tokenTransactionsRef);
+      
+      // Load all token balances
+      const tokenBalancesRef = collection(db, 'tokenBalances');
+      const tokenBalancesSnapshot = await getDocs(tokenBalancesRef);
+      
+      // Load thank you transactions
+      const thankYousRef = collection(db, 'thankYous');
+      const thankYousSnapshot = await getDocs(thankYousRef);
+      
+      // Load legacy transactions
       const transactionsRef = collection(db, 'transactions');
       const transactionSnapshot = await getDocs(transactionsRef);
       
-      let totalRevenue = 0;
+      // Calculate Token Economy Metrics
+      let totalTokensPurchased = 0;
+      let totalTokensSpent = 0;
+      let tokenPurchaseRevenue = 0;
+      let totalTokensInCirculation = 0;
+      const tokenSpenders: {[key: string]: {name: string, spent: number}} = {};
+      const tokenEarners: {[key: string]: {name: string, earned: number}} = {};
+      
+      tokenTransactionsSnapshot.forEach((doc) => {
+        const transaction = doc.data();
+        
+        // Filter out mock/test/sample transactions
+        if (transaction.fromUserId?.includes('mock') || 
+            transaction.fromUserId?.includes('test') ||
+            transaction.fromUserId?.includes('client-') ||  // Sample client data
+            transaction.toTechnicianId?.includes('mock') ||
+            transaction.toTechnicianId?.includes('test') ||
+            doc.id.includes('mock') ||
+            doc.id.includes('test') ||
+            doc.id.includes('tx-') ||  // Sample transaction IDs
+            doc.id.includes('client-')) {
+          return;
+        }
+        
+        const tokens = transaction.tokens || 0;
+        const dollarValue = transaction.dollarValue || 0;
+        
+        if (transaction.type === 'purchase') {
+          totalTokensPurchased += tokens;
+          tokenPurchaseRevenue += dollarValue;
+        } else if (transaction.type === 'tip' || transaction.type === 'thankYou') {
+          totalTokensSpent += tokens;
+          
+          // Track spenders
+          if (transaction.fromUserId && transaction.fromName) {
+            if (!tokenSpenders[transaction.fromUserId]) {
+              tokenSpenders[transaction.fromUserId] = {name: transaction.fromName, spent: 0};
+            }
+            tokenSpenders[transaction.fromUserId].spent += tokens;
+          }
+          
+          // Track earners
+          if (transaction.toTechnicianId && transaction.toName) {
+            if (!tokenEarners[transaction.toTechnicianId]) {
+              tokenEarners[transaction.toTechnicianId] = {name: transaction.toName, earned: 0};
+            }
+            tokenEarners[transaction.toTechnicianId].earned += tokens;
+          }
+        }
+      });
+      
+      // Calculate total tokens in circulation from balances (filter out mock/test data)
+      tokenBalancesSnapshot.forEach((doc) => {
+        const balance = doc.data();
+        
+        // Filter out mock/test/sample token balances
+        if (balance.userId?.includes('mock') || 
+            balance.userId?.includes('test') ||
+            balance.userId?.includes('client-') ||  // Sample client data
+            doc.id.includes('mock') ||
+            doc.id.includes('test') ||
+            doc.id.includes('client-') ||
+            doc.id === 'guest') {
+          return;
+        }
+        
+        totalTokensInCirculation += balance.tokens || 0;
+      });
+      
+      // Get top spenders and earners
+      const topTokenSpenders = Object.values(tokenSpenders)
+        .sort((a, b) => b.spent - a.spent)
+        .slice(0, 5);
+      const topTokenEarners = Object.values(tokenEarners)
+        .sort((a, b) => b.earned - a.earned)
+        .slice(0, 5);
+      
+      // Calculate Thank You Metrics
+      let totalThankYous = 0;
+      let totalThankYouPoints = 0;
+      const thankedTechnicians: {[key: string]: {name: string, thanks: number}} = {};
+      
+      thankYousSnapshot.forEach((doc) => {
+        const thankYou = doc.data();
+        
+        // Filter out mock/test/sample thank yous
+        if (thankYou.technicianId?.includes('mock') || 
+            thankYou.technicianId?.includes('test') ||
+            thankYou.fromUserId?.includes('mock') ||
+            thankYou.fromUserId?.includes('test') ||
+            thankYou.fromUserId?.includes('client-') ||  // Sample client data
+            thankYou.toTechnicianId?.includes('mock') ||
+            doc.id.includes('mock') ||
+            doc.id.includes('test') ||
+            doc.id.includes('tx-') ||  // Sample transaction IDs
+            doc.id.includes('client-')) {
+          return;
+        }
+        
+        totalThankYous++;
+        totalThankYouPoints += thankYou.points || 1;
+        
+        if (thankYou.technicianId && thankYou.technicianName) {
+          if (!thankedTechnicians[thankYou.technicianId]) {
+            thankedTechnicians[thankYou.technicianId] = {name: thankYou.technicianName, thanks: 0};
+          }
+          thankedTechnicians[thankYou.technicianId].thanks++;
+        }
+      });
+      
+      const mostThankedTechnicians = Object.values(thankedTechnicians)
+        .sort((a, b) => b.thanks - a.thanks)
+        .slice(0, 5);
+      
+      // Calculate Transaction Analytics
+      let legacyRevenue = 0;
+      const tipAmounts: {[key: number]: number} = {};
+      
       transactionSnapshot.forEach((doc) => {
         const transaction = doc.data();
-        totalRevenue += transaction.amount || 0;
+        
+        // Filter out mock/test/sample transactions
+        if (transaction.technicianId?.includes('mock') || 
+            transaction.technicianId?.includes('test') ||
+            transaction.fromUserId?.includes('mock') ||
+            transaction.fromUserId?.includes('test') ||
+            transaction.fromUserId?.includes('client-') ||  // Sample client data
+            doc.id.includes('mock') ||
+            doc.id.includes('test') ||
+            doc.id.includes('tx-') ||  // Sample transaction IDs
+            doc.id.includes('client-')) {
+          return;
+        }
+        
+        legacyRevenue += transaction.amount || 0;
+        
+        if (transaction.type === 'tip') {
+          const amount = Math.round((transaction.amount || 0) / 100);
+          tipAmounts[amount] = (tipAmounts[amount] || 0) + 1;
+        }
       });
+      
+      const popularTipAmounts = Object.entries(tipAmounts)
+        .map(([amount, count]) => ({amount: parseInt(amount), count}))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      // Calculate User Engagement Metrics
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      let newUsersThisWeek = 0;
+      let newUsersThisMonth = 0;
+      
+      [...techData, ...customerData].forEach(user => {
+        const createdAt = user.createdAt ? new Date(user.createdAt) : new Date();
+        if (createdAt > oneWeekAgo) newUsersThisWeek++;
+        if (createdAt > oneMonthAgo) newUsersThisMonth++;
+      });
+      
+      // Calculate badge distribution
+      const badgeDistribution: {[key: string]: number} = {};
+      [...techData, ...customerData].forEach(user => {
+        const totalThankYous = user.totalThankYous || 0;
+        const totalTips = user.totalTips || 0;
+        
+        if (totalThankYous >= 100) badgeDistribution['Thank You Champion'] = (badgeDistribution['Thank You Champion'] || 0) + 1;
+        else if (totalThankYous >= 50) badgeDistribution['Community Hero'] = (badgeDistribution['Community Hero'] || 0) + 1;
+        else if (totalThankYous >= 25) badgeDistribution['Appreciated'] = (badgeDistribution['Appreciated'] || 0) + 1;
+        
+        if (totalTips >= 50) badgeDistribution['Diamond TOA Earner'] = (badgeDistribution['Diamond TOA Earner'] || 0) + 1;
+        else if (totalTips >= 25) badgeDistribution['Gold TOA Recipient'] = (badgeDistribution['Gold TOA Recipient'] || 0) + 1;
+      });
+      
+      // Calculate Business Intelligence
+      const categoryRevenue: {[key: string]: number} = {};
+      techData.forEach(tech => {
+        const category = tech.category || 'General';
+        const earnings = tech.totalTips || 0;
+        categoryRevenue[category] = (categoryRevenue[category] || 0) + earnings;
+      });
+      
+      const revenueByCategory = Object.entries(categoryRevenue)
+        .map(([category, revenue]) => ({category, revenue}))
+        .sort((a, b) => b.revenue - a.revenue);
+      
+      const technicianPerformance = techData
+        .map(tech => ({
+          name: tech.name,
+          earnings: tech.totalTips || 0,
+          thanks: tech.totalThankYous || 0,
+          tips: tech.totalTips || 0
+        }))
+        .sort((a, b) => b.earnings - a.earnings)
+        .slice(0, 10);
       
       setTechnicians(techData);
       setCustomers(customerData);
       
-      // Calculate stats
-      const averageTip = transactionSnapshot.size > 0 ? (totalRevenue / transactionSnapshot.size) / 100 : 0;
+      // Calculate comprehensive stats
+      const totalRevenue = legacyRevenue / 100 + tokenPurchaseRevenue;
+      const totalTransactions = transactionSnapshot.size + tokenTransactionsSnapshot.size;
+      const averageTip = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
       const activeTechnicians = techData.filter(t => t.username).length;
+      const averageTokensPerUser = customerData.length > 0 ? totalTokensInCirculation / customerData.length : 0;
       
       setStats({
         totalTechnicians: techData.length,
         totalCustomers: customerData.length,
         techniciansWithUsernames: techData.filter(t => t.username).length,
         customersWithUsernames: customerData.filter(c => c.username).length,
-        totalTransactions: transactionSnapshot.size,
-        totalRevenue: totalRevenue / 100, // Convert cents to dollars
-        averageTip: averageTip,
-        activeTechnicians: activeTechnicians
+        totalTransactions,
+        totalRevenue,
+        averageTip,
+        activeTechnicians,
+        
+        // Token Economy Metrics
+        totalTokensInCirculation,
+        totalTokensPurchased,
+        totalTokensSpent,
+        tokenPurchaseRevenue,
+        averageTokensPerUser,
+        topTokenSpenders,
+        topTokenEarners,
+        
+        // Thank You Metrics
+        totalThankYous,
+        totalThankYouPoints,
+        mostThankedTechnicians,
+        dailyThankYouUsage: 0, // Would need daily limits data
+        
+        // Transaction Analytics
+        transactionsByType: {
+          thankYous: thankYousSnapshot.size,
+          tips: transactionSnapshot.size,
+          tokenPurchases: tokenTransactionsSnapshot.docs.filter(doc => doc.data().type === 'purchase').length
+        },
+        recentTransactionTrends: [], // Would need time-series data
+        popularTipAmounts,
+        
+        // User Engagement
+        newUsersThisWeek,
+        newUsersThisMonth,
+        activeUsersThisWeek: 0, // Would need activity tracking
+        userRetentionRate: 0, // Would need historical data
+        badgeDistribution,
+        
+        // Business Intelligence
+        revenueByCategory,
+        technicianPerformance,
+        platformGrowthRate: newUsersThisMonth > 0 ? (newUsersThisWeek / newUsersThisMonth) * 100 : 0
       });
+      
+      console.log('✅ Admin analytics loaded successfully');
       
     } catch (error) {
       console.error('Error loading admin data:', error);
@@ -446,10 +820,17 @@ export default function AdminPage() {
           <div>
             <h2 className="text-2xl font-bold text-white">Platform Overview</h2>
             <p className="text-blue-200">ThankATech Administration Dashboard</p>
+            <p className="text-green-300 text-sm mt-1">✅ Production Data Only (Mock/Test data filtered out)</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 font-medium">System Online</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+              <span className="text-blue-300 text-sm">Clean Analytics</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-green-400 font-medium">System Online</span>
+            </div>
           </div>
         </div>
       </div>
@@ -461,6 +842,7 @@ export default function AdminPage() {
             <div>
               <p className="text-slate-300 text-sm font-medium">Total Technicians</p>
               <p className="text-white text-3xl font-bold">{stats.totalTechnicians}</p>
+              <p className="text-blue-300 text-xs mt-1">{stats.activeTechnicians} active</p>
             </div>
             <div className="bg-blue-500/20 p-3 rounded-lg">
               <span className="text-2xl">🔧</span>
@@ -473,6 +855,7 @@ export default function AdminPage() {
             <div>
               <p className="text-slate-300 text-sm font-medium">Total Customers</p>
               <p className="text-white text-3xl font-bold">{stats.totalCustomers}</p>
+              <p className="text-green-300 text-xs mt-1">+{stats.newUsersThisWeek} this week</p>
             </div>
             <div className="bg-green-500/20 p-3 rounded-lg">
               <span className="text-2xl">👥</span>
@@ -485,6 +868,7 @@ export default function AdminPage() {
             <div>
               <p className="text-slate-300 text-sm font-medium">Total Transactions</p>
               <p className="text-white text-3xl font-bold">{stats.totalTransactions}</p>
+              <p className="text-purple-300 text-xs mt-1">Avg: ${stats.averageTip.toFixed(2)}</p>
             </div>
             <div className="bg-purple-500/20 p-3 rounded-lg">
               <span className="text-2xl">💳</span>
@@ -497,9 +881,191 @@ export default function AdminPage() {
             <div>
               <p className="text-slate-300 text-sm font-medium">Total Revenue</p>
               <p className="text-white text-3xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
+              <p className="text-yellow-300 text-xs mt-1">${stats.tokenPurchaseRevenue.toFixed(2)} from tokens</p>
             </div>
             <div className="bg-yellow-500/20 p-3 rounded-lg">
               <span className="text-2xl">💰</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Token Economy Analytics */}
+      <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          🪙 Token Economy Analytics
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Tokens in Circulation</p>
+            <p className="text-white text-2xl font-bold">{stats.totalTokensInCirculation.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Tokens Purchased</p>
+            <p className="text-green-400 text-2xl font-bold">{stats.totalTokensPurchased.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Tokens Spent</p>
+            <p className="text-orange-400 text-2xl font-bold">{stats.totalTokensSpent.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Avg per User</p>
+            <p className="text-blue-400 text-2xl font-bold">{stats.averageTokensPerUser.toFixed(1)}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Top Token Spenders */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🔥 Top Token Spenders</h4>
+            <div className="space-y-2">
+              {stats.topTokenSpenders.slice(0, 5).map((spender, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">{spender.name}</span>
+                  <span className="text-orange-400 font-bold">{spender.spent.toLocaleString()} TOA</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Token Earners */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">💎 Top Token Earners</h4>
+            <div className="space-y-2">
+              {stats.topTokenEarners.slice(0, 5).map((earner, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">{earner.name}</span>
+                  <span className="text-green-400 font-bold">{earner.earned.toLocaleString()} TOA</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Thank You Analytics */}
+      <div className="bg-gradient-to-r from-green-600/20 to-blue-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          🙏 Thank You Analytics
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Total Thank Yous</p>
+            <p className="text-white text-3xl font-bold">{stats.totalThankYous.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Thank You Points</p>
+            <p className="text-green-400 text-3xl font-bold">{stats.totalThankYouPoints.toLocaleString()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Tips</p>
+            <p className="text-blue-400 text-3xl font-bold">{stats.transactionsByType.tips.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Most Thanked Technicians */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🏆 Most Thanked Technicians</h4>
+            <div className="space-y-2">
+              {stats.mostThankedTechnicians.slice(0, 5).map((tech, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">{tech.name}</span>
+                  <span className="text-green-400 font-bold">{tech.thanks} thanks</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Popular Tip Amounts */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">💵 Popular Tip Amounts</h4>
+            <div className="space-y-2">
+              {stats.popularTipAmounts.slice(0, 5).map((tip, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">${tip.amount}</span>
+                  <span className="text-blue-400 font-bold">{tip.count} times</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* User Engagement Analytics */}
+      <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          📈 User Engagement & Growth
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">New Users (Week)</p>
+            <p className="text-green-400 text-2xl font-bold">{stats.newUsersThisWeek}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">New Users (Month)</p>
+            <p className="text-blue-400 text-2xl font-bold">{stats.newUsersThisMonth}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Growth Rate</p>
+            <p className="text-purple-400 text-2xl font-bold">{stats.platformGrowthRate.toFixed(1)}%</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">With Usernames</p>
+            <p className="text-orange-400 text-2xl font-bold">{stats.techniciansWithUsernames + stats.customersWithUsernames}</p>
+          </div>
+        </div>
+
+        {/* Badge Distribution */}
+        <div className="bg-black/20 rounded-lg p-4">
+          <h4 className="text-lg font-semibold text-white mb-3">🏅 Badge Distribution</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Object.entries(stats.badgeDistribution).map(([badge, count]) => (
+              <div key={badge} className="text-center">
+                <p className="text-slate-300 text-sm">{badge}</p>
+                <p className="text-yellow-400 font-bold">{count}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Business Intelligence */}
+      <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          📊 Business Intelligence
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Revenue by Category */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">💰 Revenue by Category</h4>
+            <div className="space-y-2">
+              {stats.revenueByCategory.slice(0, 5).map((category, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">{category.category}</span>
+                  <span className="text-yellow-400 font-bold">${category.revenue.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Performing Technicians */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🌟 Top Performers</h4>
+            <div className="space-y-2">
+              {stats.technicianPerformance.slice(0, 5).map((tech, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <div>
+                    <p className="text-slate-300 text-sm">{tech.name}</p>
+                    <p className="text-slate-500 text-xs">{tech.thanks} thanks, {tech.tips} tips</p>
+                  </div>
+                  <span className="text-green-400 font-bold">${tech.earnings.toFixed(2)}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -639,14 +1205,15 @@ export default function AdminPage() {
             </button>
           </div>
         </div>
+
       </div>
 
       {/* Results Display */}
-      {(operationResults || tokenManagementResults || resetResults || emailTestResults) && (
+      {(tokenManagementResults || resetResults || emailTestResults) && (
         <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
           <h3 className="text-lg font-bold text-white mb-4">📋 Operation Results</h3>
           <div className="bg-black/30 rounded-lg p-4 font-mono text-sm text-green-400 whitespace-pre-wrap max-h-96 overflow-y-auto">
-            {operationResults || tokenManagementResults || resetResults || emailTestResults}
+            {tokenManagementResults || resetResults || emailTestResults}
           </div>
         </div>
       )}
@@ -726,7 +1293,7 @@ export default function AdminPage() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      <UniversalHeader 
+      <UniversalHeader
         currentUser={user ? {
           id: user.uid,
           name: user.displayName || 'Admin',
@@ -735,9 +1302,8 @@ export default function AdminPage() {
           userType: 'admin'
         } : undefined}
         onSignOut={handleSignOut}
-      />
-      
-      <main className="relative max-w-7xl mx-auto px-4 py-8">
+        currentPath="/admin"
+      />      <main className="relative max-w-7xl mx-auto px-4 py-8">
         {/* Navigation Tabs */}
         <div className="mb-8">
           <div className="bg-white/10 backdrop-blur-lg rounded-lg p-2 border border-white/20 inline-flex">

@@ -7,6 +7,7 @@ import { findTechnicianByUsername } from '../../lib/techniciansApi';
 import TokenSendModal from '../../components/TokenSendModal';
 import Footer from '../../components/Footer';
 import { ProfileHeader } from '../../components/ProfileHeader';
+import UniversalHeader from '@/components/UniversalHeader';
 import { AppreciationActions } from '../../components/AppreciationActions';
 import { ContactInfo } from '../../components/ContactInfo';
 
@@ -116,25 +117,10 @@ export default function TechnicianProfile() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
-      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg">
-        <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer" prefetch={false}>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-base sm:text-xl font-bold">🔧</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent group-hover:text-blue-400 transition-colors">
-                ThankATech
-              </span>
-            </Link>
-            
-            <div className="text-sm text-blue-200 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-              <span className="hidden sm:inline opacity-70">thankatech.com/</span>
-              <span className="font-semibold text-white">{technician.username}</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <UniversalHeader 
+        currentPath={`/${technician.username}`}
+        customSubtitle={`thankatech.com/${technician.username}`}
+      />
 
       <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-6xl sm:px-4 lg:px-8 sm:py-12">
         <div className="mb-6 sm:mb-8">

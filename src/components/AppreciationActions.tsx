@@ -32,18 +32,18 @@ export function AppreciationActions({ onThankYou, onSendTOA, technicianName }: A
         </div>
       </button>
       
-      {/* SECONDARY ACTION: TOA - Subtle and optional */}
+      {/* SECONDARY ACTION: TOA - Signature Tinted Glass */}
       <button
         onClick={onSendTOA}
-        className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border border-white/30 hover:border-white/40 group"
+        className="w-full bg-gradient-to-r from-amber-400/20 to-yellow-500/20 backdrop-blur-md hover:from-amber-400/30 hover:to-yellow-500/30 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border border-amber-300/40 hover:border-amber-200/60 shadow-lg hover:shadow-amber-400/25 group"
       >
         <div className="flex items-center justify-center gap-3">
-          <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="font-bold text-sm">💝</span>
+          <div className="w-6 h-6 bg-amber-400/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="font-bold text-sm drop-shadow-sm">💝</span>
           </div>
           <div className="text-left">
-            <div className="font-medium">Send TOA Token</div>
-            <div className="text-xs text-white/70">Optional monetary appreciation</div>
+            <div className="font-medium text-amber-100 group-hover:text-amber-50 drop-shadow-sm">Send TOA Token</div>
+            <div className="text-xs text-amber-200/70 group-hover:text-amber-100/80">Optional monetary appreciation</div>
           </div>
         </div>
       </button>

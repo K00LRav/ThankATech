@@ -28,36 +28,10 @@ body {
   font-family: var(--font-geist-sans), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", Arial, Helvetica, sans-serif;
 }
 
-/* Smooth scroll snapping for mobile - gentler approach */
+/* Smooth scrolling without snap for better mobile experience */
 @media (max-width: 768px) {
   html {
-    scroll-snap-type: y proximity;
     scroll-behavior: smooth;
-  }
-  
-  /* Define snap points for major sections */
-  .snap-section {
-    scroll-snap-align: start;
-  }
-  
-  /* Header section */
-  header, .hero-section {
-    scroll-snap-align: start;
-  }
-  
-  /* Categories section */
-  .categories-section {
-    scroll-snap-align: start;
-  }
-  
-  /* Profile cards section - less aggressive snapping */
-  .profiles-section {
-    scroll-snap-align: start;
-  }
-  
-  /* Footer section */
-  footer {
-    scroll-snap-align: start;
   }
 }
 

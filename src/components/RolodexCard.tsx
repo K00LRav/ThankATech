@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Avatar from './Avatar';
 
 interface Technician {
   id: string;
@@ -67,7 +68,7 @@ export function RolodexCard({
     // TOA milestones
     if (totalTips >= 50) badges.push({ icon: '💎', text: 'Diamond TOA Earner', color: 'bg-purple-100 text-purple-800 border-purple-300' });
     else if (totalTips >= 25) badges.push({ icon: '🥇', text: 'Gold TOA Recipient', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' });
-    else if (totalTips >= 10) badges.push({ icon: '🪙', text: 'TOA Earner', color: 'bg-green-100 text-green-800 border-green-300' });
+    else if (totalTips >= 10) badges.push({ icon: '⭐', text: 'TOA Earner', color: 'bg-amber-100 text-amber-800 border-amber-300' });
 
     return badges;
   };
@@ -121,12 +122,12 @@ export function RolodexCard({
               {/* Profile Image */}
               <div className="relative">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
-                  <Image
-                    src={technician.photoURL || technician.image || '/default-avatar.png'}
-                    alt={technician.name}
-                    width={96}
-                    height={96}
-                    className="w-full h-full object-cover"
+                  <Avatar
+                    name={technician.name}
+                    photoURL={technician.photoURL || technician.image}
+                    size={96}
+                    className="w-full h-full"
+                    textSize="text-xl sm:text-2xl"
                   />
                 </div>
                 {/* ThankATech Points overlay */}
@@ -194,20 +195,37 @@ export function RolodexCard({
                     </span>
                   )}
                   
-                  {/* Achievement badge */}
-                  {achievementBadges.length > 0 && (
-                    <span 
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${achievementBadges[0].color} shadow-sm`}
-                      title={`Achievement: ${achievementBadges[0].text}`}
-                    >
-                      <span className="text-xs">{achievementBadges[0].icon}</span>
-                      <span className="hidden sm:inline text-xs">{achievementBadges[0].text}</span>
-                    </span>
+                  {/* Achievement badges - show more on desktop */}
+                  {achievementBadges.map((badge, index) => {
+                    // On mobile, show only first badge + indicator
+                    // On desktop, show up to 3 badges
+                    const showOnMobile = index === 0;
+                    const showOnDesktop = index < 3;
+                    
+                    if (!showOnMobile && !showOnDesktop) return null;
+                    
+                    return (
+                      <span 
+                        key={index}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${badge.color} shadow-sm ${
+                          index === 0 ? '' : 'hidden sm:inline-flex'
+                        }`}
+                        title={`Achievement: ${badge.text}`}
+                      >
+                        <span className="text-xs">{badge.icon}</span>
+                        <span className="text-xs">{badge.text}</span>
+                      </span>
+                    );
+                  })}
+                  
+                  {/* Additional achievements indicator - mobile only (shows for 2+ badges) */}
+                  {achievementBadges.length > 1 && (
+                    <span className="text-xs text-gray-300 block sm:hidden">+{achievementBadges.length - 1}</span>
                   )}
                   
-                  {/* Additional achievements indicator */}
-                  {achievementBadges.length > 1 && (
-                    <span className="text-xs text-gray-300">+{achievementBadges.length - 1}</span>
+                  {/* Additional achievements indicator - desktop only (shows for 4+ badges) */}
+                  {achievementBadges.length > 3 && (
+                    <span className="text-xs text-gray-300 hidden sm:block">+{achievementBadges.length - 3}</span>
                   )}
                 </div>
               </div>
@@ -230,16 +248,16 @@ export function RolodexCard({
                       {isLong && (
                         <button
                           onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                          className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 flex items-center gap-1 sm:hidden"
+                          className="mt-2 text-xs sm:text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 flex items-center gap-1"
                         >
                           {isDescriptionExpanded ? (
                             <>
-                              <span>Show less</span>
+                              <span className="text-xs">Show less</span>
                               <span className="text-xs">▲</span>
                             </>
                           ) : (
                             <>
-                              <span>Read more</span>
+                              <span className="text-xs">Read more</span>
                               <span className="text-xs">▼</span>
                             </>
                           )}
@@ -258,16 +276,16 @@ export function RolodexCard({
             {/* Bottom Section */}
             <div className="mt-auto pt-2 sm:pt-3">
               <div className="flex items-center justify-center gap-3 flex-wrap">
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full px-4 py-2 shadow-lg border border-emerald-400/20">
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full px-4 py-2 shadow-lg border border-blue-400/20">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm">👍</span>
                     <span className="text-sm font-bold">{technician.totalThankYous || 0}</span>
                     <span className="text-sm opacity-90">thanks</span>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full px-4 py-2 shadow-lg border border-blue-400/20">
+                <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-4 py-2 shadow-lg border border-amber-400/20">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">🪙</span>
+                    <span className="text-sm">⭐</span>
                     <span className="text-sm font-bold">{technician.totalTips || 0}</span>
                     <span className="text-sm opacity-90">TOA</span>
                   </div>
@@ -278,23 +296,23 @@ export function RolodexCard({
             {/* Action Buttons - Brand-aligned hierarchy */}
             {showActions && (onThankYou || onSendTOA) && (
               <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4">
-                {/* PRIMARY ACTION: Say Thank You - Hero button */}
+                {/* PRIMARY ACTION: Say Thank You - Emerald Call-to-Action */}
                 {onThankYou && (
                   <button 
                     onClick={onThankYou}
-                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-500/30 transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-blue-400/30"
+                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/30 transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-emerald-400/30"
                   >
                     <span className="font-bold text-white text-base">🙏 Say Thank You</span>
                   </button>
                 )}
                 
-                {/* SECONDARY ACTION: Send TOA - Subtle option */}
+                {/* SECONDARY ACTION: Send TOA - Signature Tinted Glass */}
                 {onSendTOA && (
                   <button 
                     onClick={onSendTOA}
-                    className="group flex items-center justify-center space-x-2 px-3 py-2 bg-transparent hover:bg-white/5 rounded-lg transition-all duration-300 min-h-[36px] w-full border border-white/20 hover:border-white/30"
+                    className="group flex items-center justify-center space-x-2 px-3 py-2 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 backdrop-blur-md hover:from-amber-400/30 hover:to-yellow-500/30 rounded-lg transition-all duration-300 min-h-[36px] w-full border border-amber-300/40 hover:border-amber-200/60 shadow-lg hover:shadow-amber-400/25"
                   >
-                    <span className="font-normal text-white/70 hover:text-white/90 text-sm">💝 Send TOA</span>
+                    <span className="font-normal text-amber-100 group-hover:text-amber-50 text-sm drop-shadow-sm">💝 Send TOA</span>
                   </button>
                 )}
               </div>

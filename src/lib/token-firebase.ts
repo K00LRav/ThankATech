@@ -327,16 +327,42 @@ export async function sendFreeThankYou(
       };
     }
 
-    // Use fixed meaningful message for appreciation
-    const message = `Thank you for your exceptional service! Your expertise and dedication truly make a difference.`;
+    // Pre-selected meaningful thank you messages for consistency and positivity
+    const thankYouMessages = [
+      "Thank you for your exceptional service! Your expertise and dedication truly make a difference.",
+      "Your professional work and attention to detail are greatly appreciated. Thank you!",
+      "Excellent service! Your skills and reliability make you a valued professional.",
+      "Thank you for going above and beyond. Your work quality is outstanding!",
+      "Your expertise and friendly service are much appreciated. Thank you for everything!",
+      "Professional, reliable, and skilled - thank you for your excellent work!",
+      "Your dedication to quality service is evident. Thank you for your hard work!",
+      "Thank you for your prompt and professional service. Truly appreciated!",
+      "Your attention to detail and expert skills are valued. Thank you so much!",
+      "Exceptional work and great communication. Thank you for your professionalism!"
+    ];
     
-    // Create transaction record
+    // Randomly select a message for variety while maintaining quality
+    const message = thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
+    
+    // Fetch sender and recipient names for proper display
+    const [senderDoc, recipientDoc] = await Promise.all([
+      getDoc(doc(db, COLLECTIONS.USERS, fromUserId)),
+      getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId))
+    ]);
+    
+    const fromName = senderDoc.exists() ? senderDoc.data()?.name : 'Customer';
+    const toName = recipientDoc.exists() ? recipientDoc.data()?.name : 'Technician';
+    
+    // Create transaction record with names
     const transaction: Omit<TokenTransaction, 'id'> = {
       fromUserId,
       toTechnicianId,
+      fromName,
+      toName,
+      technicianName: toName, // For compatibility
       tokens: 0, // Free thank you
       message,
-      isRandomMessage: false,
+      isRandomMessage: true, // Now using random messages
       timestamp: new Date(),
       type: 'thank_you',
       pointsAwarded: POINTS_LIMITS.POINTS_PER_THANK_YOU // 1 ThankATech Point for thank you
@@ -455,10 +481,33 @@ export async function sendTokens(
       }
     }
 
-    // Use fixed meaningful message for token appreciation
+    // Random TOA appreciation messages
+    const toaMessages = [
+      `Your outstanding work deserves recognition! Here's ${tokens} TOA tokens as appreciation.`,
+      `Exceptional service! These ${tokens} TOA tokens are a small token of my gratitude.`,
+      `Thank you for going above and beyond! Enjoy these ${tokens} TOA tokens.`,
+      `Your professionalism and skill are incredible! Here are ${tokens} TOA tokens.`,
+      `Amazing work quality! These ${tokens} TOA tokens are well-deserved.`,
+      `Your dedication to excellence shows! Please accept these ${tokens} TOA tokens.`,
+      `Outstanding service delivery! Here's ${tokens} TOA tokens as my thanks.`,
+      `Your expertise made all the difference! Enjoy these ${tokens} TOA tokens.`,
+      `Truly exceptional work! These ${tokens} TOA tokens are for you.`,
+      `Your professional service exceeded expectations! Here are ${tokens} TOA tokens.`
+    ];
+    
+    // Select appropriate message
     const message = isFreeThankYou 
-      ? `Thank you for your exceptional service! Your expertise and dedication truly make a difference.`
-      : `Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here's ${tokens} TOA tokens as a token of my appreciation.`;
+      ? `` // Free thank yous use separate message system
+      : toaMessages[Math.floor(Math.random() * toaMessages.length)];
+    
+    // Fetch sender and recipient names
+    const [senderDoc, recipientDoc] = await Promise.all([
+      getDoc(doc(db, COLLECTIONS.USERS, fromUserId)),
+      getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId))
+    ]);
+    
+    const fromName = senderDoc.exists() ? senderDoc.data()?.name : 'Customer';
+    const toName = recipientDoc.exists() ? recipientDoc.data()?.name : 'Technician';
     
     // Calculate TOA business model values
     const dollarValue = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.customerPaysPerTOA;
@@ -466,15 +515,18 @@ export async function sendTokens(
     const platformFee = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.platformFeePerTOA;
     const pointsAwarded = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
     
-    // Create transaction record with TOA business model tracking
+    // Create transaction record with names and TOA business model tracking
     const transaction: Omit<TokenTransaction, 'id'> = {
       fromUserId,
       toTechnicianId,
+      fromName,
+      toName,
+      technicianName: toName, // For compatibility
       tokens,
       message,
-      isRandomMessage: false,
+      isRandomMessage: !isFreeThankYou, // TOA messages are random, thank yous handled separately
       timestamp: new Date(),
-      type: isFreeThankYou ? 'thank_you' : 'toa',
+      type: isFreeThankYou ? 'thank_you' : 'toa_token',
       dollarValue,
       technicianPayout,
       platformFee,

@@ -641,13 +641,45 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
       const techDoc = await getDoc(technicianRef);
       if (techDoc.exists()) {
         await updateDoc(technicianRef, {
-          image: downloadURL
+          image: downloadURL,
+          photoURL: downloadURL
         });
       } else {
         console.warn(`Technician document ${technicianId} not found for photo update. This is normal for mock data.`);
       }
     } catch (error) {
       console.warn(`Unable to update technician photo for ${technicianId}:`, error.message);
+    }
+    
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload client profile photo to Firebase Storage
+ */
+export async function uploadClientPhoto(clientId, photoFile) {
+  try {
+    const photoRef = ref(storage, `clients/${clientId}/profile.jpg`);
+    await uploadBytes(photoRef, photoFile);
+    const downloadURL = await getDownloadURL(photoRef);
+    
+    // Update client record with photo URL (with existence check)
+    const clientRef = doc(db, COLLECTIONS.CLIENTS, clientId);
+    try {
+      const clientDoc = await getDoc(clientRef);
+      if (clientDoc.exists()) {
+        await updateDoc(clientRef, {
+          photoURL: downloadURL
+        });
+      } else {
+        console.warn(`Client document ${clientId} not found for photo update.`);
+      }
+    } catch (error) {
+      console.warn(`Unable to update client photo for ${clientId}:`, error.message);
     }
     
     return downloadURL;

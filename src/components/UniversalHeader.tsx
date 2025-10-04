@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Avatar from './Avatar';
 
 interface UniversalHeaderProps {
   currentUser?: {
@@ -14,17 +15,23 @@ interface UniversalHeaderProps {
     points?: number;
   };
   onSignOut?: () => void;
+  onSignIn?: () => void;
+  onRegister?: () => void;
   showNav?: boolean;
   customTitle?: string;
   customSubtitle?: string;
+  currentPath?: string;
 }
 
 const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   currentUser,
   onSignOut,
+  onSignIn,
+  onRegister,
   showNav = true,
   customTitle,
-  customSubtitle
+  customSubtitle,
+  currentPath
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -33,7 +40,7 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   return (
     <>
       {/* Header - Universal Glassmorphism Design */}
-      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg">
+      <header className="bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 shadow-lg">
         <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo - Always Visible */}
@@ -56,42 +63,38 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
               <div className="hidden sm:flex gap-3 sm:gap-4 items-center">
                 {currentUser ? (
                   <>
-                    {/* Dashboard Link - Icon on mobile, text on desktop */}
-                    <Link
-                      href="/dashboard"
-                      className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                    >
-                      <span className="hidden sm:inline">Dashboard</span>
-                      <span className="sm:hidden">📊</span>
-                    </Link>
+                    {/* Dashboard Link - Only show for non-admin users, or if admin and on admin page (to go back) */}
+                    {currentUser.userType !== 'admin' && (
+                      <Link
+                        href="/dashboard"
+                        className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                      >
+                        <span className="hidden sm:inline">Dashboard</span>
+                        <span className="sm:hidden">📊</span>
+                      </Link>
+                    )}
 
-                    {/* Admin Link (if admin) */}
+                    {/* Admin Panel Link (if admin) */}
                     {currentUser.userType === 'admin' && (
                       <Link
                         href="/admin"
-                        className="px-3 py-2 bg-red-500/20 text-red-200 rounded-lg font-medium hover:bg-red-500/30 transition-colors text-sm"
+                        className={`px-3 py-2 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500/20 to-yellow-600/20 backdrop-blur-md text-amber-200 rounded-lg font-medium hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-200 text-sm sm:text-base border border-amber-400/30 ${
+                          currentPath === '/admin' ? 'ring-2 ring-amber-400/50' : ''
+                        }`}
                       >
-                        <span className="hidden sm:inline">Admin</span>
+                        <span className="hidden sm:inline">Admin Panel</span>
                         <span className="sm:hidden">🛡️</span>
                       </Link>
                     )}
                     
                     {/* Profile Photo - Display Only */}
-                    {currentUser?.photoURL ? (
-                      <Image 
-                        src={currentUser.photoURL} 
-                        alt="Profile" 
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 rounded-full border-2 border-white/20"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
-                        <span className="text-white text-sm font-medium">
-                          {currentUser.name?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                    )}
+                    <Avatar
+                      name={currentUser.name}
+                      photoURL={currentUser.photoURL}
+                      size={32}
+                      className="border-2 border-white/20"
+                      textSize="text-sm"
+                    />
 
                     {/* Points Badge */}
                     {currentUser?.points && currentUser.points > 0 && (
@@ -110,10 +113,16 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                   </>
                 ) : (
                   <>
-                    <button className="text-gray-300 hover:text-blue-400 transition-colors font-medium text-sm sm:text-base px-3 py-2">
+                    <button 
+                      onClick={onSignIn}
+                      className="text-gray-300 hover:text-blue-400 transition-colors font-medium text-sm sm:text-base px-3 py-2"
+                    >
                       Sign In
                     </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base">
+                    <button 
+                      onClick={onRegister}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                    >
                       Join
                     </button>
                   </>
@@ -148,21 +157,13 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                 <>
                   {/* User Info */}
                   <div className="flex items-center gap-3 pb-3 border-b border-white/20">
-                    {currentUser?.photoURL ? (
-                      <Image 
-                        src={currentUser.photoURL} 
-                        alt="Profile" 
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full border-2 border-white/20"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
-                        <span className="text-white font-medium">
-                          {currentUser.name?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                    )}
+                    <Avatar
+                      name={currentUser.name}
+                      photoURL={currentUser.photoURL}
+                      size={40}
+                      className="border-2 border-white/20"
+                      textSize="text-base"
+                    />
                     <div>
                       <p className="text-white font-medium">Welcome, {currentUser.name?.split(' ')[0] || 'User'}!</p>
                       {currentUser?.points && currentUser.points > 0 && (
@@ -172,18 +173,22 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                   </div>
 
                   {/* Navigation Links */}
-                  <Link
-                    href="/dashboard"
-                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    📊 Dashboard
-                  </Link>
+                  {currentUser.userType !== 'admin' && (
+                    <Link
+                      href="/dashboard"
+                      className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      📊 Dashboard
+                    </Link>
+                  )}
 
                   {currentUser.userType === 'admin' && (
                     <Link
                       href="/admin"
-                      className="block w-full px-4 py-3 bg-red-500/20 text-red-200 rounded-lg font-medium text-center hover:bg-red-500/30 transition-colors"
+                      className={`block w-full px-4 py-3 bg-gradient-to-r from-amber-500/20 to-yellow-600/20 backdrop-blur-md text-amber-200 rounded-lg font-medium text-center hover:from-amber-500/30 hover:to-yellow-600/30 transition-all duration-200 border border-amber-400/30 ${
+                        currentPath === '/admin' ? 'ring-2 ring-amber-400/50' : ''
+                      }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       🛡️ Admin Panel
@@ -202,10 +207,22 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                 </>
               ) : (
                 <>
-                  <button className="block w-full px-4 py-3 bg-white/10 text-white rounded-lg font-medium text-center hover:bg-white/20 transition-colors">
+                  <button 
+                    onClick={() => {
+                      onSignIn?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-3 bg-white/10 text-white rounded-lg font-medium text-center hover:bg-white/20 transition-colors"
+                  >
                     Sign In
                   </button>
-                  <button className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={() => {
+                      onRegister?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-center hover:bg-blue-700 transition-colors"
+                  >
                     Join ThankATech
                   </button>
                 </>

@@ -4,9 +4,43 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Profile photos - public read, authenticated write to own folder
-    match /profile-photos/{userId}/{fileName} {
+    // Technician profile photos
+    match /technicians/{technicianId}/{fileName} {
       // Allow public read so anyone can view technician profile pictures
+      allow read: if true;
+      
+      // Allow write only if:
+      // 1. User is authenticated
+      // 2. File is under 5MB
+      // 3. File is an image
+      allow write: if request.auth != null 
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');  // Only images
+      
+      // Allow delete for authenticated users
+      allow delete: if request.auth != null;
+    }
+    
+    // Client profile photos
+    match /clients/{clientId}/{fileName} {
+      // Allow public read so anyone can view client profile pictures
+      allow read: if true;
+      
+      // Allow write only if:
+      // 1. User is authenticated
+      // 2. File is under 5MB
+      // 3. File is an image
+      allow write: if request.auth != null 
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');  // Only images
+      
+      // Allow delete for authenticated users
+      allow delete: if request.auth != null;
+    }
+    
+    // Legacy profile photos path (for backwards compatibility)
+    match /profile-photos/{userId}/{fileName} {
+      // Allow public read so anyone can view profile pictures
       allow read: if true;
       
       // Allow write only if:

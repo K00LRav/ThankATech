@@ -2,6 +2,9 @@
 // @ts-nocheck
 
 import { useState, useEffect, useCallback } from 'react';
+
+// Force dynamic rendering for this page since it uses Firebase Auth
+export const dynamic = 'force-dynamic';
 import { fetchTechnicians, getUserLocation } from '../lib/techniciansApi.js';
 import { logger } from '../lib/logger';
 import { sendThankYou, auth, authHelpers, getTechnician, getUser } from '../lib/firebase';
@@ -9,6 +12,7 @@ import { getUserTokenBalance, sendFreeThankYou } from '../lib/token-firebase';
 import { TECHNICIAN_CATEGORIES, getCategoryById, mapLegacyCategoryToNew } from '../lib/categories';
 import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
+import Avatar from '../components/Avatar';
 import ForgotPassword from '../components/ForgotPassword';
 import TokenSendModal from '../components/TokenSendModal';
 import TokenPurchaseModal from '../components/TokenPurchaseModal';
@@ -57,7 +61,7 @@ interface Technician {
   isNearby?: boolean;
 }
 
-// Main Page Header Component with Mobile Hamburger Menu
+
 const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, onLogout }: {
   currentUser: any;
   onSignIn: () => void;
@@ -69,7 +73,7 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
 
   return (
     <>
-      <header className="relative bg-white/10 backdrop-blur-xl border-b border-white/20 shadow-lg">
+      <header className="bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 shadow-lg">
         <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo - Always Visible */}
@@ -93,15 +97,13 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
                     Dashboard
                   </Link>
                   
-                  {currentUser?.photoURL && (
-                    <Image 
-                      src={currentUser.photoURL} 
-                      alt="Profile" 
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 rounded-full border-2 border-white/20"
-                    />
-                  )}
+                  <Avatar
+                    name={currentUser.name}
+                    photoURL={currentUser.photoURL}
+                    size={32}
+                    className="border-2 border-white/20"
+                    textSize="text-sm"
+                  />
 
                   {currentUser?.userType === 'customer' && (
                     <div className="flex items-center gap-2">
@@ -166,21 +168,13 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
               {currentUser ? (
                 <>
                   <div className="flex items-center gap-3 pb-3 border-b border-white/20">
-                    {currentUser?.photoURL ? (
-                      <Image 
-                        src={currentUser.photoURL} 
-                        alt="Profile" 
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full border-2 border-white/20"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-slate-600/50 rounded-full flex items-center justify-center border-2 border-white/20">
-                        <span className="text-white font-medium">
-                          {currentUser.name?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                    )}
+                    <Avatar
+                      name={currentUser.name}
+                      photoURL={currentUser.photoURL}
+                      size={40}
+                      className="border-2 border-white/20"
+                      textSize="text-base"
+                    />
                     <div>
                       <p className="text-white font-medium">Welcome, {currentUser.name?.split(' ')[0] || 'User'}!</p>
                       {currentUser?.points && currentUser.points > 0 && (
@@ -826,15 +820,13 @@ export default function Home() {
               {currentUser ? (
                 <div className="flex items-center space-x-2 sm:space-x-4">
                   <div className="flex items-center space-x-2 sm:space-x-3">
-                    {currentUser?.photoURL && (
-                      <Image 
-                        src={currentUser.photoURL} 
-                        alt="Profile" 
-                        width={32}
-                        height={32}
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white/20"
-                      />
-                    )}
+                    <Avatar
+                      name={currentUser.name}
+                      photoURL={currentUser.photoURL}
+                      size={32}
+                      className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white/20"
+                      textSize="text-xs"
+                    />
                     <span className="text-gray-300 text-sm sm:text-base hidden sm:inline">Welcome, {currentUser?.name}!</span>
                     <span className="text-gray-300 text-sm sm:hidden">{currentUser?.name?.split(' ')[0]}</span>
                     <button
@@ -866,80 +858,63 @@ export default function Home() {
             </div>
           </header>
 
-          {/* Empty State Content */}
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center max-w-2xl mx-auto px-4">
-              <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl sm:text-3xl lg:text-4xl">🔍</span>
+          {/* Compact Empty State - Friendly & Actionable */}
+          <div className="flex items-center justify-center min-h-[40vh] sm:min-h-[50vh]">
+            <div className="text-center max-w-lg mx-auto px-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-300/30">
+                <span className="text-xl sm:text-2xl">🔍</span>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                 {selectedCategory !== 'all' ? (
-                  <>No <span className="text-blue-400">{getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)}</span> Technicians Found</>
+                  <>No {getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)} Found</>
                 ) : searchQuery ? (
-                  <>No Results for &ldquo;<span className="text-blue-400">{searchQuery}</span>&rdquo;</>
+                  <>No Results for "{searchQuery}"</>
                 ) : (
-                  <>No Technicians Found in Your Area</>
+                  <>Building Our Network</>
                 )}
-              </h1>
-              <p className="text-gray-300 text-lg mb-8">
+              </h2>
+              <p className="text-gray-300 text-sm sm:text-base mb-6 leading-relaxed">
                 {selectedCategory !== 'all' || searchQuery ? (
-                  <>We couldn&apos;t find any technicians matching your criteria. Try broadening your search or check back later.</>
+                  <>Try adjusting your search or browse all categories</>
                 ) : (
-                  <>We&apos;re currently building our network of technicians in your area. Be the first to join!</>
+                  <>Help us grow by inviting skilled technicians to join ThankATech</>
                 )}
               </p>
               
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              {/* Quick Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
                 <button
                   onClick={() => setShowRegistration(true)}
-                  className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <span className="text-xl">🚀</span>
-                  Register as Technician
+                  <span className="text-lg">🚀</span>
+                  Join as Technician
                 </button>
                 {(selectedCategory !== 'all' || searchQuery) && (
                   <button
                     onClick={() => {setSearchQuery(''); setSelectedCategory('all'); window.location.reload();}}
-                    className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition-all duration-200 flex items-center justify-center gap-3"
+                    className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-xl font-medium hover:bg-white/20 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
-                    <span className="text-xl">🔄</span>
-                    Clear Filters & Reload
+                    <span className="text-lg">🔄</span>
+                    View All
                   </button>
                 )}
               </div>
 
-              {/* Helpful Tips */}
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Help Us Grow</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">👥</span>
-                    <div>
-                      <p className="font-medium text-white">Invite Technicians</p>
-                      <p className="text-sm text-gray-300">Know skilled professionals? Invite them to join ThankATech!</p>
-                    </div>
+              {/* Simple Tips */}
+              <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-sm border border-blue-300/20 rounded-xl p-4">
+                <div className="flex items-center justify-center gap-6 text-sm text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-300">👥</span>
+                    <span>Invite skilled pros</span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🔄</span>
-                    <div>
-                      <p className="font-medium text-white">Check Back Soon</p>
-                      <p className="text-sm text-gray-300">We&apos;re constantly adding new technicians to our platform.</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-cyan-300">🔄</span>
+                    <span>Check back soon</span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">📍</span>
-                    <div>
-                      <p className="font-medium text-white">Expand Your Search</p>
-                      <p className="text-sm text-gray-300">Try searching in nearby cities or broader service categories.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">💡</span>
-                    <div>
-                      <p className="font-medium text-white">Be a Pioneer</p>
-                      <p className="text-sm text-gray-300">Be among the first to build our community in your area.</p>
-                    </div>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-green-300">📍</span>
+                    <span>Try nearby areas</span>
                   </div>
                 </div>
               </div>
@@ -974,18 +949,25 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
       {/* Clean background without animated elements */}
       <div className="relative">
-        {/* Header - Universal Design with Mobile Hamburger Menu */}
-        <MainPageHeader 
-          currentUser={currentUser}
-          onSignIn={() => setShowSignIn(true)}
-          onRegister={() => setShowRegistration(true)}
-          onTokenPurchase={() => setShowTokenPurchaseModal(true)}
-          onLogout={() => {
+        {/* Header - Universal Design */}
+        <UniversalHeader
+          currentUser={currentUser ? {
+            id: currentUser.uid || currentUser.id,
+            name: currentUser.displayName || currentUser.name,
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+            userType: currentUser.userType,
+            points: currentUser.points
+          } : undefined}
+          onSignOut={() => {
             setCurrentUser(null);
             setThankYouMessage('Logged out successfully.');
             setShowThankYou(true);
             setTimeout(() => setShowThankYou(false), 3000);
           }}
+          onSignIn={() => setShowSignIn(true)}
+          onRegister={() => setShowRegistration(true)}
+          currentPath="/"
         />
 
         <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-12">
@@ -1063,37 +1045,7 @@ export default function Home() {
           onSendTOA={handleSendTOA}
           showActions={true}
         />
-
-      {/* Separate section for controls and buttons - prevents overlapping */}
-      <div className="action-buttons-container hidden">
-        {/* Location Info */}
-        {userLocation && (
-          <div className="text-center">
-            <span className="text-xs bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full border border-green-400/30 text-green-300">
-              📍 Sorted by distance
-            </span>
-          </div>
-        )}
-
-        {/* Action Buttons - Balanced desktop sizing */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:space-x-6 sm:gap-0 w-full max-w-md lg:max-w-lg mx-auto">
-          <button 
-            onClick={handleThankYou}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-blue-400 to-blue-500 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-blue-500 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-400/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
-          >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🙏</span>
-            <span className="font-semibold text-white text-sm lg:text-base">Say Thank You</span>
-          </button>
-          <button 
-            onClick={handleSendTOA}
-            className="group flex items-center justify-center space-x-2 lg:space-x-3 px-6 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-teal-600 backdrop-blur-sm rounded-xl lg:rounded-2xl hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-1 min-h-[48px] lg:min-h-[56px] flex-1"
-          >
-            <span className="text-white text-lg lg:text-xl group-hover:scale-110 transition-transform duration-200">🪙</span>
-            <span className="font-semibold text-white text-sm lg:text-base">Send Tokens</span>
-          </button>
-        </div>
-            </div>
-          </div>
+      </div>
 
       {/* Infinite Scroll Navigation - Compact mobile */}
       <div className="flex items-center justify-center gap-2 mt-4 mb-6 px-4">
@@ -1141,7 +1093,7 @@ export default function Home() {
       </div>
 
       {/* Categories Filter - Moved below technician showcase */}
-      <div className="mt-12 sm:mt-16 mb-6 sm:mb-8 px-4 snap-section categories-section">
+      <div className="mt-12 sm:mt-16 mb-6 sm:mb-8 px-4 categories-section">
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-xl font-bold text-white mb-2">
             Filter by Category

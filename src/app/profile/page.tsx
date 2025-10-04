@@ -2,6 +2,9 @@
 // @ts-nocheck
 
 import React, { useState, useEffect } from 'react';
+
+// Force dynamic rendering for this page since it uses auth
+export const dynamic = 'force-dynamic';
 import { auth, db, registerClient, deleteUserProfile, authHelpers, getClientTransactions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
