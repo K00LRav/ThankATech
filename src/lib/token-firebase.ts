@@ -385,27 +385,27 @@ export async function sendFreeThankYou(
       console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
     }
 
-    // 🆕 Award ThankATech Points to customer for being generous!
+    // Track customer activity but DON'T award points for free thank yous
     const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
     const customerDoc = await getDoc(customerRef);
     
     if (customerDoc.exists()) {
       await updateDoc(customerRef, {
-        points: increment(POINTS_LIMITS.POINTS_PER_THANK_YOU),
+        // No points awarded - only tracking
         totalThankYousSent: increment(1)
       });
     } else {
       // Create customer record if doesn't exist
       await setDoc(customerRef, {
         id: fromUserId,
-        points: POINTS_LIMITS.POINTS_PER_THANK_YOU,
+        points: 0, // No points for free thank yous
         totalThankYousSent: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
     
-    console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to customer ${fromUserId} for sending thank you`);
+    console.log(`✅ Free thank you sent from customer ${fromUserId} - only technician gets points, not customer`);
 
     // Send email notification
     try {
@@ -513,6 +513,7 @@ export async function sendTokens(
     const dollarValue = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.customerPaysPerTOA;
     const technicianPayout = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.technicianGetsPerTOA;
     const platformFee = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.platformFeePerTOA;
+    // Points awarded ONLY to technician for free thank yous, both client & technician for TOA
     const pointsAwarded = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
     
     // Create transaction record with names and TOA business model tracking
@@ -589,31 +590,31 @@ export async function sendTokens(
       console.log(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
     }
 
-    // Award ThankATech Points to customer (TOA business model)
+    // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
     const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
     const customerDoc = await getDoc(customerRef);
     
     if (customerDoc.exists()) {
       const updateData: any = {
-        points: increment(POINTS_LIMITS.POINTS_PER_THANK_YOU), // 1 point for sending thank you
         totalThankYousSent: increment(1),
         lastAppreciationDate: new Date()
       };
       
-      // Add TOA-specific tracking for paid transactions
+      // ONLY award points to client for TOA tokens (paid appreciation)
       if (!isFreeThankYou) {
-        updateData.points = increment(tokens); // 1 point per TOA sent (overrides thank you points)
+        updateData.points = increment(tokens); // 1 point per TOA sent
         updateData.totalToaSent = increment(tokens);
         updateData.totalSpent = increment(dollarValue);
         updateData.totalTokensSent = increment(tokens);
       }
+      // Free thank yous do NOT award points to clients - only to technicians
       
       await updateDoc(customerRef, updateData);
     } else {
       // Create customer record if doesn't exist
       const initialData: any = {
         id: fromUserId,
-        points: isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : tokens,
+        points: isFreeThankYou ? 0 : tokens, // No points for free thank yous
         totalThankYousSent: 1,
         totalToaSent: isFreeThankYou ? 0 : tokens,
         totalSpent: isFreeThankYou ? 0 : dollarValue,
@@ -626,7 +627,11 @@ export async function sendTokens(
       await setDoc(customerRef, initialData);
     }
     
-    console.log(`✅ Awarded ${isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : tokens} ThankATech Points to customer ${fromUserId} for ${isFreeThankYou ? 'sending thank you' : 'sending ' + tokens + ' TOA tokens'}`);
+    if (!isFreeThankYou) {
+      console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
+    } else {
+      console.log(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
+    }
 
     // Send email notification
     try {

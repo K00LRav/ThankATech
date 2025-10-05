@@ -221,11 +221,11 @@ export default function ConversionWidget({ userId }: ConversionWidgetProps) {
           <ul className="text-xs text-gray-300 space-y-2">
             <li className="flex items-start gap-2">
               <span className="text-blue-300">1.</span>
-              <span>Send thank yous → Earn 1 ThankATech Point (you + technician both get points)</span>
+              <span>Send thank yous → Technician earns 1 ThankATech Point (free for customers)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-green-300">2.</span>
-              <span>Send TOA tokens → Earn 1 point per token (for being generous!)</span>
+              <span>Send TOA tokens → Earn 1 point per transaction (for being generous!)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-300">3.</span>

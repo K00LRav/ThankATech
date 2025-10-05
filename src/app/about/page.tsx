@@ -64,14 +64,14 @@ export default function About() {
                   <span className="text-2xl">🙏</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Send Thank Yous</h3>
-                <p className="text-gray-300">Send free thank you messages to technicians. <span className="text-green-400 font-semibold">You both earn 1 Point each!</span> Building reputation and kindness together.</p>
+                <p className="text-gray-300">Send free thank you messages to technicians. <span className="text-green-400 font-semibold">Technicians earn 1 Point!</span> Building reputation and kindness together.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">🪙</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Send TOA Tokens</h3>
-                <p className="text-gray-300">Purchase and send Tokens of Appreciation for exceptional service. <span className="text-green-400 font-semibold">You earn 1 Point, they earn 2 Points!</span> Show deeper gratitude.</p>
+                <p className="text-gray-300">Purchase and send Tokens of Appreciation for exceptional service. <span className="text-green-400 font-semibold">You earn 1 Point, they earn 2 Points (regardless of TOA amount)!</span> Show deeper gratitude.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -107,7 +107,7 @@ export default function About() {
                   <span className="text-2xl">💝</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Receive Appreciation</h3>
-                <p className="text-gray-300">Get thank yous (+1⚡) and TOA tokens (+2⚡) from customers. <span className="text-green-400 font-semibold">Earn ThankATech Points for every appreciation!</span> Build reputation together.</p>
+                <p className="text-gray-300">Get thank yous (+1⚡) and TOA tokens (+2⚡ per transaction, not per token). <span className="text-green-400 font-semibold">Earn ThankATech Points for every appreciation!</span> Build reputation together.</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -142,8 +142,8 @@ export default function About() {
                 <h3 className="text-xl font-semibold mb-4 text-green-400">How to Earn Points</h3>
                 <ul className="space-y-3 text-gray-300">
                   <li className="flex items-center gap-3">
-                    <span className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">+1</span>
-                    <span>Send a thank you message to any technician</span>
+                    <span className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">+0</span>
+                    <span>Send a thank you message to any technician (free for you)</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 font-bold">+1</span>
@@ -151,11 +151,11 @@ export default function About() {
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-400 font-bold">+1</span>
-                    <span>Send a TOA token to appreciate someone</span>
+                    <span>Send TOA tokens to appreciate someone</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 font-bold">+2</span>
-                    <span>Receive a TOA token from a customer</span>
+                    <span>Receive TOA tokens from a customer (regardless of amount)</span>
                   </li>
                 </ul>
               </div>
@@ -379,7 +379,7 @@ export default function About() {
                   <span className="text-3xl">⚡</span>
                 </div>
                 <h3 className="text-lg font-semibold text-purple-400 mb-2">2. Earn Points</h3>
-                <p className="text-gray-300 text-sm">Both you and the recipient earn ThankATech Points for every interaction</p>
+                <p className="text-gray-300 text-sm">Recipients earn ThankATech Points for appreciation received, senders earn points for TOA tokens sent</p>
               </div>
               <div className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -403,12 +403,12 @@ export default function About() {
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl mb-2">👨‍💼</div>
                   <h4 className="font-semibold text-green-400 mb-2">Customer Sarah</h4>
-                  <p className="text-gray-300 text-sm">Sends 5 TOA tokens to Mike for great plumbing work. Both earn 5 points!</p>
+                  <p className="text-gray-300 text-sm">Sends 5 TOA tokens to Mike for great plumbing work. Sarah gets 1 point, Mike gets 2 points!</p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl mb-2">🔧</div>
                   <h4 className="font-semibold text-blue-400 mb-2">Technician Mike</h4>
-                  <p className="text-gray-300 text-sm">Converts his 5 points to 1 TOA token, appreciates electrician Lisa for referral</p>
+                  <p className="text-gray-300 text-sm">Converts his points to TOA tokens, appreciates electrician Lisa for referral</p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl mb-2">⚡</div>

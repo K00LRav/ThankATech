@@ -47,7 +47,7 @@ export default function TokenSendModal({
       
       if (result.success) {
         // Show success message
-        alert(`Success! ${formatTokens(tokens)} sent to ${technicianName}!`);
+        alert(`Success! ${formatTokens(tokens)} sent to ${technicianName}! You earned 1 ThankATech Point, they earned 2 ThankATech Points!`);
         onClose();
         // Refresh balance
         loadUserData();

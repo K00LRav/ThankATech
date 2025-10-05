@@ -13,7 +13,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
   const faqData = [
     {
       question: "How does ThankATech work?",
-      answer: "ThankATech is a revolutionary closed-loop appreciation economy where customers find skilled technicians and show appreciation through free thank yous and TOA tokens. Both customers and technicians earn ThankATech Points for every interaction, creating a self-sustaining cycle of appreciation!"
+      answer: "ThankATech is a revolutionary closed-loop appreciation economy where customers find skilled technicians and show appreciation through free thank yous and TOA tokens. Technicians earn points for receiving appreciation, customers earn points for sending TOA tokens, creating a self-sustaining cycle of appreciation!"
     },
     {
       question: "How do I register as a technician?",
@@ -21,7 +21,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     },
     {
       question: "What are ThankATech Points?",
-      answer: "ThankATech Points power our closed-loop economy! Earn 1 point for sending/receiving thank yous, 1 point per TOA token sent, and 2 points per TOA received. Convert 5 points → 1 TOA token to keep the appreciation cycle going without spending money!"
+      answer: "ThankATech Points power our closed-loop economy! Technicians earn 1 point for receiving thank yous. For TOA tokens: senders earn 1 point per transaction, recipients earn 2 points per transaction. Convert 5 points → 1 TOA token to keep the appreciation cycle going without spending money!"
     },
     {
       question: "What are achievement badges?",
@@ -37,7 +37,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     },
     {
       question: "How does the closed-loop economy work?",
-      answer: "1) Send thank you/TOA → earn points, 2) Convert 5 points → 1 TOA, 3) Send TOA → recipient gets money + points, 4) They convert points → more TOA, 5) Cycle continues infinitely! It's customer-funded, self-sustaining appreciation!"
+      answer: "1) Send thank you → technician earns points, 2) Send TOA → you earn 1 point, they earn 2 points + money, 3) Convert 5 points → 1 TOA, 4) Cycle continues infinitely! It's customer-funded, self-sustaining appreciation!"
     },
     {
       question: "How do I contact a technician?",

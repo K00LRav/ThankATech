@@ -114,7 +114,7 @@ const CustomerTOAHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
             </svg>
           </div>
           <h3 className="text-lg font-medium text-white mb-2">No TOA tokens sent yet</h3>
-          <p className="text-blue-200 mb-4">When you send TOA tokens to technicians, your history will appear here. <span className="text-green-400 font-semibold">You earn +1 Point per TOA sent!</span></p>
+          <p className="text-blue-200 mb-4">When you send TOA tokens to technicians, your history will appear here. <span className="text-green-400 font-semibold">You earn +1 Point per TOA transaction!</span></p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-900 transition-all duration-200"

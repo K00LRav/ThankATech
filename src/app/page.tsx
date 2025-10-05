@@ -678,7 +678,7 @@ export default function Home() {
       ));
 
       const remainingThanks = result.pointsRemaining || 0;
-      setThankYouMessage(`🎉 Thank you sent! You both earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
+      setThankYouMessage(`🎉 Thank you sent! Technician earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 4000);
     } catch (error) {
