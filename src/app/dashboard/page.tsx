@@ -305,19 +305,106 @@ export default function ModernDashboard() {
 
   const loadTechnicianTokenStats = async (technicianId: string) => {
     try {
-      // Calculate token-based earnings from transactions
-      const tokenTransactions = tipTransactions.filter(t => 
-        (t.type === 'toa_token' || t.type === 'toa') && t.tokens
+      console.log('🪙 Loading technician token stats for:', technicianId);
+      
+      // Import Firebase functions
+      const { collection, getDocs, query, where } = await import('firebase/firestore');
+      
+      // Load transactions WHERE THIS TECHNICIAN IS THE RECIPIENT
+      const technicianTransactionsQuery = query(
+        collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+        where('toTechnicianId', '==', technicianId)
       );
       
-      const totalTokensReceived = tokenTransactions.reduce((sum, t) => sum + (t.tokens || 0), 0);
-      const totalTokenEarnings = tokenTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const technicianSnapshot = await getDocs(technicianTransactionsQuery);
+      console.log(`🪙 Found ${technicianSnapshot.size} transactions received by technician`);
+      
+      // Process ALL transactions received by this technician
+      const allReceivedTransactions = [];
+      const tokenTransactions = [];
+      let totalTokensReceived = 0;
+      let totalTokenEarnings = 0;
+      
+      technicianSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        console.log(`🪙 Processing: ${data.type}, tokens: ${data.tokens}, earnings: $${data.technicianPayout || data.dollarValue}`);
+        
+        // Add ALL received transactions to the main list
+        allReceivedTransactions.push({
+          id: doc.id,
+          ...data,
+          amount: (data.technicianPayout || data.dollarValue || 0) * 100 // Convert to cents for display
+        });
+        
+        // Track token earnings separately
+        if (data.type === 'toa_token' || data.type === 'toa') {
+          tokenTransactions.push({
+            id: doc.id,
+            ...data,
+            amount: (data.technicianPayout || data.dollarValue || 0) * 100 // Convert to cents for display
+          });
+          
+          totalTokensReceived += (data.tokens || 0);
+          totalTokenEarnings += (data.technicianPayout || data.dollarValue || 0) * 100; // Convert to cents
+        }
+      });
+      
+      console.log(`🪙 Technician token stats:`);
+      console.log(`🪙 Total tokens received: ${totalTokensReceived}`);
+      console.log(`🪙 Total earnings: $${totalTokenEarnings / 100}`);
+      console.log(`🪙 Transaction count: ${tokenTransactions.length}`);
       
       setTokenBalance({
         totalTokensReceived,
-        totalTokenEarnings,
+        totalTokenEarnings: totalTokenEarnings / 100, // Convert back to dollars for display
         transactionCount: tokenTransactions.length
       });
+      
+      // Update tip transactions with ALL received transactions (thank_you + toa_token)
+      setTipTransactions(allReceivedTransactions);
+      
+      // ALSO CALCULATE TECHNICIAN POINTS AND THANK YOUS RECEIVED
+      let totalThankYousReceived = 0;
+      let totalPointsEarned = 0;
+      
+      technicianSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        
+        if (data.type === 'thank_you') {
+          totalThankYousReceived++;
+          totalPointsEarned += 1; // 1 point per free thank you
+        } else if (data.type === 'toa_token' || data.type === 'toa') {
+          totalPointsEarned += 2; // 2 points per TOA token received
+        }
+      });
+      
+      console.log(`🪙 Technician appreciation stats:`);
+      console.log(`🪙 Thank yous received: ${totalThankYousReceived}`);
+      console.log(`🪙 Total points earned: ${totalPointsEarned}`);
+      
+      // Update the user profile data to show correct points and thank yous
+      if (userProfile) {
+        setUserProfile(prev => ({
+          ...prev,
+          points: totalPointsEarned,
+          totalThankYousReceived: totalThankYousReceived
+        }));
+        
+        // Also update the technician document in Firestore
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const techRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
+          await updateDoc(techRef, {
+            points: totalPointsEarned,
+            totalThankYousReceived: totalThankYousReceived,
+            updatedAt: new Date()
+          });
+          console.log(`✅ Updated technician document with ${totalPointsEarned} points and ${totalThankYousReceived} thank yous`);
+        } catch (updateError) {
+          console.error('Error updating technician document:', updateError);
+        }
+      }
+      
     } catch (error) {
       console.error('Error loading technician token stats:', error);
     }
