@@ -1,8 +1,8 @@
-# ThankATech Platform Documentation v2.0.0
+# ThankATech Platform Documentation v2.0.1
 
 ## Platform Overview
 
-ThankATech is a professional appreciation platform that connects clients with technicians through a token-based gratitude system. Our platform enables clients to show appreciation through TOA tokens and ThankATech Points, while providing technicians with a meaningful way to receive recognition and compensation for their excellent service.
+ThankATech is a professional appreciation platform that connects clients with technicians through a token-based gratitude system. Our platform enables clients to show appreciation through free thank yous and paid TOA tokens, while providing technicians with meaningful recognition and compensation for their excellent service through our ThankATech Points economy.
 
 ### Mission Statement
 Transform professional appreciation into measurable value while fostering authentic relationships between service providers and clients through an innovative token-based recognition system.
@@ -18,7 +18,10 @@ Transform professional appreciation into measurable value while fostering authen
 ### Token Economy Structure
 - **TOA Token Value**: $0.01 per token
 - **Revenue Distribution**: 85% technician earnings, 15% platform fee
-- **ThankATech Points**: Free appreciation points that can be converted to tokens
+- **ThankATech Points System**: 
+  - Free thank yous: Technicians earn 1 point (clients earn 0)
+  - TOA transactions: Clients earn 1 point, technicians earn 2 points
+  - Point conversion: 5 points → 1 TOA token (max 20 conversions/day)
 - **Payment Processing**: Stripe integration for secure transactions
 
 ### Revenue Streams
@@ -50,17 +53,19 @@ Transform professional appreciation into measurable value while fostering authen
 - **Transaction History**: Complete filterable transaction history with search
 
 ### Appreciation Tools
-- **Send Tokens**: Send TOA tokens to technicians with messages
-- **Send Thank You Points**: Free appreciation with points
+- **Send TOA Tokens**: Send paid tokens to technicians (clients earn 1 point, technicians earn 2 points + money)
+- **Send Thank Yous**: Free appreciation messages (only technicians earn 1 point)
+- **Points Conversion**: Convert 5 ThankATech Points to 1 TOA token
 - **Browse Technicians**: View available technicians and their profiles
 
 ## Technician Dashboard Features
 
 ### Earnings Tracking
 - **Token Balance**: Current TOA tokens received
-- **Earnings Overview**: Track tokens received from clients
-- **Transaction History**: Complete history of received tokens and points
-- **Thank You Counter**: Track total thank you points received
+- **ThankATech Points**: Points earned from appreciation (1 per thank you, 2 per TOA received)
+- **Earnings Overview**: Track tokens and money received from clients ($0.0085 per TOA token)
+- **Transaction History**: Complete history of received tokens, points, and thank yous
+- **Conversion Tools**: Convert points to TOA tokens for giving back
 
 ### Profile Management
 - **Profile Photos**: Upload and manage profile pictures
@@ -81,8 +86,10 @@ Transform professional appreciation into measurable value while fostering authen
 
 ### Token Management Tools
 - **Manual Token Management**: Add tokens to specific user accounts
-- **Balance Checking**: View any user's token balance
-- **Transaction Oversight**: View detailed transaction information
+- **Points Management**: View and manage ThankATech Points balances
+- **Balance Checking**: View any user's token and points balance
+- **Transaction Oversight**: View detailed transaction information with point awards
+- **Conversion Analytics**: Track points-to-token conversion patterns
 
 ### Administrative Tools
 - **Password Reset**: Reset user passwords for support
@@ -149,10 +156,12 @@ interface TokenTransaction {
   toTechnicianId?: string;
   type: 'thank_you' | 'toa' | 'token_purchase';
   tokens: number;
-  pointsAwarded: number;
+  pointsAwarded: number; // Points earned: 0 for client thank yous, 1 for TOA senders, 1-2 for recipients
   message: string;
   timestamp: Timestamp;
-  dollarValue?: number;
+  dollarValue?: number; // Actual money: $0.01 per TOA token
+  technicianPayout?: number; // 85% payout to technician
+  platformFee?: number; // 15% platform fee
 }
 ```
 
@@ -189,13 +198,15 @@ interface TokenTransaction {
 ### ✅ Implemented Features
 - **User Authentication**: Google OAuth with Firebase Auth
 - **Token Purchase System**: Stripe integration with real payments
-- **Token Transfer**: Send tokens between users with messages
+- **ThankATech Points Economy**: Correct point distribution (free thank yous vs paid TOA)
+- **Points Conversion System**: 5 points → 1 TOA token with daily limits
+- **Token Transfer**: Send tokens between users with messages and point awards
 - **Profile Management**: Upload photos, manage profile information
-- **Transaction History**: Complete filterable transaction tracking
-- **Admin Dashboard**: Basic analytics and user management
-- **Email Notifications**: Brevo SMTP integration
-- **Security Rules**: Firebase security for database and storage
-- **Responsive Design**: Mobile-friendly interface
+- **Transaction History**: Complete filterable transaction tracking with points
+- **Admin Dashboard**: Token analytics, user management, and points oversight
+- **Email Notifications**: Brevo SMTP integration with transaction confirmations
+- **Security Rules**: Production-ready Firebase security for database and storage
+- **Responsive Design**: Mobile-friendly interface optimized for iPhone
 
 ### 📋 Future Roadmap (Not Yet Implemented)
 - **Mobile Application**: React Native mobile app
@@ -241,16 +252,23 @@ firebase deploy --only storage
 
 ---
 
-*ThankATech Platform Documentation v2.0.0 - Honest Current State*
+*ThankATech Platform Documentation v2.0.1 - Honest Current State*
 
-*This documentation reflects the actual implemented features as of January 2024*
+*This documentation reflects the actual implemented features as of October 2025*
 
 **Platform Status**: Production Ready ✅  
-**Current Version**: v2.0.0 with token management system  
+**Current Version**: v2.0.1 with corrected ThankATech Points business logic  
 **Repository**: Active development with regular updates  
+**Last Update**: Business logic corrections for proper point distribution
 
 ---
 
-**What We Actually Have**: A working token-based appreciation platform with real payments, user management, and basic analytics.
+**What We Actually Have**: A working closed-loop appreciation economy with:
+- Correct ThankATech Points distribution (free thank yous vs paid TOA)
+- Real Stripe payments and token management
+- Points-to-token conversion system (5:1 ratio)
+- Production Firebase security rules
+- Complete user dashboards and admin analytics
+- Email notifications and responsive design
 
 **What We're Building Toward**: The comprehensive features described in our aspirational documentation (saved as `site-aspirational-v2.0.0.md`).
