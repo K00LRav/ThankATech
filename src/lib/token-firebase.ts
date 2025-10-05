@@ -151,8 +151,13 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
   try {
     // Check if user is admin - admins have unlimited tokens and thank yous
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
-    const userRef = doc(db, COLLECTIONS.USERS, userId);
-    const userDoc = await getDoc(userRef);
+    // Try clients collection first, then fall back to users collection
+    let userRef = doc(db, 'clients', userId);
+    let userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) {
+      userRef = doc(db, COLLECTIONS.USERS, userId);
+      userDoc = await getDoc(userRef);
+    }
     
     if (userDoc.exists()) {
       const userData = userDoc.data();
@@ -345,12 +350,16 @@ export async function sendFreeThankYou(
     const message = thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
     
     // Fetch sender and recipient names for proper display
-    const [senderDoc, recipientDoc] = await Promise.all([
-      getDoc(doc(db, COLLECTIONS.USERS, fromUserId)),
-      getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId))
-    ]);
+    // Try clients collection first, then fall back to users collection
+    let senderDoc = await getDoc(doc(db, 'clients', fromUserId));
+    if (!senderDoc.exists()) {
+      senderDoc = await getDoc(doc(db, COLLECTIONS.USERS, fromUserId));
+    }
     
-    const fromName = senderDoc.exists() ? senderDoc.data()?.name : 'Customer';
+    const recipientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId));
+    
+    const senderData = senderDoc.exists() ? senderDoc.data() : {};
+    const fromName = senderData?.name || senderData?.displayName || 'Customer';
     const toName = recipientDoc.exists() ? recipientDoc.data()?.name : 'Technician';
     
     // Create transaction record with names
@@ -386,8 +395,13 @@ export async function sendFreeThankYou(
     }
 
     // Track customer activity but DON'T award points for free thank yous
-    const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
-    const customerDoc = await getDoc(customerRef);
+    // Try clients collection first, then fall back to users collection
+    let customerRef = doc(db, 'clients', fromUserId);
+    let customerDoc = await getDoc(customerRef);
+    if (!customerDoc.exists()) {
+      customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
+      customerDoc = await getDoc(customerRef);
+    }
     
     if (customerDoc.exists()) {
       await updateDoc(customerRef, {
@@ -410,8 +424,13 @@ export async function sendFreeThankYou(
     // Send email notification
     try {
       const techData = techDoc?.data();
-      const fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
-      const fromUserDoc = await getDoc(fromUserRef);
+      // Try clients collection first, then fall back to users collection
+      let fromUserRef = doc(db, 'clients', fromUserId);
+      let fromUserDoc = await getDoc(fromUserRef);
+      if (!fromUserDoc.exists()) {
+        fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
+        fromUserDoc = await getDoc(fromUserRef);
+      }
       const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
       
       if (techData?.email) {
@@ -501,12 +520,16 @@ export async function sendTokens(
       : toaMessages[Math.floor(Math.random() * toaMessages.length)];
     
     // Fetch sender and recipient names
-    const [senderDoc, recipientDoc] = await Promise.all([
-      getDoc(doc(db, COLLECTIONS.USERS, fromUserId)),
-      getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId))
-    ]);
+    // Try clients collection first, then fall back to users collection
+    let senderDoc = await getDoc(doc(db, 'clients', fromUserId));
+    if (!senderDoc.exists()) {
+      senderDoc = await getDoc(doc(db, COLLECTIONS.USERS, fromUserId));
+    }
     
-    const fromName = senderDoc.exists() ? senderDoc.data()?.name : 'Customer';
+    const recipientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId));
+    
+    const senderData = senderDoc.exists() ? senderDoc.data() : {};
+    const fromName = senderData?.name || senderData?.displayName || 'Customer';
     const toName = recipientDoc.exists() ? recipientDoc.data()?.name : 'Technician';
     
     // Calculate TOA business model values
@@ -591,8 +614,13 @@ export async function sendTokens(
     }
 
     // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
-    const customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
-    const customerDoc = await getDoc(customerRef);
+    // Try clients collection first, then fall back to users collection
+    let customerRef = doc(db, 'clients', fromUserId);
+    let customerDoc = await getDoc(customerRef);
+    if (!customerDoc.exists()) {
+      customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
+      customerDoc = await getDoc(customerRef);
+    }
     
     if (customerDoc.exists()) {
       const updateData: any = {
@@ -636,8 +664,13 @@ export async function sendTokens(
     // Send email notification
     try {
       const techData = techDoc?.data();
-      const fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
-      const fromUserDoc = await getDoc(fromUserRef);
+      // Try clients collection first, then fall back to users collection
+      let fromUserRef = doc(db, 'clients', fromUserId);
+      let fromUserDoc = await getDoc(fromUserRef);
+      if (!fromUserDoc.exists()) {
+        fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
+        fromUserDoc = await getDoc(fromUserRef);
+      }
       const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
       
       if (techData?.email) {
