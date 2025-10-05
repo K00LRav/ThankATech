@@ -49,43 +49,43 @@ export default function About() {
 
         {/* TOA Cultural Significance Section */}
         <section className="mb-16">
-          <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-            <h2 className="text-3xl font-bold text-center mb-6">
+          <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 sm:p-6 md:p-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6">
               <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                 🏺 The Meaning Behind TOA
               </span>
             </h2>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">🪙</span>
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-xl sm:text-2xl">🪙</span>
                 </div>
-                <h3 className="text-xl font-semibold text-blue-400 mb-3">Token of Appreciation</h3>
-                <p className="text-gray-300">Our digital currency for recognizing excellent service and spreading gratitude throughout professional communities.</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-blue-400 mb-3">Token of Appreciation</h3>
+                <p className="text-sm sm:text-base text-gray-300">Our digital currency for recognizing excellent service and spreading gratitude throughout professional communities.</p>
               </div>
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">⚔️</span>
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-xl sm:text-2xl">⚔️</span>
                 </div>
-                <h3 className="text-xl font-semibold text-emerald-400 mb-3">Warrior Spirit (Māori: Toa)</h3>
-                <p className="text-gray-300">In Te Reo Māori, "toa" means warrior or brave person - perfectly capturing the courage of skilled technicians who tackle challenges.</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-emerald-400 mb-3">Warrior Spirit (Māori: Toa)</h3>
+                <p className="text-sm sm:text-base text-gray-300">In Te Reo Māori, "toa" means warrior or brave person - perfectly capturing the courage of skilled technicians who tackle challenges.</p>
               </div>
             </div>
-            <div className="text-center mt-8 p-6 bg-white/5 rounded-xl border border-white/10">
-              <p className="text-gray-300 italic text-lg">
+            <div className="text-center mt-6 sm:mt-8 p-4 sm:p-6 bg-white/5 rounded-xl border border-white/10">
+              <p className="text-gray-300 italic text-base sm:text-lg">
                 "We honor both meanings: appreciating the <span className="text-emerald-400 font-semibold">warriors of professional service</span> who courageously solve problems and keep our world running."
               </p>
-              <div className="flex items-center justify-center gap-4 mt-4 text-sm text-gray-400">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm text-gray-400">
                 <div className="flex items-center gap-2">
                   <span className="text-blue-400">🪙</span>
                   <span>Appreciation Currency</span>
                 </div>
-                <span>+</span>
+                <span className="hidden sm:inline">+</span>
                 <div className="flex items-center gap-2">
                   <span className="text-emerald-400">⚔️</span>
                   <span>Warrior Recognition</span>
                 </div>
-                <span>=</span>
+                <span className="hidden sm:inline">=</span>
                 <div className="flex items-center gap-2">
                   <span className="text-purple-400">💝</span>
                   <span>Meaningful Gratitude</span>
