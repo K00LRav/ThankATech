@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../lib/firebase';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
+import { sendFreeThankYou } from '../../lib/token-firebase';
 import TokenSendModal from '../../components/TokenSendModal';
 import Footer from '../../components/Footer';
 import { ProfileHeader } from '../../components/ProfileHeader';
@@ -45,6 +48,7 @@ export default function TechnicianProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTokenSendModal, setShowTokenSendModal] = useState(false);
+  const [user] = useAuthState(auth);
 
   const loadTechnician = useCallback(async () => {
     try {
@@ -58,7 +62,6 @@ export default function TechnicianProfile() {
 
       setTechnician(technicianData);
     } catch (err) {
-      console.error('Error loading technician:', err);
       setError('Failed to load technician profile');
     } finally {
       setLoading(false);
@@ -106,8 +109,36 @@ export default function TechnicianProfile() {
     );
   }
 
-  const handleThankYou = () => {
-    console.log('Thank you clicked for', technician.name);
+  const handleThankYou = async () => {
+    if (!user) {
+      // Redirect to main page for authentication
+      router.push('/');
+      return;
+    }
+
+    if (!technician) return;
+
+    try {
+      const result = await sendFreeThankYou(user.uid, technician.id);
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to send thank you. Please try again.');
+        return;
+      }
+      
+      // Update technician's stats locally
+      setTechnician(prev => prev ? {
+        ...prev,
+        totalThankYous: (prev.totalThankYous || 0) + 1,
+        points: (prev.points || 0) + 1
+      } : null);
+      
+      // Clear any existing error
+      setError(null);
+      
+    } catch (error) {
+      setError('Failed to send thank you. Please try again.');
+    }
   };
 
   const handleSignIn = () => {
@@ -200,7 +231,14 @@ export default function TechnicianProfile() {
           <div className="space-y-6">
             <AppreciationActions 
               onThankYou={handleThankYou}
-              onSendTOA={() => setShowTokenSendModal(true)}
+              onSendTOA={() => {
+                if (!user) {
+                  // Redirect to main page for authentication
+                  router.push('/');
+                  return;
+                }
+                setShowTokenSendModal(true);
+              }}
               technicianName={technician.name}
             />
 
@@ -214,7 +252,7 @@ export default function TechnicianProfile() {
         onClose={() => setShowTokenSendModal(false)}
         technicianId={technician?.id || ''}
         technicianName={technician?.name || technician?.businessName || ''}
-        userId="guest"
+        userId={user?.uid || ''}
       />
 
       <Footer onOpenRegistration={() => {}} />
