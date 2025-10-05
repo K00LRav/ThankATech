@@ -133,7 +133,10 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
 
     await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
     
-    logger.success(`Added ${tokensToAdd} tokens to user ${userId} and created transaction record`);
+    // Development only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Added ${tokensToAdd} tokens to user ${userId} and created transaction record`);
+    }
   } catch (error) {
     logger.error('Error adding tokens to balance:', error);
     throw error;
@@ -163,7 +166,10 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
     if (userDoc.exists()) {
       const userData = userDoc.data();
       if (userData.email === adminEmail) {
-        logger.info(`Admin user ${adminEmail} bypassing daily limits`);
+        // Development only logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Admin user ${adminEmail} bypassing daily limits`);
+        }
         return { canSendFree: true, remainingFree: 999 }; // Unlimited for admin
       }
     }
@@ -227,7 +233,10 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
               alreadyThankedToday: false 
             };
           }
-          logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          // Development only logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          }
           return { canThank: true, alreadyThankedToday: false };
         }
       }
@@ -251,7 +260,10 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
               alreadyThankedToday: false 
             };
           }
-          logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          // Development only logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          }
           return { canThank: true, alreadyThankedToday: false };
         }
       }
@@ -331,7 +343,10 @@ export async function updateDailyPerTechnicianLimit(userId: string, technicianId
       await setDoc(limitRef, newLimit);
     }
     
-    logger.success(`Updated daily per-technician limit for user ${userId}`);
+    // Development only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Updated daily per-technician limit for user ${userId}`);
+    }
   } catch (error) {
     logger.error('Error updating daily per-technician limit:', error);
     throw error;
@@ -419,7 +434,10 @@ export async function sendFreeThankYou(
         totalThankYous: increment(1)
       });
       
-      console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
+      // Development only logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
+      }
     }
 
     // Track customer activity but DON'T award points for free thank yous
@@ -443,7 +461,10 @@ export async function sendFreeThankYou(
       });
     }
     
-    console.log(`✅ Free thank you sent from customer ${fromUserId} - only technician gets points, not customer`);
+    // Development only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Free thank you sent from customer ${fromUserId} - only technician gets points, not customer`);
+    }
 
     // Send email notification
     try {
@@ -627,7 +648,10 @@ export async function sendTokens(
       
       await updateDoc(technicianRef, updateData);
       
-      console.log(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
+      // Development only logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
+      }
     }
 
     // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
@@ -668,10 +692,13 @@ export async function sendTokens(
       await setDoc(customerRef, initialData);
     }
     
-    if (!isFreeThankYou) {
-      console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
-    } else {
-      console.log(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
+    // Development only logging
+    if (process.env.NODE_ENV === 'development') {
+      if (!isFreeThankYou) {
+        console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
+      } else {
+        console.log(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
+      }
     }
 
     // Send email notification
@@ -826,7 +853,10 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
       });
     });
 
-    logger.info(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
+    // Development only logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
+    }
 
     return { 
       success: true, 
