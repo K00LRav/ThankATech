@@ -58,13 +58,13 @@ if (isFirebaseConfigured) {
 }
 
 // Export with proper type annotations
-export { db, auth, storage, googleProvider };
+export { db, auth, storage, googleProvider, COLLECTIONS };
 
 // Collection names
 const COLLECTIONS = {
   TECHNICIANS: 'technicians',
   CLIENTS: 'clients',
-  USERS: 'users',
+  ADMINS: 'admins',
   THANK_YOUS: 'thankYous',
   TIPS: 'tips',
   TOKEN_BALANCES: 'tokenBalances',
@@ -1012,88 +1012,7 @@ export const authHelpers = {
   }
 };
 
-/**
- * Migration helper: Move technician from clients collection to technicians collection
- */
-export async function migrateTechnicianProfile(userId) {
-  if (!db) {
-    console.warn('Firebase not configured. Cannot migrate.');
-    return null;
-  }
 
-  try {
-    // Get user from clients collection
-    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
-    
-    if (!userDoc.exists()) {
-      return null;
-    }
-    
-    const userData = userDoc.data();
-    
-    // Check if user is a technician
-    if (userData.userType !== 'technician') {
-      return null;
-    }
-    
-    // Check if already exists in technicians collection
-    const existingTechDoc = await getDoc(doc(db, 'technicians', userId));
-    if (existingTechDoc.exists()) {
-      return { id: existingTechDoc.id, ...existingTechDoc.data() };
-    }
-    
-    // Create technician profile
-    const technicianProfile = {
-      // Basic info
-      name: userData.name,
-      email: userData.email,
-      phone: userData.phone || '',
-      location: userData.location || '',
-      
-      // Business info
-      businessName: userData.businessName || '',
-      title: userData.title || `${userData.businessName || 'Technician'} - ${userData.category || 'Service'}`,
-      category: userData.category || '',
-      businessAddress: userData.businessAddress || '',
-      businessPhone: userData.businessPhone || userData.phone || '',
-      businessEmail: userData.businessEmail || userData.email,
-      website: userData.website || '',
-      
-      // Service details
-      experience: userData.experience || '',
-      certifications: userData.certifications || '',
-      about: userData.about || userData.description || '',
-      serviceArea: userData.serviceArea || '',
-      hourlyRate: userData.hourlyRate || '',
-      availability: userData.availability || '',
-      
-      // Profile image - prioritize Google photo
-      image: userData.photoURL || userData.profileImage || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      photoURL: userData.photoURL || null,
-      
-      // Stats
-      points: userData.points || 0,
-      // Rating system removed - using ThankATech Points system
-      totalThankYous: userData.totalThankYous || 0,
-      totalTips: userData.totalTips || 0,
-      totalTipAmount: userData.totalTipAmount || 0,
-      
-      // System fields
-      createdAt: userData.createdAt || new Date(),
-      isActive: true,
-      userType: 'technician'
-    };
-    
-    // Add to technicians collection with the same ID
-    await setDoc(doc(db, 'technicians', userId), technicianProfile);
-    
-    return { id: userId, ...technicianProfile };
-    
-  } catch (error) {
-    console.error('Error migrating technician profile:', error);
-    throw error;
-  }
-}
 
 // Delete user profile and related data
 export async function deleteUserProfile(userId, userType = 'customer') {
@@ -1214,47 +1133,13 @@ export async function getTechnician(technicianId) {
   if (!db || !technicianId) return null;
   
   try {
-    // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, technicianId));
-    if (usersDoc.exists()) {
-      const userData = usersDoc.data();
-      if (userData.userType === 'technician') {
-        return { id: usersDoc.id, ...userData };
-      }
-    }
-    
-    // Try technicians collection by document ID
+    // Check technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
       return { id: techDoc.id, ...techDoc.data() };
     }
     
-    // Try clients collection by document ID as fallback
-    const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, technicianId));
-    if (clientDoc.exists()) {
-      const userData = clientDoc.data();
-      if (userData.userType === 'technician') {
-        return { id: clientDoc.id, ...userData };
-      }
-    }
-    
-    // If not found as document ID, try as Firebase Auth UID
-    
-    // Search users collection by authUid for technicians
-    const usersQuery = query(
-      collection(db, COLLECTIONS.USERS),
-      where('authUid', '==', technicianId),
-      where('userType', '==', 'technician'),
-      limit(1)
-    );
-    const usersSnapshot = await getDocs(usersQuery);
-    
-    if (!usersSnapshot.empty) {
-      const doc = usersSnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
-    }
-    
-    // Search technicians collection by authUid
+    // Search technicians collection by authUid if not found by ID
     const techQuery = query(
       collection(db, COLLECTIONS.TECHNICIANS),
       where('authUid', '==', technicianId),
@@ -1264,20 +1149,6 @@ export async function getTechnician(technicianId) {
     
     if (!techSnapshot.empty) {
       const doc = techSnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
-    }
-    
-    // Search clients collection by authUid for technicians
-    const clientQuery = query(
-      collection(db, COLLECTIONS.CLIENTS),
-      where('authUid', '==', technicianId),
-      where('userType', '==', 'technician'),
-      limit(1)
-    );
-    const clientSnapshot = await getDocs(clientQuery);
-    
-    if (!clientSnapshot.empty) {
-      const doc = clientSnapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
     
@@ -1297,18 +1168,7 @@ export async function getClient(userId) {
   if (!db || !userId) return null;
   
   try {
-    
-    // First, check users collection by Firebase Auth UID (new primary method)
-    const usersDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
-    if (usersDoc.exists()) {
-      const userData = usersDoc.data();
-      if (userData.userType === 'client') {
-        const clientData = { id: usersDoc.id, ...userData };
-        return clientData;
-      }
-    }
-    
-    // Try as document ID first
+    // Check clients collection by document ID
     const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (clientDoc.exists()) {
       const userData = { id: clientDoc.id, ...clientDoc.data() };
@@ -1316,20 +1176,6 @@ export async function getClient(userId) {
     }
     
     // If not found as document ID, try as Firebase Auth UID
-    
-    // Search users collection by authUid for clients
-    const usersQuery = query(
-      collection(db, COLLECTIONS.USERS),
-      where('authUid', '==', userId),
-      where('userType', '==', 'client'),
-      limit(1)
-    );
-    const usersSnapshot = await getDocs(usersQuery);
-    
-    if (!usersSnapshot.empty) {
-      const doc = usersSnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
-    }
     
     // Search clients collection by authUid
     const clientQuery = query(
@@ -1766,7 +1612,16 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
       // Get client name
       let clientName = 'Anonymous Customer';
       try {
-        const clientDoc = await getDoc(doc(db, 'users', data.fromUserId));
+        // Try clients collection first
+        let clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.fromUserId));
+        if (!clientDoc.exists()) {
+          // Try technicians collection
+          clientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, data.fromUserId));
+        }
+        if (!clientDoc.exists()) {
+          // Try admins collection
+          clientDoc = await getDoc(doc(db, COLLECTIONS.ADMINS, data.fromUserId));
+        }
         if (clientDoc.exists()) {
           clientName = clientDoc.data().name || clientDoc.data().displayName || 'Customer';
         }
@@ -2078,24 +1933,22 @@ export async function findTechnicianByUsername(username: string): Promise<any> {
   try {
     const normalizedUsername = username.toLowerCase().trim();
     
-    // First, try to find in users collection (new structure)
-    const usersQuery = query(
-      collection(db, COLLECTIONS.USERS),
-      where('username', '==', normalizedUsername),
-      where('userType', '==', 'technician')
+    // Search in technicians collection by username
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('username', '==', normalizedUsername)
     );
-    const usersSnapshot = await getDocs(usersQuery);
+    const techSnapshot = await getDocs(techQuery);
     
-    if (!usersSnapshot.empty) {
-      const doc = usersSnapshot.docs[0];
+    if (!techSnapshot.empty) {
+      const doc = techSnapshot.docs[0];
       return { id: doc.id, ...doc.data() };
     }
     
-    // Fallback: try uniqueId in users collection (for backward compatibility)
+    // Also try uniqueId in case username was stored there
     const uniqueIdQuery = query(
-      collection(db, COLLECTIONS.USERS),
-      where('uniqueId', '==', username),
-      where('userType', '==', 'technician')
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('uniqueId', '==', username)
     );
     const uniqueIdSnapshot = await getDocs(uniqueIdQuery);
     
@@ -2104,19 +1957,7 @@ export async function findTechnicianByUsername(username: string): Promise<any> {
       return { id: doc.id, ...doc.data() };
     }
     
-    // Legacy fallback: search in technicians collection
-    const techQuery = query(
-      collection(db, COLLECTIONS.TECHNICIANS),
-      where('username', '==', normalizedUsername)
-    );
-    const techSnapshot = await getDocs(techQuery);
-    
-    if (techSnapshot.empty) {
-      return null;
-    }
-    
-    const doc = techSnapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
+    return null;
   } catch (error) {
     console.error('Error finding technician by username:', error);
     return null;
@@ -2415,8 +2256,9 @@ export async function migrateUsersToClients() {
   try {
     console.log('🔄 Starting migration from "users" → "clients" collection...');
     
-    // Get all documents from 'users' collection
-    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+    // This migration function is obsolete - users collection has been removed
+    console.warn('Migration function is obsolete - users collection no longer exists');
+    return { success: true, migratedCount: 0, message: 'Migration not needed - new architecture in place' };
     
     if (usersSnapshot.empty) {
       console.log('✅ No documents found in "users" collection. Migration not needed.');
@@ -2527,8 +2369,8 @@ export async function checkMigrationStatus() {
   }
   
   try {
-    // Check users collection
-    const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+    // Users collection has been removed - no migration needed
+    const usersCount = 0;
     const usersCount = usersSnapshot.size;
     
     // Check clients collection  

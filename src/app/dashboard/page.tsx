@@ -198,25 +198,6 @@ export default function ModernDashboard() {
         return;
       }
 
-      // Finally check users collection for existing admin/special users
-      const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
-      if (userDoc.exists()) {
-        const profile = { id: userId, ...userDoc.data() } as UserProfile;
-        
-        // Check if this is an admin user by userType in database
-        if (profile.userType === 'admin') {
-          router.push('/admin');
-          return;
-        }
-        
-        setUserProfile(profile);
-        setEditedProfile(profile);
-        
-        // Load transactions based on user type
-        await loadTransactions(userId, profile.userType);
-        return;
-      }
-      
       // Fallback: Try searching by email (for legacy users or those missing authUid)
       const userEmail = authUser?.email || user?.email;
       if (userEmail) {
@@ -376,8 +357,16 @@ export default function ModernDashboard() {
           
           if (!fromName && data.fromUserId) {
             try {
-              const userDocRef = doc(db, 'users', data.fromUserId);
-              const userDoc = await getDoc(userDocRef);
+              // Try clients collection first
+              let userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.fromUserId));
+              if (!userDoc.exists()) {
+                // Try technicians collection
+                userDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, data.fromUserId));
+              }
+              if (!userDoc.exists()) {
+                // Try admins collection
+                userDoc = await getDoc(doc(db, COLLECTIONS.ADMINS, data.fromUserId));
+              }
               fromName = userDoc.exists() ? (userDoc.data() as any)?.name : null;
             } catch (error) {
               console.log('Could not fetch user name:', error);
@@ -499,8 +488,14 @@ export default function ModernDashboard() {
 
     setIsDeleting(true);
     try {
-      // Delete user document
-      await deleteDoc(doc(db, 'users', userProfile.id));
+      // Delete user document from appropriate collection
+      if (userProfile.userType === 'technician') {
+        await deleteDoc(doc(db, COLLECTIONS.TECHNICIANS, userProfile.id));
+      } else if (userProfile.userType === 'admin') {
+        await deleteDoc(doc(db, COLLECTIONS.ADMINS, userProfile.id));
+      } else {
+        await deleteDoc(doc(db, COLLECTIONS.CLIENTS, userProfile.id));
+      }
       
       // Delete user account
       if (user) {

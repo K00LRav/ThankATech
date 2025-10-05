@@ -35,7 +35,7 @@ import EmailService from './email';
 
 const db = getFirestore(app);
 
-// Collection names
+// Collection names  
 const COLLECTIONS = {
   TOKEN_BALANCES: 'tokenBalances',
   TOKEN_TRANSACTIONS: 'tokenTransactions', 
@@ -43,7 +43,8 @@ const COLLECTIONS = {
   DAILY_POINTS: 'dailyPoints',
   DAILY_PER_TECH_LIMITS: 'dailyPerTechLimits',
   TECHNICIANS: 'technicians',
-  USERS: 'users'
+  CLIENTS: 'clients', // Clients (customers who send appreciation)
+  ADMINS: 'admins'    // Admins (platform administrators)
 };
 
 /**
@@ -151,11 +152,11 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
   try {
     // Check if user is admin - admins have unlimited tokens and thank yous
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
-    // Try clients collection first, then fall back to users collection
-    let userRef = doc(db, 'clients', userId);
+    // Check admins collection first, then clients collection
+    let userRef = doc(db, COLLECTIONS.ADMINS, userId);
     let userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
-      userRef = doc(db, COLLECTIONS.USERS, userId);
+      userRef = doc(db, COLLECTIONS.CLIENTS, userId);
       userDoc = await getDoc(userRef);
     }
     
@@ -209,23 +210,53 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
   try {
     // Check if user is admin - admins have unlimited thank yous (but still can't thank themselves)
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thankatech.com';
-    const userRef = doc(db, COLLECTIONS.USERS, userId);
-    const userDoc = await getDoc(userRef);
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      if (userData.email === adminEmail) {
-        // Prevent self-thanking even for admin
-        if (userId === technicianId) {
-          return { 
-            canThank: false, 
-            reason: "You cannot thank yourself", 
-            alreadyThankedToday: false 
-          };
+    // Check admins collection first
+    try {
+      const adminRef = doc(db, COLLECTIONS.ADMINS, userId);
+      const adminDoc = await getDoc(adminRef);
+      
+      if (adminDoc.exists()) {
+        const adminData = adminDoc.data();
+        if (adminData.email === adminEmail) {
+          // Prevent self-thanking even for admin
+          if (userId === technicianId) {
+            return { 
+              canThank: false, 
+              reason: "You cannot thank yourself", 
+              alreadyThankedToday: false 
+            };
+          }
+          logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          return { canThank: true, alreadyThankedToday: false };
         }
-        logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
-        return { canThank: true, alreadyThankedToday: false };
       }
+    } catch {
+      // Continue checking other collections
+    }
+    
+    // Check clients collection for admin email
+    try {
+      const clientRef = doc(db, COLLECTIONS.CLIENTS, userId);
+      const clientDoc = await getDoc(clientRef);
+      
+      if (clientDoc.exists()) {
+        const clientData = clientDoc.data();
+        if (clientData.email === adminEmail) {
+          // Prevent self-thanking even for admin
+          if (userId === technicianId) {
+            return { 
+              canThank: false, 
+              reason: "You cannot thank yourself", 
+              alreadyThankedToday: false 
+            };
+          }
+          logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+          return { canThank: true, alreadyThankedToday: false };
+        }
+      }
+    } catch {
+      // Continue
     }
 
     // Prevent self-thanking
@@ -350,11 +381,8 @@ export async function sendFreeThankYou(
     const message = thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
     
     // Fetch sender and recipient names for proper display
-    // Try clients collection first, then fall back to users collection
-    let senderDoc = await getDoc(doc(db, 'clients', fromUserId));
-    if (!senderDoc.exists()) {
-      senderDoc = await getDoc(doc(db, COLLECTIONS.USERS, fromUserId));
-    }
+    // Sender is always a client, recipient is always a technician
+    const senderDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, fromUserId));
     
     const recipientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId));
     
@@ -395,13 +423,9 @@ export async function sendFreeThankYou(
     }
 
     // Track customer activity but DON'T award points for free thank yous
-    // Try clients collection first, then fall back to users collection
-    let customerRef = doc(db, 'clients', fromUserId);
-    let customerDoc = await getDoc(customerRef);
-    if (!customerDoc.exists()) {
-      customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
-      customerDoc = await getDoc(customerRef);
-    }
+    // Customer is always in clients collection
+    const customerRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
+    const customerDoc = await getDoc(customerRef);
     
     if (customerDoc.exists()) {
       await updateDoc(customerRef, {
@@ -424,13 +448,9 @@ export async function sendFreeThankYou(
     // Send email notification
     try {
       const techData = techDoc?.data();
-      // Try clients collection first, then fall back to users collection
-      let fromUserRef = doc(db, 'clients', fromUserId);
-      let fromUserDoc = await getDoc(fromUserRef);
-      if (!fromUserDoc.exists()) {
-        fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
-        fromUserDoc = await getDoc(fromUserRef);
-      }
+      // Get client data for email notification
+      const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
+      const fromUserDoc = await getDoc(fromUserRef);
       const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
       
       if (techData?.email) {
@@ -520,11 +540,8 @@ export async function sendTokens(
       : toaMessages[Math.floor(Math.random() * toaMessages.length)];
     
     // Fetch sender and recipient names
-    // Try clients collection first, then fall back to users collection
-    let senderDoc = await getDoc(doc(db, 'clients', fromUserId));
-    if (!senderDoc.exists()) {
-      senderDoc = await getDoc(doc(db, COLLECTIONS.USERS, fromUserId));
-    }
+    // Sender is always a client, recipient is always a technician
+    const senderDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, fromUserId));
     
     const recipientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId));
     
@@ -614,13 +631,9 @@ export async function sendTokens(
     }
 
     // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
-    // Try clients collection first, then fall back to users collection
-    let customerRef = doc(db, 'clients', fromUserId);
-    let customerDoc = await getDoc(customerRef);
-    if (!customerDoc.exists()) {
-      customerRef = doc(db, COLLECTIONS.USERS, fromUserId);
-      customerDoc = await getDoc(customerRef);
-    }
+    // Customer is always in clients collection
+    const customerRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
+    const customerDoc = await getDoc(customerRef);
     
     if (customerDoc.exists()) {
       const updateData: any = {
@@ -664,13 +677,9 @@ export async function sendTokens(
     // Send email notification
     try {
       const techData = techDoc?.data();
-      // Try clients collection first, then fall back to users collection
-      let fromUserRef = doc(db, 'clients', fromUserId);
-      let fromUserDoc = await getDoc(fromUserRef);
-      if (!fromUserDoc.exists()) {
-        fromUserRef = doc(db, COLLECTIONS.USERS, fromUserId);
-        fromUserDoc = await getDoc(fromUserRef);
-      }
+      // Get client data for email notification
+      const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
+      const fromUserDoc = await getDoc(fromUserRef);
       const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
       
       if (techData?.email) {
@@ -749,15 +758,19 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
       };
     }
 
-    // Get user's current points balance (check both collections)
+    // Get user's current points balance (check all collections)
     let userRef = doc(db, 'technicians', userId);
     let userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
-      userRef = doc(db, 'users', userId);
+      userRef = doc(db, COLLECTIONS.CLIENTS, userId);
       userDoc = await getDoc(userRef);
       if (!userDoc.exists()) {
-        return { success: false, error: 'User not found' };
+        userRef = doc(db, COLLECTIONS.ADMINS, userId);
+        userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+          return { success: false, error: 'User not found' };
+        }
       }
     }
 
@@ -831,15 +844,18 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 // Check how many points user can convert today
 export const getConversionStatus = async (userId: string) => {
   try {
-    // Get user's current points (check both collections)
+    // Get user's current points (check all collections)
     let userRef = doc(db, 'technicians', userId);
     let userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
-      userRef = doc(db, 'users', userId);
+      userRef = doc(db, COLLECTIONS.CLIENTS, userId);
       userDoc = await getDoc(userRef);
       if (!userDoc.exists()) {
-        return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
+        userRef = doc(db, COLLECTIONS.ADMINS, userId);
+        userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+          return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
       }
     }
 
@@ -869,6 +885,7 @@ export const getConversionStatus = async (userId: string) => {
       usedToday: tokensAlreadyConverted,
       conversionRate: CONVERSION_SYSTEM.pointsToTOARate
     };
+      }
 
   } catch (error) {
     logger.error('Error getting conversion status:', error);

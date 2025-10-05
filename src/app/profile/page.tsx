@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 
 // Force dynamic rendering for this page since it uses auth
 export const dynamic = 'force-dynamic';
-import { auth, db, registerClient, deleteUserProfile, authHelpers, getClientTransactions } from '@/lib/firebase';
+import { auth, db, registerClient, deleteUserProfile, authHelpers, getClientTransactions, COLLECTIONS } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
@@ -197,12 +197,27 @@ export default function ProfilePage() {
       
       try {
         
-        // First, try to find the user in the users collection
-        let userDoc = await getDoc(doc(db, 'users', user.uid));
+        // Try to find the user in the appropriate collections
+        let userDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, user.uid));
         let userData = null;
         
         if (userDoc.exists()) {
           userData = userDoc.data() as UserProfile;
+        } else {
+          // Try technicians collection
+          userDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, user.uid));
+          if (userDoc.exists()) {
+            userData = userDoc.data() as UserProfile;
+          } else {
+            // Try admins collection
+            userDoc = await getDoc(doc(db, COLLECTIONS.ADMINS, user.uid));
+            if (userDoc.exists()) {
+              userData = userDoc.data() as UserProfile;
+            }
+          }
+        }
+        
+        if (userData) {
         } else {
           // If not found in users, check technicians collection by email
           const { query, where, getDocs, collection } = await import('firebase/firestore');
@@ -317,7 +332,10 @@ Please complete your profile information below and click "Save Changes" to creat
       };
 
       // Determine which collection to use based on user type
-      const collection = profile?.userType === 'technician' ? 'technicians' : 'users';
+      const userType = (profile?.userType as string) || 'client';
+      const collection = userType === 'technician' ? COLLECTIONS.TECHNICIANS : 
+                        userType === 'admin' ? COLLECTIONS.ADMINS : 
+                        COLLECTIONS.CLIENTS;
       
       // Try to update first, if that fails, create the document
       try {

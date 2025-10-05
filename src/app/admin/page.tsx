@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, COLLECTIONS } from '@/lib/firebase';
 import { 
   collection, 
   query, 
@@ -208,7 +208,7 @@ export default function AdminPage() {
         where('username', '==', username.toLowerCase())
       );
       const customersQuery = query(
-        collection(db, 'users'),
+        collection(db, COLLECTIONS.CLIENTS),
         where('username', '==', username.toLowerCase())
       );
       
@@ -254,16 +254,13 @@ export default function AdminPage() {
 
   const checkAdminAccess = useCallback(async (user: any) => {
     try {
-      // First check if user has admin userType in database
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      // First check if user exists in admins collection
+      let adminDoc = await getDoc(doc(db, COLLECTIONS.ADMINS, user.uid));
       
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.userType === 'admin') {
-          setIsAuthorized(true);
-          await loadAdminData();
-          return;
-        }
+      if (adminDoc.exists()) {
+        setIsAuthorized(true);
+        await loadAdminData();
+        return;
       }
       
       // Fallback: Check if user email matches admin email (for initial setup)
@@ -282,21 +279,20 @@ export default function AdminPage() {
       // Admin can use either Google OR email/password authentication with correct email
       const isAdmin = isCorrectEmail && (isGoogleAuth || isEmailAuth);
       
-      if (isAdmin && !userDoc.exists()) {
-        // Create admin user document in database
-        await setDoc(doc(db, 'users', user.uid), {
+      if (isAdmin) {
+        // Create admin user document in admins collection (since we know it doesn't exist)
+        await setDoc(doc(db, COLLECTIONS.ADMINS, user.uid), {
           name: user.displayName || 'Admin',
           email: user.email,
           userType: 'admin',
           points: 0,
           createdAt: Date.now()
         });
-      }
-      
-      setIsAuthorized(isAdmin);
-      
-      if (isAdmin) {
+        
+        setIsAuthorized(true);
         await loadAdminData();
+      } else {
+        setIsAuthorized(false);
       }
     } catch (error) {
       console.error('Error checking admin access:', error);
@@ -478,11 +474,9 @@ export default function AdminPage() {
         }
       });
       
-      // Load customers from both clients and users collections (filter out mock/sample data)
-      const clientsRef = collection(db, 'clients');
+      // Load customers from clients collection (filter out mock/sample data)
+      const clientsRef = collection(db, COLLECTIONS.CLIENTS);
       const clientsSnapshot = await getDocs(clientsRef);
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
       
       const customerData: Customer[] = [];
       clientsSnapshot.forEach((doc) => {
@@ -496,19 +490,6 @@ export default function AdminPage() {
             !data.email?.includes('example.com') &&
             !data.name?.toLowerCase().includes('test')) {
           customerData.push({ id: doc.id, ...data } as Customer);
-        }
-      });
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.userType !== 'admin' && 
-            !userData.isSample && 
-            !userData.isTest && 
-            !doc.id.includes('mock') && 
-            !doc.id.includes('test') && 
-            !userData.email?.includes('test') &&
-            !userData.email?.includes('example.com') &&
-            !userData.name?.toLowerCase().includes('test')) {
-          customerData.push({ id: doc.id, ...userData } as Customer);
         }
       });
       
