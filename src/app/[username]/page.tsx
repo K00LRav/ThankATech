@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
 import TokenSendModal from '../../components/TokenSendModal';
@@ -38,6 +38,7 @@ interface Technician {
 
 export default function TechnicianProfile() {
   const params = useParams();
+  const router = useRouter();
   const username = params.username as string;
 
   const [technician, setTechnician] = useState<Technician | null>(null);
@@ -109,6 +110,14 @@ export default function TechnicianProfile() {
     console.log('Thank you clicked for', technician.name);
   };
 
+  const handleSignIn = () => {
+    router.push('/');
+  };
+
+  const handleRegister = () => {
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden hidden sm:block">
@@ -120,6 +129,8 @@ export default function TechnicianProfile() {
       <UniversalHeader 
         currentPath={`/${technician.username}`}
         customSubtitle={`thankatech.com/${technician.username}`}
+        onSignIn={handleSignIn}
+        onRegister={handleRegister}
       />
 
       <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-6xl sm:px-4 lg:px-8 sm:py-12">

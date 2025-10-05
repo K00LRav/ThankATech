@@ -1,9 +1,20 @@
 "use client";
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import UniversalHeader from '@/components/UniversalHeader';
 
 export default function About() {
+  const router = useRouter();
+
+  const handleSignIn = () => {
+    router.push('/');
+  };
+
+  const handleRegister = () => {
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* Background Animation */}
@@ -15,7 +26,11 @@ export default function About() {
         </div>
       </div>
 
-      <UniversalHeader currentPath="/about" />
+      <UniversalHeader 
+        currentPath="/about"
+        onSignIn={handleSignIn}
+        onRegister={handleRegister}
+      />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-6xl mx-auto px-6 py-12">
