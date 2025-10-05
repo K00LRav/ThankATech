@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../lib/firebase';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
-import { sendFreeThankYou } from '../../lib/token-firebase';
+import { sendFreeThankYou, getUserTokenBalance } from '../../lib/token-firebase';
 import TokenSendModal from '../../components/TokenSendModal';
+import TokenPurchaseModal from '../../components/TokenPurchaseModal';
 import Footer from '../../components/Footer';
 import { ProfileHeader } from '../../components/ProfileHeader';
 import UniversalHeader from '@/components/UniversalHeader';
@@ -48,6 +49,7 @@ export default function TechnicianProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTokenSendModal, setShowTokenSendModal] = useState(false);
+  const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
   const [user] = useAuthState(auth);
 
   const loadTechnician = useCallback(async () => {
@@ -231,13 +233,29 @@ export default function TechnicianProfile() {
           <div className="space-y-6">
             <AppreciationActions 
               onThankYou={handleThankYou}
-              onSendTOA={() => {
+              onSendTOA={async () => {
                 if (!user) {
                   // Redirect to main page for authentication
                   router.push('/');
                   return;
                 }
-                setShowTokenSendModal(true);
+
+                try {
+                  // Check user's token balance first
+                  const tokenBalance = await getUserTokenBalance(user.uid);
+                  
+                  if (tokenBalance.tokens > 0) {
+                    // User has tokens, open send modal
+                    setShowTokenSendModal(true);
+                  } else {
+                    // User has no tokens, open purchase modal
+                    setShowTokenPurchaseModal(true);
+                  }
+                } catch (error) {
+                  console.error('Error checking token balance:', error);
+                  // Fallback to purchase modal on error
+                  setShowTokenPurchaseModal(true);
+                }
               }}
               technicianName={technician.name}
             />
@@ -253,6 +271,17 @@ export default function TechnicianProfile() {
         technicianId={technician?.id || ''}
         technicianName={technician?.name || technician?.businessName || ''}
         userId={user?.uid || ''}
+      />
+
+      <TokenPurchaseModal
+        isOpen={showTokenPurchaseModal}
+        onClose={() => setShowTokenPurchaseModal(false)}
+        userId={user?.uid || ''}
+        onPurchaseSuccess={(tokens) => {
+          // After successful purchase, close purchase modal and open send modal
+          setShowTokenPurchaseModal(false);
+          setShowTokenSendModal(true);
+        }}
       />
 
       <Footer onOpenRegistration={() => {}} />
