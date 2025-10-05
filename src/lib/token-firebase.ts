@@ -126,7 +126,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
       message: `Purchased ${tokensToAdd} TOA tokens via Stripe payment ($${purchaseAmount.toFixed(2)})`,
       isRandomMessage: false,
       timestamp: new Date(),
-      type: 'toa',
+      type: 'token_purchase', // Changed from 'toa' to 'token_purchase'
       dollarValue: purchaseAmount,
       pointsAwarded: 0 // Token purchases don't award points, sending tokens does
     };
@@ -441,24 +441,19 @@ export async function sendFreeThankYou(
     }
 
     // Track customer activity but DON'T award points for free thank yous
-    // Customer is always in clients collection
-    const customerRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
-    const customerDoc = await getDoc(customerRef);
+    // Customer is always in clients collection - find by authUid first
+    const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
+    const clientSnapshot = await getDocs(clientsQuery);
     
-    if (customerDoc.exists()) {
+    if (!clientSnapshot.empty) {
+      const customerRef = doc(db, COLLECTIONS.CLIENTS, clientSnapshot.docs[0].id);
       await updateDoc(customerRef, {
         // No points awarded - only tracking
         totalThankYousSent: increment(1)
       });
     } else {
-      // Create customer record if doesn't exist
-      await setDoc(customerRef, {
-        id: fromUserId,
-        points: 0, // No points for free thank yous
-        totalThankYousSent: 1,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      // Customer document not found - this shouldn't happen for existing users
+      console.warn('Customer document not found for authUid:', fromUserId);
     }
     
     // Development only logging
@@ -655,11 +650,14 @@ export async function sendTokens(
     }
 
     // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
-    // Customer is always in clients collection
-    const customerRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
-    const customerDoc = await getDoc(customerRef);
+    // Customer is always in clients collection - find by authUid first
+    const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
+    const clientSnapshot = await getDocs(clientsQuery);
     
-    if (customerDoc.exists()) {
+    if (!clientSnapshot.empty) {
+      const customerRef = doc(db, COLLECTIONS.CLIENTS, clientSnapshot.docs[0].id);
+      const customerDoc = clientSnapshot.docs[0];
+      
       const updateData: any = {
         totalThankYousSent: increment(1),
         lastAppreciationDate: new Date()
@@ -676,20 +674,8 @@ export async function sendTokens(
       
       await updateDoc(customerRef, updateData);
     } else {
-      // Create customer record if doesn't exist
-      const initialData: any = {
-        id: fromUserId,
-        points: isFreeThankYou ? 0 : tokens, // No points for free thank yous
-        totalThankYousSent: 1,
-        totalToaSent: isFreeThankYou ? 0 : tokens,
-        totalSpent: isFreeThankYou ? 0 : dollarValue,
-        totalTokensSent: isFreeThankYou ? 0 : tokens,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastAppreciationDate: new Date()
-      };
-      
-      await setDoc(customerRef, initialData);
+      // Create customer record if doesn't exist - this shouldn't happen for existing users
+      console.warn('Customer document not found for authUid:', fromUserId);
     }
     
     // Development only logging

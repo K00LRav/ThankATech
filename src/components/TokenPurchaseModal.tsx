@@ -57,13 +57,20 @@ export default function TokenPurchaseModal({
 
       if (response.ok) {
         const { url } = await response.json();
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        } else {
+          throw new Error('No checkout URL received');
+        }
       } else {
-        throw new Error('Failed to create checkout session');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      alert('Purchase failed. Please try again.');
+      const message = error instanceof Error ? error.message : 'Purchase failed. Please try again.';
+      alert(`Purchase failed: ${message}`);
     } finally {
       setPurchasing(false);
     }

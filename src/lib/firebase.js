@@ -1576,13 +1576,75 @@ export async function getTechnicianEarnings(technicianId) {
       totalNetAmount += technicianPayout;
     });
     
+    // ALSO get token-based earnings from tokenTransactions where this technician is the recipient
+    let tokenEarnings = 0;
+    let tokenTransactionCount = 0;
+    
+    try {
+      console.log('💰 Checking token-based earnings for technician:', actualTechnicianId);
+      console.log('💰 This is the ID we are querying for in tokenTransactions');
+      
+      // Query tokenTransactions where this technician is the recipient
+      const tokenTransactionsQuery = query(
+        collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+        where('toTechnicianId', '==', actualTechnicianId)
+      );
+      
+      const tokenSnapshot = await getDocs(tokenTransactionsQuery);
+      console.log(`💰 Found ${tokenSnapshot.size} token transactions received for ${actualTechnicianId}`);
+      
+      tokenSnapshot.docs.forEach(tokenDoc => {
+        const tokenData = tokenDoc.data();
+        console.log(`🔍 Token transaction: type=${tokenData.type}, tokens=${tokenData.tokens}, dollarValue=${tokenData.dollarValue}, technicianPayout=${tokenData.technicianPayout}`);
+        
+        // Only count actual token earnings (toa_token and toa types)
+        if (tokenData.type === 'toa_token' || tokenData.type === 'toa') {
+          // Use technicianPayout if available, otherwise calculate from tokens
+          let earning = 0;
+          if (tokenData.technicianPayout) {
+            earning = tokenData.technicianPayout * 100; // Convert to cents
+            console.log(`💰 Using technicianPayout: $${tokenData.technicianPayout} -> ${earning} cents`);
+          } else if (tokenData.tokens) {
+            // Fallback: calculate earnings from tokens
+            earning = tokenData.tokens * 0.85; // 85 cents per 100 tokens = 0.85 cents per token
+            console.log(`💰 Calculating from tokens: ${tokenData.tokens} * 0.85 = ${earning} cents`);
+          }
+          
+          if (earning > 0) {
+            tokenEarnings += earning;
+            tokenTransactionCount++;
+            console.log(`💰 Added token earning: $${earning / 100} (${tokenData.tokens} tokens) from ${tokenData.fromName || 'Client'}`);
+            console.log(`💰 Running total: $${tokenEarnings / 100}`);
+          } else {
+            console.log(`⚠️ Skipping transaction - no earning calculated`);
+          }
+        } else {
+          console.log(`⚠️ Skipping transaction - type ${tokenData.type} not counted for earnings`);
+        }
+      });
+      
+      console.log(`💰 Total token earnings: $${tokenEarnings / 100} from ${tokenTransactionCount} transactions`);
+      
+    } catch (tokenError) {
+      console.warn('💰 Error fetching token earnings:', tokenError);
+    }
+    
+    // Combine legacy tips and token earnings
+    const combinedEarnings = totalNetAmount + tokenEarnings;
+    
+    console.log(`💰 FINAL CALCULATION:`);
+    console.log(`💰 Legacy tips earnings: $${totalNetAmount / 100}`);
+    console.log(`💰 Token earnings: $${tokenEarnings / 100}`);
+    console.log(`💰 Combined total earnings: $${combinedEarnings / 100}`);
     
     const result = {
-      totalEarnings: totalNetAmount / 100, // Convert to dollars - what technician actually earned
-      availableBalance: totalNetAmount / 100, // Convert to dollars - available to withdraw
+      totalEarnings: combinedEarnings / 100, // Convert to dollars - what technician actually earned
+      availableBalance: combinedEarnings / 100, // Convert to dollars - available to withdraw
       pendingBalance: 0, // For now, no pending payments
-      tipCount: allTips.length
+      tipCount: allTips.length + tokenTransactionCount // Include both legacy tips and token transactions
     };
+    
+    console.log(`💰 Returning result:`, result);
     
     return result;
   } catch (error) {

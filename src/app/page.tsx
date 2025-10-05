@@ -659,7 +659,7 @@ export default function Home() {
       const currentTechnician = displayedProfiles[currentProfileIndex];
       
       // Use new consolidated ThankATech Points system
-      const result = await sendFreeThankYou(currentUser.id, currentTechnician.id);
+      const result = await sendFreeThankYou(currentUser.uid, currentTechnician.id);
       
       if (!result.success) {
         setError(result.error || 'Failed to send thank you. Please try again.');
