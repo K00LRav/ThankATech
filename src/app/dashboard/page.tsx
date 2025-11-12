@@ -399,6 +399,19 @@ export default function ModernDashboard() {
         };
       });
       
+      // Update Firestore with calculated points to keep cached value in sync
+      try {
+        const { updateDoc, doc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'technicians', technicianId), {
+          points: dashboardData.totalPoints,
+          totalThankYousReceived: dashboardData.totalThankYous,
+          updatedAt: new Date()
+        });
+      } catch (firestoreError) {
+        // Silent fail - dashboard still works even if Firestore update fails
+        logger.error('Failed to sync points to Firestore:', firestoreError);
+      }
+      
     } catch (error) {
       logger.error('Error loading technician dashboard:', error);
     }
