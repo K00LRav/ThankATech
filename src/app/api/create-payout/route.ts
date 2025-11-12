@@ -256,6 +256,32 @@ export async function POST(request: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 3000)); // Increased to 3 seconds
       } catch (bankError: any) {
         logger.error('Bank account creation error:', bankError);
+        
+        // If OAuth permission error, delete old account and recreate
+        if (bankError.code === 'oauth_not_supported' || bankError.type === 'StripePermissionError') {
+          logger.warn(`Permission error on account ${stripeAccountId}, deleting and will recreate`);
+          
+          try {
+            // Delete the problematic account
+            await stripe.accounts.del(stripeAccountId);
+            logger.info(`Deleted account ${stripeAccountId}`);
+          } catch (delError: any) {
+            logger.warn(`Could not delete account: ${delError.message}`);
+          }
+          
+          // Clear from Firestore
+          await db.collection('technicians').doc(technicianId).update({
+            stripeAccountId: null,
+            stripeAccountStatus: null,
+            updatedAt: new Date(),
+          });
+          
+          return NextResponse.json(
+            { error: 'Account reset due to permissions issue. Please try again to create a fresh account.' },
+            { status: 400 }
+          );
+        }
+        
         return NextResponse.json(
           { error: `Invalid bank account: ${bankError.message}` },
           { status: 400 }
