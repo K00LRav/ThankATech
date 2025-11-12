@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
 
     if (!emailSent) {
       console.error('Failed to send contact form email');
-      // Don't fail the request if email fails - log it instead
+      return NextResponse.json(
+        { error: 'Failed to send email notification. Please try again or contact us directly at support@thankatech.com' },
+        { status: 500 }
+      );
     }
 
     // TODO: Store contact form submission in database if needed

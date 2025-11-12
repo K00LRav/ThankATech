@@ -126,7 +126,7 @@ export default function Contact() {
                   name="userType"
                   value={formData.userType}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent [&>option]:text-gray-900 [&>option]:bg-white"
                 >
                   <option value="customer">Customer</option>
                   <option value="technician">Technician</option>
