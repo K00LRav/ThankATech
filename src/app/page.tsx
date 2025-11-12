@@ -908,7 +908,10 @@ export default function Home() {
                 </button>
                 {(selectedCategory !== 'all' || searchQuery) && (
                   <button
-                    onClick={() => {setSearchQuery(''); setSelectedCategory('all'); window.location.reload();}}
+                    onClick={() => {
+                      setSearchQuery(''); 
+                      setSelectedCategory('all');
+                    }}
                     className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-xl font-medium hover:bg-white/20 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
                     <span className="text-lg">🔄</span>
