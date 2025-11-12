@@ -372,168 +372,34 @@ export default function ModernDashboard() {
 
   const loadTechnicianTokenStats = async (technicianId: string) => {
     try {
-      // Import Firebase functions
-      const { collection, getDocs, query, where } = await import('firebase/firestore');
+      // Use the clean, centralized technician dashboard loader
+      const { loadTechnicianDashboard } = await import('@/lib/technician-dashboard');
+      const dashboardData = await loadTechnicianDashboard(technicianId);
       
-      // Get technician data first to get all identifiers
-      const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
-      const techData = techDoc.exists() ? techDoc.data() : null;
-      
-      logger.info(`Loading transactions for technician: ${technicianId}, email: ${techData?.email}`);
-      
-      // Load transactions WHERE THIS TECHNICIAN IS THE RECIPIENT
-      // Query by ID first
-      const query1 = query(
-        collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-        where('toTechnicianId', '==', technicianId)
-      );
-      const snapshot1 = await getDocs(query1);
-      
-      // Query by email if available
-      let snapshot2: any = { docs: [] };
-      if (techData?.email) {
-        const query2 = query(
-          collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('toTechnicianEmail', '==', techData.email)
-        );
-        snapshot2 = await getDocs(query2);
-      }
-      
-      // Combine results and deduplicate
-      const allDocs = [...snapshot1.docs];
-      snapshot2.docs.forEach((doc: any) => {
-        if (!allDocs.find(d => d.id === doc.id)) {
-          allDocs.push(doc);
-        }
-      });
-      
-      logger.info(`Found ${allDocs.length} token transactions for technician`);
-      
-      // DEBUG: Log all found transactions
-      allDocs.forEach(doc => {
-        const data = doc.data();
-        logger.info(`Transaction: ${data.type}, ${data.tokens} TOA, from: ${data.fromName}, amount: $${data.dollarValue || data.technicianPayout}`);
-      });
-      
-      // Process ALL transactions received by this technician
-      const allReceivedTransactions = [];
-      const tokenTransactions = [];
-      let totalTokensReceived = 0;
-      let totalTokenEarnings = 0;
-      
-      allDocs.forEach(doc => {
-        const data = doc.data();
-        
-        // Add ALL received transactions to the main list
-        allReceivedTransactions.push({
-          id: doc.id,
-          ...data,
-          amount: (data.technicianPayout || data.dollarValue || 0) * 100 // Convert to cents for display
-        });
-        
-        // Track token earnings separately
-        if (data.type === 'toa_token' || data.type === 'toa') {
-          tokenTransactions.push({
-            id: doc.id,
-            ...data,
-            amount: (data.technicianPayout || data.dollarValue || 0) * 100 // Convert to cents for display
-          });
-          
-          totalTokensReceived += (data.tokens || 0);
-          totalTokenEarnings += (data.technicianPayout || data.dollarValue || 0) * 100; // Convert to cents
-        }
-      });
-      
-      // Merge earnings stats with existing wallet balance
+      // Update token balance with comprehensive earnings data
       setTokenBalance(prev => ({
-        ...prev, // Keep existing wallet data (tokens, totalPurchased, totalSpent)
-        totalTokensReceived,
-        totalTokenEarnings: totalTokenEarnings / 100, // Convert back to dollars for display
-        transactionCount: tokenTransactions.length
+        ...prev,
+        totalTokensReceived: dashboardData.totalTokensReceived,
+        totalTokenEarnings: dashboardData.totalEarnings,
+        availableBalance: dashboardData.availableBalance,
+        transactionCount: dashboardData.transactionCount
       }));
       
-      // Update tip transactions with ALL received transactions (thank_you + toa_token)
-      setTipTransactions(allReceivedTransactions);
+      // Update activity feed with all transactions and payouts
+      setTipTransactions(dashboardData.allActivity);
+      setAllTransactions(dashboardData.allActivity);
       
-      // ALSO load payouts for this technician to show in activity
-      try {
-        const payoutsQuery = query(
-          collection(db, 'payouts'),
-          where('technicianId', '==', technicianId)
-        );
-        
-        const payoutsSnapshot = await getDocs(payoutsQuery);
-        logger.info(`Found ${payoutsSnapshot.docs.length} payouts for technician`);
-        
-        const payoutTransactions = payoutsSnapshot.docs.map(payoutDoc => {
-          const payoutData = payoutDoc.data();
-          logger.info(`Payout: ${payoutData.status}, amount: $${(payoutData.amount / 100).toFixed(2)}, date: ${payoutData.createdAt?.toDate()}`);
-          
-          return {
-            id: payoutDoc.id,
-            type: 'payout',
-            amount: -(payoutData.amount || 0), // Negative for withdrawals
-            timestamp: payoutData.createdAt,
-            status: payoutData.status,
-            transferId: payoutData.transferId,
-            stripeAccountId: payoutData.stripeAccountId
-          };
-        });
-        
-        // Combine token transactions and payouts, then sort by timestamp
-        const allActivity = [...allReceivedTransactions, ...payoutTransactions].sort((a, b) => {
-          const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-          const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
-          return bTime.getTime() - aTime.getTime();
-        });
-        
-        setTipTransactions(allActivity);
-        setAllTransactions(allActivity);
-        
-      } catch (payoutError) {
-        logger.error('Error loading payouts:', payoutError);
-        // Fallback to just token transactions if payout query fails
-      }
-      
-      // Calculate technician points and thank yous received
-      let totalThankYousReceived = 0;
-      let totalPointsEarned = 0;
-      
-      allDocs.forEach(doc => {
-        const data = doc.data();
-        
-        if (data.type === 'thank_you') {
-          totalThankYousReceived++;
-          totalPointsEarned += 1; // 1 point per free thank you
-        } else if (data.type === 'toa_token' || data.type === 'toa') {
-          totalPointsEarned += 2; // 2 points per TOA transaction (not per token)
-        }
-      });
-      
-      // Update the user profile data to show correct points and thank yous
+      // Update profile points
       if (userProfile) {
         setUserProfile(prev => ({
           ...prev,
-          points: totalPointsEarned,
-          totalThankYousReceived: totalThankYousReceived
+          points: dashboardData.totalPoints,
+          totalThankYousReceived: dashboardData.totalThankYous
         }));
-        
-        // Also update the technician document in Firestore
-        try {
-          const { doc, updateDoc } = await import('firebase/firestore');
-          const techRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
-          await updateDoc(techRef, {
-            points: totalPointsEarned,
-            totalThankYousReceived: totalThankYousReceived,
-            updatedAt: new Date()
-          });
-        } catch (updateError) {
-          logger.error('Error updating technician document:', updateError);
-        }
       }
       
     } catch (error) {
-      logger.error('Error loading technician token stats:', error);
+      logger.error('Error loading technician dashboard:', error);
     }
   };
 
