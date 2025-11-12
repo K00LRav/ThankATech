@@ -365,15 +365,28 @@ export default function ModernDashboard() {
   const loadTechnicianTokenStats = async (technicianId: string) => {
     try {
       // Import Firebase functions
-      const { collection, getDocs, query, where } = await import('firebase/firestore');
+      const { collection, getDocs, query, where, or } = await import('firebase/firestore');
+      
+      // Get technician data first to get all identifiers
+      const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
+      const techData = techDoc.exists() ? techDoc.data() : null;
+      
+      logger.info(`Loading transactions for technician: ${technicianId}, email: ${techData?.email}`);
       
       // Load transactions WHERE THIS TECHNICIAN IS THE RECIPIENT
+      // Check by ID, email, and authUid to catch all transactions
       const technicianTransactionsQuery = query(
         collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-        where('toTechnicianId', '==', technicianId)
+        or(
+          where('toTechnicianId', '==', technicianId),
+          where('toTechnicianEmail', '==', techData?.email),
+          where('toTechnicianId', '==', techData?.authUid)
+        )
       );
       
       const technicianSnapshot = await getDocs(technicianTransactionsQuery);
+      
+      logger.info(`Found ${technicianSnapshot.docs.length} token transactions for technician`);
       
       // Process ALL transactions received by this technician
       const allReceivedTransactions = [];
