@@ -1239,7 +1239,7 @@ export default function Home() {
         onClose={() => setShowTokenSendModal(false)}
         technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
         technicianName={displayedProfiles[currentProfileIndex]?.name || ''}
-        userId={currentUser?.id || ''}
+        userId={currentUser?.uid || ''}
       />
 
       {/* Token Send Modal */}
@@ -1248,14 +1248,14 @@ export default function Home() {
         onClose={() => setShowTokenSendModal(false)}
         technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
         technicianName={displayedProfiles[currentProfileIndex]?.name || displayedProfiles[currentProfileIndex]?.businessName || ''}
-        userId={currentUser?.id || ''}
+        userId={currentUser?.uid || ''}
       />
 
       {/* Token Purchase Modal */}
       <TokenPurchaseModal
         isOpen={showTokenPurchaseModal}
         onClose={() => setShowTokenPurchaseModal(false)}
-        userId={currentUser?.id || ''}
+        userId={currentUser?.uid || ''}
         onPurchaseSuccess={(tokens) => {
           logger.info(`User purchased ${tokens} tokens`);
           // Could show a success message or update UI here
