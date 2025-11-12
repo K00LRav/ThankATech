@@ -249,8 +249,8 @@ export default function ModernDashboard() {
           name: techData.name || techData.displayName || 'Technician',
           email: techData.email,
           userType: 'technician',
-          points: techData.points || 0,
-          ...techData 
+          ...techData,
+          points: 0 // Will be updated from transaction calculation (must be after spread)
         } as UserProfile;
         
         setUserProfile(profile);
@@ -390,13 +390,14 @@ export default function ModernDashboard() {
       setAllTransactions(dashboardData.allActivity);
       
       // Update profile points
-      if (userProfile) {
-        setUserProfile(prev => ({
+      setUserProfile(prev => {
+        if (!prev) return prev;
+        return {
           ...prev,
           points: dashboardData.totalPoints,
           totalThankYousReceived: dashboardData.totalThankYous
-        }));
-      }
+        };
+      });
       
     } catch (error) {
       logger.error('Error loading technician dashboard:', error);
@@ -409,11 +410,11 @@ export default function ModernDashboard() {
       // Technicians use loadTechnicianTokenStats() instead
       
       // Load transactions sent by this client + token purchases
+      // Remove orderBy to avoid needing Firebase index, we'll sort in memory
       const tokenTransactionsQuery = query(
         collection(db, 'tokenTransactions'),
         where('fromUserId', '==', userId),
-        orderBy('timestamp', 'desc'),
-        firestoreLimit(20)
+        firestoreLimit(50) // Increased limit to get more history
       );
 
       const tokenSnapshot = await getDocs(tokenTransactionsQuery);
@@ -1107,7 +1108,7 @@ export default function ModernDashboard() {
                         icon: '💸',
                         bgColor: 'bg-yellow-500/20',
                         title: `Payout to Bank (${transaction.status || 'pending'})`,
-                        amount: `-${formatCurrency(Math.abs(transaction.amount || 0) / 100)}`, // Negative, convert cents to dollars
+                        amount: formatCurrency(transaction.amount || 0), // Already in dollars and negative from lib
                         points: null
                       };
                     default:

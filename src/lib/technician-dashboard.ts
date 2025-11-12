@@ -3,7 +3,7 @@
  * REBUILT FROM SCRATCH - November 12, 2025
  */
 
-import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, limit } from 'firebase/firestore';
 import { db, COLLECTIONS } from './firebase';
 import { logger } from './logger';
 
@@ -23,8 +23,6 @@ export interface TechnicianDashboardData {
 
 export async function loadTechnicianDashboard(technicianId: string): Promise<TechnicianDashboardData> {
   try {
-    logger.info(`🔄 REBUILDING technician dashboard for: ${technicianId}`);
-    
     // Get technician info
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (!techDoc.exists()) {
@@ -32,14 +30,29 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     }
     const techData = techDoc.data();
     
-    // ====== STEP 1: Load token transactions ======
+    // ====== STEP 1: Load token transactions (received) ======
     const txQuery = query(
       collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
       where('toTechnicianId', '==', technicianId)
     );
     const txSnapshot = await getDocs(txQuery);
     
-    logger.info(`Found ${txSnapshot.docs.length} transactions`);
+    // ====== STEP 1B: Load token purchases (made by this technician) ======
+    // Only load purchases if we have a valid auth UID
+    let purchaseSnapshot = { docs: [] } as any;
+    if (techData.uid || techData.authUid) {
+      const authUid = techData.uid || techData.authUid;
+      try {
+        const purchaseQuery = query(
+          collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+          where('fromUserId', '==', authUid),
+          where('type', '==', 'token_purchase')
+        );
+        purchaseSnapshot = await getDocs(purchaseQuery);
+      } catch (error) {
+        // Silently handle purchase loading errors
+      }
+    }
     
     const tokenTransactions: any[] = [];
     let totalTokens = 0;
@@ -47,7 +60,8 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     let points = 0;
     let thankYous = 0;
     
-    txSnapshot.docs.forEach(docSnap => {
+    // Process transactions and fetch sender names
+    const transactionPromises = txSnapshot.docs.map(async (docSnap) => {
       const data = docSnap.data();
       
       // The data coming from Firebase has:
@@ -58,27 +72,113 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
       const dollarAmount = data.technicianPayout || 0;
       const tokens = data.tokens || 0;
       
-      logger.info(`TX: ${tokens} tokens = $${dollarAmount.toFixed(2)} (${data.type})`);
+      // Always fetch the actual sender name from their profile
+      let fromName = 'Customer';
+      if (data.fromUserId) {
+        try {
+          // fromUserId is Firebase Auth UID, not Firestore doc ID
+          // Need to query by authUid or uid field instead of direct document lookup
+          const clientsQuery = query(
+            collection(db, 'clients'),
+            where('authUid', '==', data.fromUserId),
+            limit(1)
+          );
+          let querySnapshot = await getDocs(clientsQuery);
+          
+          if (querySnapshot.empty) {
+            // Try uid field (for backwards compatibility)
+            const clientsQueryUid = query(
+              collection(db, 'clients'),
+              where('uid', '==', data.fromUserId),
+              limit(1)
+            );
+            querySnapshot = await getDocs(clientsQueryUid);
+          }
+          
+          if (querySnapshot.empty) {
+            // Try technicians collection
+            const techniciansQuery = query(
+              collection(db, 'technicians'),
+              where('uid', '==', data.fromUserId),
+              limit(1)
+            );
+            querySnapshot = await getDocs(techniciansQuery);
+          }
+          
+          if (!querySnapshot.empty) {
+            const senderData = querySnapshot.docs[0].data();
+            const fetchedName = senderData.name || senderData.displayName || senderData.businessName || null;
+            
+            // Use actual name if available, otherwise email
+            if (fetchedName && fetchedName !== 'Customer') {
+              fromName = fetchedName;
+            } else if (senderData.email) {
+              fromName = senderData.email;
+            } else {
+              fromName = data.fromName || 'Customer';
+            }
+          } else {
+            fromName = data.fromName || 'Customer';
+          }
+        } catch (error) {
+          logger.error(`Error fetching sender profile:`, error);
+          fromName = data.fromName || 'Customer';
+        }
+      } else {
+        fromName = data.fromName || 'Customer';
+      }
       
-      tokenTransactions.push({
+      return {
         id: docSnap.id,
         type: data.type,
-        amount: dollarAmount, // Keep in dollars
+        amount: dollarAmount,
         timestamp: data.timestamp,
-        fromName: data.fromName || 'Customer',
+        fromName: fromName,
         tokens: tokens,
-        message: data.message || ''
+        message: data.message || '',
+        dollarAmount,
+        dataType: data.type,
+        pointsAwarded: data.pointsAwarded || 0
+      };
+    });
+    
+    const transactionResults = await Promise.all(transactionPromises);
+    
+    // Build final array and calculate totals
+    transactionResults.forEach(tx => {
+      tokenTransactions.push({
+        id: tx.id,
+        type: tx.type,
+        amount: tx.amount,
+        timestamp: tx.timestamp,
+        fromName: tx.fromName,
+        tokens: tx.tokens,
+        message: tx.message
       });
       
       // Calculate totals
-      if (data.type === 'toa_token' || data.type === 'toa') {
-        totalTokens += tokens;
-        totalEarningsCents += Math.round(dollarAmount * 100); // Convert to cents for precision
-        points += 2;
-      } else if (data.type === 'thank_you') {
+      if (tx.dataType === 'toa_token' || tx.dataType === 'toa') {
+        totalTokens += tx.tokens;
+        totalEarningsCents += Math.round(tx.dollarAmount * 100); // Convert to cents for precision
+        points += 2; // 2 points per token transaction
+      } else if (tx.dataType === 'thank_you') {
         thankYous++;
-        points += 1;
+        points += 1; // 1 point per thank you
       }
+    });
+    
+    // ====== STEP 1C: Process token purchases ======
+    purchaseSnapshot.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      tokenTransactions.push({
+        id: docSnap.id,
+        type: 'token_purchase',
+        amount: data.dollarValue || 0,
+        timestamp: data.timestamp,
+        fromName: 'Token Purchase',
+        tokens: data.tokens || 0,
+        message: `Purchased ${data.tokens || 0} TOA tokens`
+      });
     });
     
     // ====== STEP 2: Load payouts ======
@@ -88,16 +188,12 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     );
     const payoutSnapshot = await getDocs(payoutQuery);
     
-    logger.info(`Found ${payoutSnapshot.docs.length} payouts`);
-    
     const payoutTransactions: any[] = [];
     let totalPayoutsCents = 0;
     
     payoutSnapshot.docs.forEach(docSnap => {
       const data = docSnap.data();
       const amountCents = data.amount || 0; // Already in cents
-      
-      logger.info(`Payout: $${(amountCents/100).toFixed(2)} (${data.status})`);
       
       payoutTransactions.push({
         id: docSnap.id,
@@ -123,14 +219,6 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
       const bTime = b.timestamp?.toDate?.() || new Date(0);
       return bTime.getTime() - aTime.getTime();
     });
-    
-    // ====== STEP 5: Log summary ======
-    logger.info(`📊 SUMMARY:`);
-    logger.info(`  Tokens: ${totalTokens} TOA`);
-    logger.info(`  Earnings: $${totalEarnings.toFixed(2)}`);
-    logger.info(`  Payouts: $${totalPayouts.toFixed(2)}`);
-    logger.info(`  Available: $${availableBalance.toFixed(2)}`);
-    logger.info(`  Points: ${points}`);
     
     return {
       tokenTransactions,

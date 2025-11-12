@@ -98,6 +98,20 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
   }
 
   try {
+    // Check for duplicate processing if sessionId provided
+    if (sessionId) {
+      const existingTxQuery = query(
+        collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+        where('stripeSessionId', '==', sessionId)
+      );
+      const existingTx = await getDocs(existingTxQuery);
+      
+      if (!existingTx.empty) {
+        logger.warn(`⚠️ Duplicate purchase detected - session ${sessionId} already processed`);
+        return; // Skip duplicate processing
+      }
+    }
+    
     const balanceRef = doc(db, COLLECTIONS.TOKEN_BALANCES, userId);
     const balanceDoc = await getDoc(balanceRef);
     

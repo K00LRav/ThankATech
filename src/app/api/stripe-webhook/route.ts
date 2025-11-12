@@ -170,15 +170,11 @@ async function handleInvoicePayment(invoice: any) {
 }
 
 async function handleCheckoutCompleted(session: any) {
-  console.log('✅ Checkout session completed:', session.id);
-  
   try {
     const { userId, tokenPackId, tokens, type } = session.metadata;
     
     // Handle token purchases
     if (type === 'token_purchase' && userId && tokens) {
-      console.log(`🪙 Processing token purchase: ${tokens} tokens for user ${userId}`);
-      
       // Import token functions
       const { addTokensToBalance } = await import('@/lib/token-firebase');
       
@@ -186,9 +182,7 @@ async function handleCheckoutCompleted(session: any) {
       const tokensToAdd = parseInt(tokens);
       const purchaseAmount = session.amount_total / 100; // Convert from cents to dollars
       
-      await addTokensToBalance(userId, tokensToAdd, purchaseAmount);
-      
-      console.log(`✅ Added ${tokensToAdd} tokens to user ${userId} balance`);
+      await addTokensToBalance(userId, tokensToAdd, purchaseAmount, session.id);
       
       // TODO: Send purchase confirmation email
     }

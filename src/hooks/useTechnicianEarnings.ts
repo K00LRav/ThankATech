@@ -24,21 +24,16 @@ export const useTechnicianEarnings = (technicianId: string | null) => {
 
     setLoading(true);
     try {
-      // Dynamically import to avoid potential circular dependencies
-      const firebaseModule = await import('../lib/firebase');
+      // Use the NEW centralized dashboard loader instead of old getTechnicianEarnings
+      const { loadTechnicianDashboard } = await import('../lib/technician-dashboard');
       
-      const { getTechnicianEarnings } = firebaseModule;
-      if (!getTechnicianEarnings) {
-        throw new Error('getTechnicianEarnings function not found in firebase module');
-      }
-      
-      const realEarnings: any = await getTechnicianEarnings(technicianId);
+      const dashboardData = await loadTechnicianDashboard(technicianId);
       
       setEarnings({
-        availableBalance: realEarnings.availableBalance || 0,
-        totalEarnings: realEarnings.totalEarnings || 0,
-        pendingBalance: realEarnings.pendingBalance || 0,
-        tipCount: realEarnings.tipCount || 0,
+        availableBalance: dashboardData.availableBalance || 0,
+        totalEarnings: dashboardData.totalEarnings || 0,
+        pendingBalance: 0, // Not currently used
+        tipCount: dashboardData.transactionCount || 0,
       });
     } catch (error) {
       logger.error('Failed to fetch technician earnings:', error);
