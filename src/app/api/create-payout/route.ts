@@ -1,7 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerStripe } from '@/lib/stripe';
-import { auth } from '@/lib/firebase';
-import { headers } from 'next/headers';
+import { logger } from '@/lib/logger';
+
+// Initialize Firebase Admin for server-side operations
+let adminDb: any = null;
+async function getAdminDb() {
+  if (adminDb) return adminDb;
+  
+  const { initializeApp, getApps, cert } = await import('firebase-admin/app');
+  const { getFirestore } = await import('firebase-admin/firestore');
+  
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
+  
+  adminDb = getFirestore();
+  return adminDb;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { amount, technicianId, bankAccount } = await request.json();
+    const { amount, technicianId, method = 'standard', bankAccount } = await request.json();
 
     // Validate request
     if (!amount || !technicianId) {
@@ -31,36 +52,136 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, we'll simulate the payout process
-    // In production, you would:
-    // 1. Create a Stripe Express Account for the technician
-    // 2. Verify their identity and bank account
-    // 3. Create a transfer to their account
+    // Get technician's Stripe account
+    const db = await getAdminDb();
+    const techDoc = await db.collection('technicians').doc(technicianId).get();
+    
+    if (!techDoc.exists) {
+      return NextResponse.json(
+        { error: 'Technician not found' },
+        { status: 404 }
+      );
+    }
 
-    console.log(`Processing payout of $${amount / 100} to technician ${technicianId}`);
+    const techData = techDoc.data();
+    let stripeAccountId = techData.stripeAccountId;
 
-    // Simulate payout processing
-    const mockPayout = {
-      id: `payout_${Date.now()}`,
-      amount: amount,
+    // If no Stripe account, create one
+    if (!stripeAccountId) {
+      logger.info(`Creating Stripe Express account for technician ${technicianId}`);
+      
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'US',
+        email: techData.email,
+        capabilities: {
+          transfers: { requested: true },
+        },
+        business_type: 'individual',
+        metadata: {
+          technicianId: technicianId,
+        },
+      });
+
+      stripeAccountId = account.id;
+
+      await db.collection('technicians').doc(technicianId).update({
+        stripeAccountId: stripeAccountId,
+        stripeAccountStatus: 'pending',
+        updatedAt: new Date(),
+      });
+    }
+
+    // Add bank account if provided
+    if (bankAccount && bankAccount.accountNumber && bankAccount.routingNumber) {
+      try {
+        const externalAccount = await stripe.accounts.createExternalAccount(
+          stripeAccountId,
+          {
+            external_account: {
+              object: 'bank_account',
+              country: 'US',
+              currency: 'usd',
+              account_holder_type: 'individual',
+              routing_number: bankAccount.routingNumber,
+              account_number: bankAccount.accountNumber,
+            },
+          }
+        );
+        
+        logger.info(`Added bank account to Stripe account ${stripeAccountId}`);
+      } catch (bankError: any) {
+        logger.error('Bank account creation error:', bankError);
+        return NextResponse.json(
+          { error: `Invalid bank account: ${bankError.message}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Calculate fee for express payout
+    const fee = method === 'express' ? 50 : 0; // $0.50 for express
+    const netAmount = amount - fee;
+
+    // Create transfer to technician's Stripe account
+    const transfer = await stripe.transfers.create({
+      amount: netAmount,
       currency: 'usd',
-      status: 'pending',
-      estimated_arrival_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-      method: 'standard',
+      destination: stripeAccountId,
       description: `ThankATech payout for technician ${technicianId}`,
-      created: Math.floor(Date.now() / 1000)
+      metadata: {
+        technicianId: technicianId,
+        payoutMethod: method,
+        requestedAmount: amount,
+        fee: fee,
+      },
+    });
+
+    logger.info(`Created transfer ${transfer.id} for $${netAmount / 100} to ${stripeAccountId}`);
+
+    // Store payout record in Firestore
+    const payoutRecord = {
+      transferId: transfer.id,
+      technicianId: technicianId,
+      stripeAccountId: stripeAccountId,
+      amount: amount,
+      fee: fee,
+      netAmount: netAmount,
+      method: method,
+      status: 'pending',
+      createdAt: new Date(),
+      estimatedArrival: new Date(Date.now() + (method === 'express' ? 30 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000)),
     };
+
+    await db.collection('payouts').add(payoutRecord);
+
+    // Update technician's earnings balance (deduct the amount)
+    await db.collection('technicians').doc(technicianId).update({
+      totalEarnings: (techData.totalEarnings || 0) - (amount / 100),
+      lastPayoutDate: new Date(),
+      updatedAt: new Date(),
+    });
 
     return NextResponse.json({
       success: true,
-      payout: mockPayout,
-      message: 'Payout initiated successfully. Funds will arrive in 1-2 business days.'
+      payout: {
+        id: transfer.id,
+        amount: netAmount,
+        currency: 'usd',
+        status: 'pending',
+        estimated_arrival_date: payoutRecord.estimatedArrival,
+        method: method,
+        description: transfer.description,
+      },
+      message: method === 'express' 
+        ? 'Payout initiated! Funds will arrive in ~30 minutes.'
+        : 'Payout initiated successfully. Funds will arrive in 1-2 business days.'
     });
 
-  } catch (error) {
-    console.error('Payout error:', error);
+  } catch (error: any) {
+    logger.error('Payout error:', error);
     return NextResponse.json(
-      { error: 'Failed to process payout' },
+      { error: error.message || 'Failed to process payout' },
       { status: 500 }
     );
   }
