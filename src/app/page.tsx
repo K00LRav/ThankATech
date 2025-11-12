@@ -816,8 +816,9 @@ export default function Home() {
     );
   }
 
-  // Show enhanced empty state - still show the full page with helpful content
-  if (profiles.length === 0) {
+  // Show enhanced empty state ONLY if no technicians exist in the database at all
+  // If technicians exist but are filtered out, show inline message instead
+  if (allProfiles.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-2 sm:p-4 iphone-safe-top iphone-safe-bottom">
         {/* Clean background without animated elements */}
