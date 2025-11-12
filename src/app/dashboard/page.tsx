@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
 import { auth, db, COLLECTIONS } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 import { 
   doc, 
   getDoc, 
@@ -265,14 +266,14 @@ export default function ModernDashboard() {
       }
       
       // Still no user found - this is likely a Google sign-in user who hasn't completed registration
-      console.error('❌ User document not found in any collection (clients, technicians, users)');      
+      logger.error('❌ User document not found in any collection (clients, technicians, users)');      
       
       // Sign out the user and redirect to registration
       await signOut(auth);
       router.push('/');
       
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      logger.error('Error loading user profile:', error);
     }
   };
 
@@ -281,7 +282,7 @@ export default function ModernDashboard() {
       const balance = await getUserTokenBalance(userId);
       setTokenBalance(balance);
     } catch (error) {
-      console.error('Error loading token balance:', error);
+      logger.error('Error loading token balance:', error);
     }
   };
 
@@ -369,12 +370,12 @@ export default function ModernDashboard() {
             updatedAt: new Date()
           });
         } catch (updateError) {
-          console.error('Error updating technician document:', updateError);
+          logger.error('Error updating technician document:', updateError);
         }
       }
       
     } catch (error) {
-      console.error('Error loading technician token stats:', error);
+      logger.error('Error loading technician token stats:', error);
     }
   };
 
@@ -490,7 +491,7 @@ export default function ModernDashboard() {
       setTipTransactions(allTransactions.slice(0, 15)); // Show most recent 15 transactions
       setAllTransactions(allTransactions);
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      logger.error('Error loading transactions:', error);
     }
   };
 
@@ -524,7 +525,7 @@ export default function ModernDashboard() {
       setUserProfile({ ...userProfile, ...editedProfile });
       setIsEditingProfile(false);
     } catch (error) {
-      console.error('Error saving profile:', error);
+      logger.error('Error saving profile:', error);
       alert('Error saving profile. Please try again.');
     }
   };
@@ -534,7 +535,7 @@ export default function ModernDashboard() {
       await signOut(auth);
       router.push('/');
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
     }
   };
 
@@ -559,7 +560,7 @@ export default function ModernDashboard() {
       
       router.push('/');
     } catch (error) {
-      console.error('Error deleting account:', error);
+      logger.error('Error deleting account:', error);
       alert('Error deleting account. Please try again.');
       setIsDeleting(false);
     }

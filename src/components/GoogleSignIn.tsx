@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { authHelpers } from '../lib/firebase';
+import { logger } from '../lib/logger';
 
 interface GoogleSignInProps {
   onSignInSuccess: (result: any) => void;
@@ -18,7 +19,7 @@ export default function GoogleSignIn({ onSignInSuccess, onError, className = '' 
       const result = await authHelpers.signInWithGoogle();
       onSignInSuccess(result);
     } catch (error) {
-      console.error('Google sign-in error:', error);
+      logger.error('Google sign-in error:', error);
       onError(error instanceof Error ? error.message : 'Failed to sign in with Google');
     } finally {
       setLoading(false);
@@ -70,6 +71,7 @@ export default function GoogleSignIn({ onSignInSuccess, onError, className = '' 
     </button>
   );
 }
+
 
 
 

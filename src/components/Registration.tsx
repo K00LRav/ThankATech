@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { registerUser, registerTechnician, isUsernameTaken, generateUsernameSuggestions, validateUsername } from '../lib/firebase';
 import { TECHNICIAN_CATEGORIES, getSubcategoriesForCategory } from '../lib/categories';
 import GoogleSignIn from './GoogleSignIn';
+import { logger } from '../lib/logger';
 
 interface RegistrationProps {
   onRegistrationComplete: (user: any) => void;
@@ -93,7 +94,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
         setUsernameSuggestions([]);
       }
     } catch (error) {
-      console.error('Error checking username:', error);
+      logger.error('Error checking username:', error);
       setUsernameStatus('invalid');
       setUsernameError('Error checking username availability');
       setUsernameSuggestions([]);
@@ -753,6 +754,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
     </div>
   );
 }
+
 
 
 

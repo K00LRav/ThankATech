@@ -14,6 +14,7 @@ import { ProfileHeader } from '../../components/ProfileHeader';
 import UniversalHeader from '@/components/UniversalHeader';
 import { AppreciationActions } from '../../components/AppreciationActions';
 import { ContactInfo } from '../../components/ContactInfo';
+import { logger } from '../../lib/logger';
 
 interface Technician {
   id: string;
@@ -254,7 +255,7 @@ export default function TechnicianProfile() {
                       setShowTokenPurchaseModal(true);
                     }
                   } catch (error) {
-                    console.error('Error checking token balance:', error);
+                    logger.error('Error checking token balance:', error);
                     // Fallback to purchase modal on error
                     setShowTokenPurchaseModal(true);
                   }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { convertPointsToTOA, getConversionStatus } from '../lib/token-firebase';
 import { CONVERSION_SYSTEM } from '../lib/tokens';
+import { logger } from '../lib/logger';
 
 interface ConversionWidgetProps {
   userId: string;
@@ -33,7 +34,7 @@ export default function ConversionWidget({ userId }: ConversionWidgetProps) {
         ));
       }
     } catch (error) {
-      console.error('Error loading conversion status:', error);
+      logger.error('Error loading conversion status:', error);
       setMessage('❌ Failed to load conversion status');
     }
   };

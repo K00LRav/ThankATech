@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from "@vercel/analytics/next";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -62,13 +63,16 @@ export default function RootLayout({
           fontFamily: `var(--font-geist-sans), "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Emoji", sans-serif`
         }}
       >
-        {children}
-        <SpeedInsights />
-        <Analytics />
+        <ErrorBoundary>
+          {children}
+          <SpeedInsights />
+          <Analytics />
+        </ErrorBoundary>
       </body>
     </html>
   );
 }
+
 
 
 

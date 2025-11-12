@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatCurrency, validatePayoutAmount, PAYOUT_METHODS, centsToDollars } from '@/lib/stripe';
+import { logger } from '@/lib/logger';
 
 interface PayoutModalProps {
   isOpen: boolean;
@@ -109,7 +110,7 @@ export default function PayoutModal({
         setError(result.error || 'Payout failed');
       }
     } catch (error) {
-      console.error('Payout error:', error);
+      logger.error('Payout error:', error);
       setError('Failed to process payout');
     } finally {
       setIsProcessing(false);
@@ -317,3 +318,4 @@ export default function PayoutModal({
     </div>
   );
 }
+

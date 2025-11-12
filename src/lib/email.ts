@@ -3,6 +3,8 @@
  * Handles all email notifications for ThankATech
  */
 
+import { logger } from './logger';
+
 interface EmailData {
   to: string;
   subject: string;
@@ -390,9 +392,9 @@ export class EmailService {
           htmlContent: emailData.html
         };
 
-        console.log('🚀 Sending email via Brevo API');
-        console.log('📧 Full Payload:', JSON.stringify(emailPayload, null, 2));
-        console.log('🔑 Using API Key:', process.env.BREVO_API_KEY?.substring(0, 20) + '...');
+        logger.info('🚀 Sending email via Brevo API');
+        logger.info('📧 Full Payload:', JSON.stringify(emailPayload, null, 2));
+        logger.info('🔑 Using API Key:', process.env.BREVO_API_KEY?.substring(0, 20) + '...');
 
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
@@ -406,18 +408,18 @@ export class EmailService {
 
         const result = await response.json();
         
-        console.log('📊 Brevo API Response:', {
+        logger.info('📊 Brevo API Response:', {
           status: response.status,
           ok: response.ok,
           result: result
         });
         
         if (response.ok) {
-          console.log('✅ Email sent successfully via Brevo API');
-          console.log('📨 Message ID:', result.messageId);
+          logger.info('✅ Email sent successfully via Brevo API');
+          logger.info('📨 Message ID:', result.messageId);
           return true;
         } else {
-          console.error('❌ Brevo API Error:', {
+          logger.error('❌ Brevo API Error:', {
             status: response.status,
             error: result,
             apiKeyUsed: process.env.BREVO_API_KEY?.substring(0, 20) + '...'
@@ -477,12 +479,12 @@ export class EmailService {
         return response.ok;
       }
 
-      console.warn('No email service configured. Set BREVO_API_KEY, RESEND_API_KEY, or SENDGRID_API_KEY environment variable.');
+      logger.warn('No email service configured. Set BREVO_API_KEY, RESEND_API_KEY, or SENDGRID_API_KEY environment variable.');
       return false;
 
     } catch (error) {
-      console.error('❌ Failed to send email:', error);
-      console.error('🔍 Environment check:', {
+      logger.error('❌ Failed to send email:', error);
+      logger.error('🔍 Environment check:', {
         NODE_ENV: process.env.NODE_ENV,
         hasBrevoKey: !!process.env.BREVO_API_KEY,
         hasEmailFrom: !!process.env.EMAIL_FROM,

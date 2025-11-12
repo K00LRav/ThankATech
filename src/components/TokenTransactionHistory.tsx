@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, limit as firestoreLimit, getDocs } from 'firebase/firestore';
 import { db, COLLECTIONS } from '@/lib/firebase';
 import { formatTokens } from '@/lib/tokens';
+import { logger } from '@/lib/logger';
 
 interface Transaction {
   id: string;
@@ -85,7 +86,7 @@ export default function TokenTransactionHistory({
 
       setTransactions(transactionList);
     } catch (error) {
-      console.error('Error loading transaction history:', error);
+      logger.error('Error loading transaction history:', error);
     }
     setLoading(false);
   };

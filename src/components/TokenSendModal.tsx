@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { sendTokens, getUserTokenBalance } from '@/lib/token-firebase';
 import { formatTokens } from '@/lib/tokens';
+import { logger } from '@/lib/logger';
 
 interface TokenSendModalProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export default function TokenSendModal({
       const balance = await getUserTokenBalance(userId);
       setUserBalance(balance.tokens);
     } catch (error) {
-      console.error('Error loading user data:', error);
+      logger.error('Error loading user data:', error);
     }
   };
 
@@ -55,7 +56,7 @@ export default function TokenSendModal({
         alert(`Error: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error sending tokens:', error);
+      logger.error('Error sending tokens:', error);
       alert('Error sending tokens. Please try again.');
     } finally {
       setSending(false);

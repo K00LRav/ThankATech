@@ -135,7 +135,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
     
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Added ${tokensToAdd} tokens to user ${userId} and created transaction record`);
+      logger.info(`Added ${tokensToAdd} tokens to user ${userId} and created transaction record`);
     }
   } catch (error) {
     logger.error('Error adding tokens to balance:', error);
@@ -148,7 +148,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
  */
 export async function checkDailyThankYouLimit(userId: string, technicianId: string): Promise<{canSendFree: boolean, remainingFree: number}> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock limit check.');
+    logger.warn('Firebase not configured. Returning mock limit check.');
     return { canSendFree: true, remainingFree: 2 };
   }
 
@@ -168,7 +168,7 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
       if (userData.email === adminEmail) {
         // Development only logging
         if (process.env.NODE_ENV === 'development') {
-          console.log(`Admin user ${adminEmail} bypassing daily limits`);
+          logger.info(`Admin user ${adminEmail} bypassing daily limits`);
         }
         return { canSendFree: true, remainingFree: 999 }; // Unlimited for admin
       }
@@ -209,7 +209,7 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
   alreadyThankedToday: boolean
 }> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock limit check.');
+    logger.warn('Firebase not configured. Returning mock limit check.');
     return { canThank: true, alreadyThankedToday: false };
   }
 
@@ -235,7 +235,7 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
           }
           // Development only logging
           if (process.env.NODE_ENV === 'development') {
-            console.log(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+            logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
           }
           return { canThank: true, alreadyThankedToday: false };
         }
@@ -262,7 +262,7 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
           }
           // Development only logging
           if (process.env.NODE_ENV === 'development') {
-            console.log(`Admin user ${adminEmail} bypassing per-technician daily limits`);
+            logger.info(`Admin user ${adminEmail} bypassing per-technician daily limits`);
           }
           return { canThank: true, alreadyThankedToday: false };
         }
@@ -304,7 +304,7 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
       return { canThank: true, alreadyThankedToday: false };
     }
   } catch (error) {
-    console.error('Error checking daily per-technician limit:', error);
+    logger.error('Error checking daily per-technician limit:', error);
     // Default to allowing thank you on error
     return { canThank: true, alreadyThankedToday: false };
   }
@@ -315,7 +315,7 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
  */
 export async function updateDailyPerTechnicianLimit(userId: string, technicianId: string): Promise<void> {
   if (!db) {
-    console.warn('Firebase not configured. Mock limit updated.');
+    logger.warn('Firebase not configured. Mock limit updated.');
     return;
   }
 
@@ -345,7 +345,7 @@ export async function updateDailyPerTechnicianLimit(userId: string, technicianId
     
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Updated daily per-technician limit for user ${userId}`);
+      logger.info(`Updated daily per-technician limit for user ${userId}`);
     }
   } catch (error) {
     logger.error('Error updating daily per-technician limit:', error);
@@ -363,7 +363,7 @@ export async function sendFreeThankYou(
   toTechnicianId: string
 ): Promise<{success: boolean, transactionId?: string, error?: string, pointsRemaining?: number}> {
   if (!db) {
-    console.warn('Firebase not configured. Mock thank you sent.');
+    logger.warn('Firebase not configured. Mock thank you sent.');
     return { success: true, transactionId: 'mock-thank-you-' + Date.now(), pointsRemaining: 0 };
   }
 
@@ -436,7 +436,7 @@ export async function sendFreeThankYou(
       
       // Development only logging
       if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
+        logger.info(`✅ Awarded ${POINTS_LIMITS.POINTS_PER_THANK_YOU} ThankATech Point to technician ${toTechnicianId} (free thank you)`);
       }
     }
 
@@ -453,12 +453,12 @@ export async function sendFreeThankYou(
       });
     } else {
       // Customer document not found - this shouldn't happen for existing users
-      console.warn('Customer document not found for authUid:', fromUserId);
+      logger.warn('Customer document not found for authUid:', fromUserId);
     }
     
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ Free thank you sent from customer ${fromUserId} - only technician gets points, not customer`);
+      logger.info(`✅ Free thank you sent from customer ${fromUserId} - only technician gets points, not customer`);
     }
 
     // Send email notification
@@ -481,7 +481,7 @@ export async function sendFreeThankYou(
         );
       }
     } catch (emailError) {
-      console.error('❌ Failed to send notification email:', emailError);
+      logger.error('❌ Failed to send notification email:', emailError);
       // Don't fail the transaction if email fails
     }
     
@@ -494,7 +494,7 @@ export async function sendFreeThankYou(
       pointsRemaining: 0 // No longer tracking global daily points
     };
   } catch (error) {
-    console.error('Error sending free thank you:', error);
+    logger.error('Error sending free thank you:', error);
     return { success: false, error: error.message };
   }
 }
@@ -508,7 +508,7 @@ export async function sendTokens(
   tokens: number
 ): Promise<{success: boolean, transactionId?: string, error?: string}> {
   if (!db) {
-    console.warn('Firebase not configured. Mock tokens sent.');
+    logger.warn('Firebase not configured. Mock tokens sent.');
     return { success: true, transactionId: 'mock-transaction-' + Date.now() };
   }
 
@@ -653,7 +653,7 @@ export async function sendTokens(
       
       // Development only logging
       if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
+        logger.info(`✅ Awarded ${pointsAwarded} ThankATech Points to technician ${toTechnicianId} (${isFreeThankYou ? 'free thank you' : tokens + ' TOA received'})`);
       }
     }
 
@@ -683,15 +683,15 @@ export async function sendTokens(
       await updateDoc(customerRef, updateData);
     } else {
       // Create customer record if doesn't exist - this shouldn't happen for existing users
-      console.warn('Customer document not found for authUid:', fromUserId);
+      logger.warn('Customer document not found for authUid:', fromUserId);
     }
     
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
       if (!isFreeThankYou) {
-        console.log(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
+        logger.info(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
       } else {
-        console.log(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
+        logger.info(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
       }
     }
 
@@ -727,7 +727,7 @@ export async function sendTokens(
         }
       }
     } catch (emailError) {
-      console.error('❌ Failed to send notification email:', emailError);
+      logger.error('❌ Failed to send notification email:', emailError);
       // Don't fail the transaction if email fails
     }
     
@@ -849,7 +849,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
+      logger.info(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
     }
 
     return { 

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { TOKEN_PACKS, formatPrice, formatTokens } from '@/lib/tokens';
 import { getUserTokenBalance, addTokensToBalance } from '@/lib/token-firebase';
+import { logger } from '@/lib/logger';
 
 interface TokenPurchaseModalProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export default function TokenPurchaseModal({
       const balance = await getUserTokenBalance(userId);
       setCurrentBalance(balance.tokens);
     } catch (error) {
-      console.error('Error loading token balance:', error);
+      logger.error('Error loading token balance:', error);
     }
   }, [userId]);
 
@@ -68,7 +69,7 @@ export default function TokenPurchaseModal({
         throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      logger.error('Purchase error:', error);
       const message = error instanceof Error ? error.message : 'Purchase failed. Please try again.';
       alert(`Purchase failed: ${message}`);
     } finally {

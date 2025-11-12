@@ -185,3 +185,4 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     </footer>
   );
 }
+

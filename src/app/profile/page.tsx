@@ -11,6 +11,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { logger } from '@/lib/logger';
 
 interface UserProfile {
   uid: string;
@@ -64,7 +65,7 @@ const CustomerTOAHistory: React.FC<{ profile: UserProfile }> = ({ profile }) => 
         const transactions = await getClientTransactions(profile.uid, profile.email);
         setTransactions(transactions);
       } catch (err) {
-        console.error('Error loading customer transactions:', err);
+        logger.error('Error loading customer transactions:', err);
         setError('Failed to load TOA history');
       } finally {
         setLoading(false);
@@ -294,7 +295,7 @@ export default function ProfilePage() {
 Please complete your profile information below and click "Save Changes" to create your profile.`);
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        logger.error('Error loading profile:', error);
         setFormError('Failed to load profile data: ' + (error instanceof Error ? error.message : 'Unknown error'));
       } finally {
         setIsLoading(false);
@@ -357,7 +358,7 @@ Please complete your profile information below and click "Save Changes" to creat
         setSaveMessage(null);
       }, 5000);
     } catch (error) {
-      console.error('Error saving profile:', error);
+      logger.error('Error saving profile:', error);
       setFormError('Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
@@ -384,7 +385,7 @@ Please complete your profile information below and click "Save Changes" to creat
       window.location.href = '/';
       
     } catch (error) {
-      console.error('Error deleting profile:', error);
+      logger.error('Error deleting profile:', error);
       setFormError('Failed to delete profile. Please try again.');
     } finally {
       setIsDeleting(false);
@@ -1265,3 +1266,4 @@ Please complete your profile information below and click "Save Changes" to creat
     </div>
   );
 }
+

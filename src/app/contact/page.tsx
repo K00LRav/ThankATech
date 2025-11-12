@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import UniversalHeader from '@/components/UniversalHeader';
+import { logger } from '@/lib/logger';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -46,7 +47,7 @@ export default function Contact() {
         setSubmitMessage(result.error || 'Failed to send message. Please try again.');
       }
     } catch (error) {
-      console.error('Error submitting contact form:', error);
+      logger.error('Error submitting contact form:', error);
       setSubmitMessage('Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -283,6 +284,7 @@ export default function Contact() {
     </div>
   );
 }
+
 
 
 

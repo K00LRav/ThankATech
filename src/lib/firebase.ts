@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Firebase configuration and services for ThankATech
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -6,11 +5,11 @@ import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateD
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, Auth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from 'firebase/storage';
 import EmailService from './email';
+import { logger } from './logger';
 import { 
   UserTokenBalance, 
   TokenTransaction, 
   DailyThankYouLimit, 
-  getRandomThankYouMessage,
   TOKEN_LIMITS 
 } from './tokens';
 
@@ -48,7 +47,7 @@ if (isFirebaseConfigured) {
   googleProvider.addScope('email');
   googleProvider.addScope('profile');
 } else {
-  console.warn('Firebase not configured. Using mock data mode.');
+  logger.warn('Firebase not configured. Using mock data mode.');
   // Create mock objects that won't throw errors
   app = null;
   db = null;
@@ -100,7 +99,7 @@ function createUniqueIdFromEmail(email) {
  */
 export async function registerTechnician(technicianData) {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock data.');
+    logger.warn('Firebase not configured. Returning mock data.');
     return { id: 'mock-tech-' + Date.now(), ...technicianData, points: 0 };
   }
 
@@ -155,7 +154,7 @@ export async function registerTechnician(technicianData) {
         const userCredential = await createUserWithEmailAndPassword(auth, technicianData.email, technicianData.password);
         authUser = userCredential.user;
       } catch (authError) {
-        console.error('Error creating Firebase Auth account:', authError);
+        logger.error('Error creating Firebase Auth account:', authError);
         throw new Error(`Failed to create login account: ${authError.message}`);
       }
     }
@@ -168,12 +167,12 @@ export async function registerTechnician(technicianData) {
         const geocodeResult = await geocodeAddress(technicianData.businessAddress);
         if (geocodeResult && geocodeResult.coordinates) {
           coordinates = geocodeResult.coordinates;
-          console.log(`✅ Geocoded address for ${technicianData.businessName}: ${coordinates.lat}, ${coordinates.lng}`);
+          logger.info(`✅ Geocoded address for ${technicianData.businessName}: ${coordinates.lat}, ${coordinates.lng}`);
         } else {
-          console.warn(`⚠️ Could not geocode address: ${technicianData.businessAddress}`);
+          logger.warn(`⚠️ Could not geocode address: ${technicianData.businessAddress}`);
         }
       } catch (geocodeError) {
-        console.error('Error geocoding address during registration:', geocodeError);
+        logger.error('Error geocoding address during registration:', geocodeError);
         // Continue with registration even if geocoding fails
       }
     }
@@ -234,13 +233,13 @@ export async function registerTechnician(technicianData) {
       await EmailService.sendWelcomeEmail(technicianData.email, technicianName, 'technician');
       // Welcome email sent to technician
     } catch (emailError) {
-      console.error('❌ Failed to send technician welcome email:', emailError);
+      logger.error('❌ Failed to send technician welcome email:', emailError);
       // Don't fail registration if email fails
     }
     
     return { id: docRef.id, ...technicianProfile };
   } catch (error) {
-    console.error('Error registering technician:', error);
+    logger.error('Error registering technician:', error);
     throw error;
   }
 }
@@ -250,7 +249,7 @@ export async function registerTechnician(technicianData) {
  */
 export async function registerClient(userData) {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock user data.');
+    logger.warn('Firebase not configured. Returning mock user data.');
     return { id: 'mock-user-' + Date.now(), ...userData };
   }
 
@@ -274,7 +273,7 @@ export async function registerClient(userData) {
         const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
         authUser = userCredential.user;
       } catch (authError) {
-        console.error('Error creating Firebase Auth account:', authError);
+        logger.error('Error creating Firebase Auth account:', authError);
         throw new Error(`Failed to create login account: ${authError.message}`);
       }
     }
@@ -298,13 +297,13 @@ export async function registerClient(userData) {
       await EmailService.sendWelcomeEmail(userData.email, userName, userType);
       // Welcome email sent to user
     } catch (emailError) {
-      console.error('❌ Failed to send welcome email:', emailError);
+      logger.error('❌ Failed to send welcome email:', emailError);
       // Don't fail registration if email fails
     }
     
     return { id: docRef.id, uniqueId, ...userData };
   } catch (error) {
-    console.error('Error registering user:', error);
+    logger.error('Error registering user:', error);
     throw error;
   }
 }
@@ -314,7 +313,7 @@ export async function registerClient(userData) {
  */
 export async function getRegisteredTechnicians() {
   if (!db) {
-    console.warn('Firebase not configured. Returning empty array.');
+    logger.warn('Firebase not configured. Returning empty array.');
     return [];
   }
 
@@ -339,7 +338,7 @@ export async function getRegisteredTechnicians() {
     try {
       tipsSnapshot = await getDocs(collection(db, 'tips'));
     } catch (tipError) {
-      console.error('❌ Error fetching tips collection:', tipError);
+      logger.error('❌ Error fetching tips collection:', tipError);
       // Continue without tip data if tips collection fails
       tipsSnapshot = { size: 0, forEach: () => {} };
     }
@@ -381,7 +380,7 @@ export async function getRegisteredTechnicians() {
     // Debug: Log tip collection summary
     
     if (tipsSnapshot.size === 0) {
-      console.warn('⚠️ No tips found in database - this might be the issue!');
+      logger.warn('⚠️ No tips found in database - this might be the issue!');
     }
 
     // Enhance technicians with calculated tip data using multiple matching strategies
@@ -408,7 +407,7 @@ export async function getRegisteredTechnicians() {
       let totalAmount = 0;
       
       allTips.forEach(tipStr => {
-        const tip = JSON.parse(tipStr);
+        const tip = JSON.parse(tipStr as string) as any;
         totalCount += 1;
         // Use technician payout (net amount after fees) instead of gross amount
         totalAmount += tip.technicianPayout || tip.amount || 0;
@@ -429,7 +428,7 @@ export async function getRegisteredTechnicians() {
     
     return technicians;
   } catch (error) {
-    console.error('Error fetching technicians:', error);
+    logger.error('Error fetching technicians:', error);
     return [];
   }
 }
@@ -439,7 +438,7 @@ export async function getRegisteredTechnicians() {
  */
 export async function sendThankYou(technicianId, userId, message = '') {
   if (!db) {
-    console.warn('Firebase not configured. Mock thank you sent.');
+    logger.warn('Firebase not configured. Mock thank you sent.');
     return { success: true, pointsAwarded: 1 };
   }
 
@@ -472,10 +471,10 @@ export async function sendThankYou(technicianId, userId, message = '') {
           totalThankYous: increment(1)
         });
       } else {
-        console.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
+        logger.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
       }
     } catch (error) {
-      console.warn(`Unable to update technician document ${technicianId}:`, error.message);
+      logger.warn(`Unable to update technician document ${technicianId}:`, error.message);
       // Continue execution - this is OK for mock data
     }
 
@@ -487,7 +486,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
           totalThankYousSent: increment(1)
         });
       } catch (error) {
-        console.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
+        logger.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
       }
     }
@@ -508,7 +507,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
             customerName = userData.displayName || userData.name || 'A customer';
           }
         } catch (error) {
-          console.warn('Could not fetch customer name:', error.message);
+          logger.warn('Could not fetch customer name:', error.message);
         }
       }
       
@@ -528,13 +527,13 @@ export async function sendThankYou(technicianId, userId, message = '') {
         }
       }
     } catch (emailError) {
-      console.error('❌ Failed to send thank you notification email:', emailError);
+      logger.error('❌ Failed to send thank you notification email:', emailError);
       // Don't fail the thank you if email fails
     }
 
     return { success: true, pointsAwarded: 10 };
   } catch (error) {
-    console.error('Error sending thank you:', error);
+    logger.error('Error sending thank you:', error);
     throw error;
   }
 }
@@ -544,7 +543,7 @@ export async function sendThankYou(technicianId, userId, message = '') {
  */
 export async function sendTip(technicianId, userId, amount, message = '') {
   if (!db) {
-    console.warn('Firebase not configured. Mock tip sent.');
+    logger.warn('Firebase not configured. Mock tip sent.');
     return { success: true, pointsAwarded: amount };
   }
 
@@ -580,10 +579,10 @@ export async function sendTip(technicianId, userId, amount, message = '') {
           totalTips: increment(amount)
         });
       } else {
-        console.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
+        logger.warn(`Technician document ${technicianId} not found in Firestore. This is normal for mock data.`);
       }
     } catch (error) {
-      console.warn(`Unable to update technician document ${technicianId}:`, error.message);
+      logger.warn(`Unable to update technician document ${technicianId}:`, error.message);
       // Continue execution - this is OK for mock data
     }
 
@@ -595,7 +594,7 @@ export async function sendTip(technicianId, userId, amount, message = '') {
           totalTipsSent: increment(amount)
         });
       } catch (error) {
-        console.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
+        logger.warn(`User document ${userId} not found in clients collection, skipping user stats update:`, error.message);
         // This is OK - user might be a technician or the document might not exist
       }
     }
@@ -616,7 +615,7 @@ export async function sendTip(technicianId, userId, amount, message = '') {
             customerName = userData.displayName || userData.name || 'A customer';
           }
         } catch (error) {
-          console.warn('Could not fetch customer name:', error.message);
+          logger.warn('Could not fetch customer name:', error.message);
         }
       }
       
@@ -626,24 +625,24 @@ export async function sendTip(technicianId, userId, amount, message = '') {
         const technicianEmail = techData.email;
         
         if (technicianEmail) {
-          await EmailService.sendTipNotification(
+          await EmailService.sendToaReceivedNotification(
             technicianEmail,
             technicianName,
             customerName,
-            amount,
+            amount / 100, // Convert cents to dollars
             message
           );
           // Tip notification sent to technician
         }
       }
     } catch (emailError) {
-      console.error('❌ Failed to send tip notification email:', emailError);
+      logger.error('❌ Failed to send tip notification email:', emailError);
       // Don't fail the tip if email fails
     }
 
     return { success: true, pointsAwarded: points };
   } catch (error) {
-    console.error('Error sending tip:', error);
+    logger.error('Error sending tip:', error);
     throw error;
   }
 }
@@ -670,15 +669,15 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
           photoUpdatedAt: new Date() // Track when photo was last updated
         });
       } else {
-        console.warn(`Technician document ${technicianId} not found for photo update. This is normal for mock data.`);
+        logger.warn(`Technician document ${technicianId} not found for photo update. This is normal for mock data.`);
       }
     } catch (error) {
-      console.warn(`Unable to update technician photo for ${technicianId}:`, error.message);
+      logger.warn(`Unable to update technician photo for ${technicianId}:`, error.message);
     }
 
     return downloadURL;
   } catch (error) {
-    console.error('Error uploading photo:', error);
+    logger.error('Error uploading photo:', error);
     throw error;
   }
 }
@@ -704,15 +703,15 @@ export async function uploadClientPhoto(clientId, photoFile) {
           photoUpdatedAt: new Date() // Track when photo was last updated
         });
       } else {
-        console.warn(`Client document ${clientId} not found for photo update.`);
+        logger.warn(`Client document ${clientId} not found for photo update.`);
       }
     } catch (error) {
-      console.warn(`Unable to update client photo for ${clientId}:`, error.message);
+      logger.warn(`Unable to update client photo for ${clientId}:`, error.message);
     }
 
     return downloadURL;
   } catch (error) {
-    console.error('Error uploading photo:', error);
+    logger.error('Error uploading photo:', error);
     throw error;
   }
 }
@@ -741,7 +740,7 @@ export async function getTopTechnicians(limitCount = 10) {
     
     return technicians;
   } catch (error) {
-    console.error('Error fetching top technicians:', error);
+    logger.error('Error fetching top technicians:', error);
     return [];
   }
 }
@@ -751,7 +750,7 @@ export async function getTopTechnicians(limitCount = 10) {
  */
 export async function claimBusiness(technicianId, claimData) {
   if (!db) {
-    console.warn('Firebase not configured. Mock business claimed.');
+    logger.warn('Firebase not configured. Mock business claimed.');
     return { success: true, id: 'mock-claim-' + Date.now() };
   }
 
@@ -775,15 +774,15 @@ export async function claimBusiness(technicianId, claimData) {
           claimId: docRef.id
         });
       } else {
-        console.warn(`Technician document ${technicianId} not found for business claim. This is normal for mock data.`);
+        logger.warn(`Technician document ${technicianId} not found for business claim. This is normal for mock data.`);
       }
     } catch (error) {
-      console.warn(`Unable to update technician claim status for ${technicianId}:`, error.message);
+      logger.warn(`Unable to update technician claim status for ${technicianId}:`, error.message);
     }
 
     return { success: true, claimId: docRef.id };
   } catch (error) {
-    console.error('Error claiming business:', error);
+    logger.error('Error claiming business:', error);
     throw error;
   }
 }
@@ -793,7 +792,7 @@ export async function claimBusiness(technicianId, claimData) {
  */
 export async function getClientById(userId) {
   if (!db) {
-    console.warn('Firebase not configured.');
+    logger.warn('Firebase not configured.');
     return null;
   }
 
@@ -816,7 +815,7 @@ export async function getClientById(userId) {
 
     return null;
   } catch (error) {
-    console.error('Error getting user by ID:', error);
+    logger.error('Error getting user by ID:', error);
     return null;
   }
 }
@@ -834,7 +833,7 @@ export async function getClientByEmail(email) {
     
     if (!usersSnapshot.empty) {
       const doc = usersSnapshot.docs[0];
-      return { id: doc.id, ...doc.data(), userType: 'customer' };
+      return { id: doc.id, ...doc.data(), userType: 'customer' } as any;
     }
     
     // Check in technicians collection
@@ -843,12 +842,12 @@ export async function getClientByEmail(email) {
     
     if (!techSnapshot.empty) {
       const doc = techSnapshot.docs[0];
-      return { id: doc.id, ...doc.data(), userType: 'technician' };
+      return { id: doc.id, ...doc.data(), userType: 'technician' } as any;
     }
     
     return null;
   } catch (error) {
-    console.error('Error checking user:', error);
+    logger.error('Error checking user:', error);
     return null;
   }
 }
@@ -860,7 +859,7 @@ export const authHelpers = {
   // Sign in with Google with unified technician handling
   signInWithGoogle: async () => {
     if (!auth || !googleProvider) {
-      console.warn('Firebase not configured. Using mock Google sign-in.');
+      logger.warn('Firebase not configured. Using mock Google sign-in.');
       return {
         user: {
           uid: 'mock-google-' + Date.now(),
@@ -950,7 +949,7 @@ export const authHelpers = {
         };
       }
     } catch (error) {
-      console.error('Error signing in with Google:', error);
+      logger.error('Error signing in with Google:', error);
       throw error;
     }
   },
@@ -969,7 +968,7 @@ export const authHelpers = {
       
       return userCredential.user;
     } catch (error) {
-      console.error('Error signing up:', error);
+      logger.error('Error signing up:', error);
       throw error;
     }
   },
@@ -992,7 +991,7 @@ export const authHelpers = {
         };
       }
     } catch (error) {
-      console.error('Error signing in:', error);
+      logger.error('Error signing in:', error);
       throw error;
     }
   },
@@ -1020,11 +1019,11 @@ export const authHelpers = {
             });
           }
         } catch (dbError) {
-          console.warn('Could not clear IndexedDB:', dbError);
+          logger.warn('Could not clear IndexedDB:', dbError);
         }
       }
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
       // Even if Firebase signOut fails, clear local storage
       if (typeof window !== 'undefined') {
         localStorage.clear();
@@ -1078,7 +1077,7 @@ export async function deleteUserProfile(userId, userType = 'customer') {
     
     
   } catch (error) {
-    console.error('Error deleting user profile:', error);
+    logger.error('Error deleting user profile:', error);
     throw error;
   }
 }
@@ -1091,7 +1090,7 @@ export async function deleteUserProfile(userId, userType = 'customer') {
 export async function recordTransaction(transactionData) {
   
   if (!db) {
-    console.warn('❌ Firebase not configured - transaction not recorded');
+    logger.warn('❌ Firebase not configured - transaction not recorded');
     return null;
   }
   
@@ -1102,7 +1101,7 @@ export async function recordTransaction(transactionData) {
       await findTechnicianByEmail(transactionData.technicianEmail);
       
     if (!technician) {
-      console.error('❌ Technician not found for transaction');
+      logger.error('❌ Technician not found for transaction');
       throw new Error('Technician not found');
     }
     
@@ -1140,14 +1139,14 @@ export async function recordTransaction(transactionData) {
           lastTipDate: new Date().toISOString()
         });
       } catch (updateError) {
-        console.warn('⚠️ Could not update technician document earnings:', updateError);
+        logger.warn('⚠️ Could not update technician document earnings:', updateError);
         // Continue execution - the transaction is still recorded in tips collection
       }
     }
     
     return docRef.id;
   } catch (error) {
-    console.error('❌ Error recording transaction:', error);
+    logger.error('❌ Error recording transaction:', error);
     throw error;
   }
 }
@@ -1164,7 +1163,7 @@ export async function getTechnician(technicianId) {
     // Check technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
     if (techDoc.exists()) {
-      return { id: techDoc.id, ...techDoc.data() };
+      return { id: techDoc.id, ...techDoc.data() } as any;
     }
     
     // Search technicians collection by authUid if not found by ID
@@ -1177,12 +1176,12 @@ export async function getTechnician(technicianId) {
     
     if (!techSnapshot.empty) {
       const doc = techSnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+      return { id: doc.id, ...doc.data() } as any;
     }
     
     return null;
   } catch (error) {
-    console.error('❌ Error getting technician:', error);
+    logger.error('❌ Error getting technician:', error);
     return null;
   }
 }
@@ -1199,7 +1198,7 @@ export async function getClient(userId) {
     // Check clients collection by document ID
     const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (clientDoc.exists()) {
-      const userData = { id: clientDoc.id, ...clientDoc.data() };
+      const userData = { id: clientDoc.id, ...clientDoc.data() } as any;
       return userData;
     }
     
@@ -1215,12 +1214,12 @@ export async function getClient(userId) {
     
     if (!clientSnapshot.empty) {
       const doc = clientSnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+      return { id: doc.id, ...doc.data() } as any;
     }
     
     return null;
   } catch (error) {
-    console.error('❌ Error getting user:', error);
+    logger.error('❌ Error getting user:', error);
     return null;
   }
 }
@@ -1250,7 +1249,7 @@ export async function findUserByUniqueId(uniqueId) {
     
     if (!techSnapshot.empty) {
       const techDoc = techSnapshot.docs[0];
-      const techData = { id: techDoc.id, ...techDoc.data() };
+      const techData = { id: techDoc.id, ...techDoc.data() } as any;
       return techData;
     }
     
@@ -1264,13 +1263,13 @@ export async function findUserByUniqueId(uniqueId) {
     
     if (!userSnapshot.empty) {
       const userDoc = userSnapshot.docs[0];
-      const userData = { id: userDoc.id, ...userDoc.data() };
+      const userData = { id: userDoc.id, ...userDoc.data() } as any;
       return userData;
     }
     
     return null;
   } catch (error) {
-    console.error('❌ Error finding user by unique ID:', error);
+    logger.error('❌ Error finding user by unique ID:', error);
     return null;
   }
 }
@@ -1305,7 +1304,7 @@ export async function findTechnicianByEmail(email) {
     
     if (!techSnapshot.empty) {
       const techDoc = techSnapshot.docs[0];
-      const techData = { id: techDoc.id, ...techDoc.data() };
+      const techData = { id: techDoc.id, ...techDoc.data() } as any;
       return techData;
     }
     
@@ -1320,13 +1319,13 @@ export async function findTechnicianByEmail(email) {
     
     if (!userSnapshot.empty) {
       const userDoc = userSnapshot.docs[0];
-      const userData = { id: userDoc.id, ...userDoc.data() };
+      const userData = { id: userDoc.id, ...userDoc.data() } as any;
       return userData;
     }
     
     return null;
   } catch (error) {
-    console.error('Error finding technician by email:', error);
+    logger.error('Error finding technician by email:', error);
     return null;
   }
 }
@@ -1352,7 +1351,7 @@ export async function linkGoogleAccountToTechnician(technicianId, googleUser) {
     });
     
   } catch (error) {
-    console.error('Error linking Google account:', error);
+    logger.error('Error linking Google account:', error);
   }
 }
 
@@ -1458,7 +1457,7 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
     
     return uniqueTips;
   } catch (error) {
-    console.error('Error getting tips for technician:', error);
+    logger.error('Error getting tips for technician:', error);
     return [];
   }
 }
@@ -1466,7 +1465,7 @@ export async function getTipsForTechnician(technicianId, technicianEmail, techni
 export async function getTechnicianEarnings(technicianId) {
   
   if (!db) {
-    console.warn('❌ Firebase not configured - using mock earnings');
+    logger.warn('❌ Firebase not configured - using mock earnings');
     return {
       totalEarnings: 0,
       availableBalance: 0,
@@ -1560,7 +1559,7 @@ export async function getTechnicianEarnings(technicianId) {
                 }
               }
             } catch (emailError) {
-              console.warn('💰 Email-based lookup failed:', emailError);
+              logger.warn('💰 Email-based lookup failed:', emailError);
             }
           }
         }
@@ -1569,7 +1568,7 @@ export async function getTechnicianEarnings(technicianId) {
     
     
     if (!technicianData?.email) {
-      console.warn('💰 No email found for technician:', technicianId);
+      logger.warn('💰 No email found for technician:', technicianId);
       return { totalEarnings: 0, availableBalance: 0, pendingBalance: 0, tipCount: 0 };
     }
     
@@ -1598,9 +1597,6 @@ export async function getTechnicianEarnings(technicianId) {
     let tokenTransactionCount = 0;
     
     try {
-      console.log('💰 Checking token-based earnings for technician:', actualTechnicianId);
-      console.log('💰 This is the ID we are querying for in tokenTransactions');
-      
       // Query tokenTransactions where this technician is the recipient
       const tokenTransactionsQuery = query(
         collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
@@ -1608,11 +1604,9 @@ export async function getTechnicianEarnings(technicianId) {
       );
       
       const tokenSnapshot = await getDocs(tokenTransactionsQuery);
-      console.log(`💰 Found ${tokenSnapshot.size} token transactions received for ${actualTechnicianId}`);
       
       tokenSnapshot.docs.forEach(tokenDoc => {
         const tokenData = tokenDoc.data();
-        console.log(`🔍 Token transaction: type=${tokenData.type}, tokens=${tokenData.tokens}, dollarValue=${tokenData.dollarValue}, technicianPayout=${tokenData.technicianPayout}`);
         
         // Only count actual token earnings (toa_token and toa types)
         if (tokenData.type === 'toa_token' || tokenData.type === 'toa') {
@@ -1620,39 +1614,24 @@ export async function getTechnicianEarnings(technicianId) {
           let earning = 0;
           if (tokenData.technicianPayout) {
             earning = tokenData.technicianPayout * 100; // Convert to cents
-            console.log(`💰 Using technicianPayout: $${tokenData.technicianPayout} -> ${earning} cents`);
           } else if (tokenData.tokens) {
             // Fallback: calculate earnings from tokens
             earning = tokenData.tokens * 0.85; // 85 cents per 100 tokens = 0.85 cents per token
-            console.log(`💰 Calculating from tokens: ${tokenData.tokens} * 0.85 = ${earning} cents`);
           }
           
           if (earning > 0) {
             tokenEarnings += earning;
             tokenTransactionCount++;
-            console.log(`💰 Added token earning: $${earning / 100} (${tokenData.tokens} tokens) from ${tokenData.fromName || 'Client'}`);
-            console.log(`💰 Running total: $${tokenEarnings / 100}`);
-          } else {
-            console.log(`⚠️ Skipping transaction - no earning calculated`);
           }
-        } else {
-          console.log(`⚠️ Skipping transaction - type ${tokenData.type} not counted for earnings`);
         }
       });
       
-      console.log(`💰 Total token earnings: $${tokenEarnings / 100} from ${tokenTransactionCount} transactions`);
-      
     } catch (tokenError) {
-      console.warn('💰 Error fetching token earnings:', tokenError);
+      logger.error('Error fetching token earnings:', tokenError);
     }
     
     // Combine legacy tips and token earnings
     const combinedEarnings = totalNetAmount + tokenEarnings;
-    
-    console.log(`💰 FINAL CALCULATION:`);
-    console.log(`💰 Legacy tips earnings: $${totalNetAmount / 100}`);
-    console.log(`💰 Token earnings: $${tokenEarnings / 100}`);
-    console.log(`💰 Combined total earnings: $${combinedEarnings / 100}`);
     
     const result = {
       totalEarnings: combinedEarnings / 100, // Convert to dollars - what technician actually earned
@@ -1661,10 +1640,9 @@ export async function getTechnicianEarnings(technicianId) {
       tipCount: allTips.length + tokenTransactionCount // Include both legacy tips and token transactions
     };
     
-    console.log(`💰 Returning result:`, result);
     return result;
   } catch (error) {
-    console.error('❌ Error fetching technician earnings:', error);
+    logger.error('Error fetching technician earnings:', error);
     return {
       totalEarnings: 0,
       availableBalance: 0,
@@ -1718,7 +1696,7 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
           clientName = clientDoc.data().name || clientDoc.data().displayName || 'Customer';
         }
       } catch (error) {
-        console.warn('Could not fetch client name:', error);
+        logger.warn('Could not fetch client name:', error);
       }
       
       transactions.push({
@@ -1774,7 +1752,7 @@ export async function getTechnicianTransactions(technicianId, technicianEmail, t
     
     return transactions;
   } catch (error) {
-    console.error('❌ Error loading technician transactions:', error);
+    logger.error('❌ Error loading technician transactions:', error);
     return [];
   }
 }
@@ -1814,7 +1792,7 @@ export async function getClientTransactions(clientId, clientEmail) {
           technicianName = techDoc.data().name || techDoc.data().businessName || 'Technician';
         }
       } catch (error) {
-        console.warn('Could not fetch technician name:', error);
+        logger.warn('Could not fetch technician name:', error);
       }
       
       transactions.push({
@@ -1853,7 +1831,7 @@ export async function getClientTransactions(clientId, clientEmail) {
     if (tipsQuery) {
       const tipsSnapshot = await getDocs(tipsQuery);
       tipsSnapshot.forEach((doc) => {
-        const tip = doc.data();
+        const tip = doc.data() as any;
         transactions.push({
           id: doc.id,
           type: 'toa',
@@ -1878,7 +1856,7 @@ export async function getClientTransactions(clientId, clientEmail) {
     
     return transactions;
   } catch (error) {
-    console.error('❌ Error loading client transactions:', error);
+    logger.error('❌ Error loading client transactions:', error);
     return [];
   }
 }
@@ -1912,7 +1890,7 @@ export async function getCustomerTransactions(customerId, customerEmail) {
         orderBy('createdAt', 'desc')
       );
     } else {
-      console.warn('No customer ID or email provided');
+      logger.warn('No customer ID or email provided');
       return [];
     }
     
@@ -1920,7 +1898,7 @@ export async function getCustomerTransactions(customerId, customerEmail) {
     const tips = [];
     
     querySnapshot.forEach((doc) => {
-      const data = doc.data();
+      const data = doc.data() as any;
       tips.push({
         id: doc.id,
         ...data
@@ -1945,7 +1923,7 @@ export async function getCustomerTransactions(customerId, customerEmail) {
     
     return transactions;
   } catch (error) {
-    console.error('❌ Error loading customer transactions:', error);
+    logger.error('❌ Error loading customer transactions:', error);
     return [];
   }
 }
@@ -1955,7 +1933,7 @@ export async function getCustomerTransactions(customerId, customerEmail) {
  */
 export async function isUsernameTaken(username: string): Promise<boolean> {
   if (!db) {
-    console.warn('Firebase not configured');
+    logger.warn('Firebase not configured');
     return false;
   }
 
@@ -1976,7 +1954,7 @@ export async function isUsernameTaken(username: string): Promise<boolean> {
     
     return techSnapshot.size > 0 || userSnapshot.size > 0;
   } catch (error) {
-    console.error('Error checking username availability:', error);
+    logger.error('Error checking username availability:', error);
     return true;
   }
 }
@@ -2018,7 +1996,7 @@ export async function generateUsernameSuggestions(baseUsername: string): Promise
  */
 export async function findTechnicianByUsername(username: string): Promise<any> {
   if (!db) {
-    console.warn('Firebase not configured');
+    logger.warn('Firebase not configured');
     return null;
   }
 
@@ -2051,7 +2029,7 @@ export async function findTechnicianByUsername(username: string): Promise<any> {
     
     return null;
   } catch (error) {
-    console.error('Error finding technician by username:', error);
+    logger.error('Error finding technician by username:', error);
     return null;
   }
 }
@@ -2098,7 +2076,7 @@ export function validateUsername(username: string): { isValid: boolean; error: s
 // Get user's token balance
 export async function getUserTokenBalance(userId: string): Promise<UserTokenBalance> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock token balance.');
+    logger.warn('Firebase not configured. Returning mock token balance.');
     return {
       userId,
       tokens: 100,
@@ -2113,7 +2091,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
     const balanceDoc = await getDoc(balanceRef);
     
     if (balanceDoc.exists()) {
-      return { id: balanceDoc.id, ...balanceDoc.data() } as UserTokenBalance;
+      return { id: balanceDoc.id, ...balanceDoc.data() } as any as UserTokenBalance;
     } else {
       // Create initial balance record
       const initialBalance: UserTokenBalance = {
@@ -2128,7 +2106,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
       return initialBalance;
     }
   } catch (error) {
-    console.error('Error getting token balance:', error);
+    logger.error('Error getting token balance:', error);
     throw error;
   }
 }
@@ -2136,7 +2114,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
 // Add tokens to user's balance (after purchase)
 export async function addTokensToBalance(userId: string, tokensToAdd: number, purchaseAmount: number): Promise<void> {
   if (!db) {
-    console.warn('Firebase not configured. Mock tokens added.');
+    logger.warn('Firebase not configured. Mock tokens added.');
     return;
   }
 
@@ -2161,7 +2139,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
       });
     }
   } catch (error) {
-    console.error('Error adding tokens to balance:', error);
+    logger.error('Error adding tokens to balance:', error);
     throw error;
   }
 }
@@ -2169,7 +2147,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
 // Check daily thank you limit
 export async function checkDailyThankYouLimit(userId: string, technicianId: string): Promise<{canSendFree: boolean, remainingFree: number}> {
   if (!db) {
-    console.warn('Firebase not configured. Returning mock limit check.');
+    logger.warn('Firebase not configured. Returning mock limit check.');
     return { canSendFree: true, remainingFree: 2 };
   }
 
@@ -2194,7 +2172,7 @@ export async function checkDailyThankYouLimit(userId: string, technicianId: stri
       };
     }
   } catch (error) {
-    console.error('Error checking daily limit:', error);
+    logger.error('Error checking daily limit:', error);
     // Default to allowing free thank you on error
     return { canSendFree: true, remainingFree: 2 };
   }
@@ -2208,7 +2186,7 @@ export async function sendTokens(
   customMessage?: string
 ): Promise<{success: boolean, transactionId?: string, error?: string}> {
   if (!db) {
-    console.warn('Firebase not configured. Mock tokens sent.');
+    logger.warn('Firebase not configured. Mock tokens sent.');
     return { success: true, transactionId: 'mock-transaction-' + Date.now() };
   }
 
@@ -2236,8 +2214,8 @@ export async function sendTokens(
       }
     }
 
-    // Get random message if no custom message provided
-    const message = customMessage || getRandomThankYouMessage();
+    // Use custom message or default
+    const message = customMessage || 'Thank you for your great work!';
     
     // Create transaction record
     const transaction: Omit<TokenTransaction, 'id'> = {
@@ -2314,23 +2292,23 @@ export async function sendTokens(
           );
         } else {
           // Send token notification (we'll update this template next)
-          await EmailService.sendTipNotification(
+          await EmailService.sendToaReceivedNotification(
             techData.email,
             technicianName,
             customerName,
-            Math.round(tokens * 0.1), // Convert tokens to dollar equivalent for now
+            Math.round(tokens * 0.01), // Convert tokens to dollar equivalent
             message
           );
         }
       }
     } catch (emailError) {
-      console.error('❌ Failed to send notification email:', emailError);
+      logger.error('❌ Failed to send notification email:', emailError);
       // Don't fail the transaction if email fails
     }
     
     return { success: true, transactionId: transactionRef.id };
   } catch (error) {
-    console.error('Error sending tokens:', error);
+    logger.error('Error sending tokens:', error);
     return { success: false, error: error.message };
   }
 }
@@ -2340,115 +2318,9 @@ export async function sendTokens(
  * This should be run once during the transition period
  */
 export async function migrateUsersToClients() {
-  if (!db) {
-    console.warn('Firebase not configured. Cannot perform migration.');
-    return { success: false, error: 'Firebase not configured' };
-  }
-
-  try {
-    console.log('🔄 Starting migration from "users" → "clients" collection...');
-    
-    // This migration function is obsolete - users collection has been removed
-    console.warn('Migration function is obsolete - users collection no longer exists');
-    return { success: true, migratedCount: 0, message: 'Migration not needed - new architecture in place' };
-    
-    if (usersSnapshot.empty) {
-      console.log('✅ No documents found in "users" collection. Migration not needed.');
-      return { success: true, migratedCount: 0, message: 'No data to migrate' };
-    }
-    
-    console.log(`📊 Found ${usersSnapshot.size} documents to migrate`);
-    
-    const migrationPromises = [];
-    const migrationResults = [];
-    
-    usersSnapshot.forEach((userDoc) => {
-      const userData = userDoc.data();
-      const documentId = userDoc.id;
-      
-      console.log(`📝 Preparing to migrate document: ${documentId}`);
-      
-      // Add userType if missing (default to client)
-      if (!userData.userType) {
-        userData.userType = 'client';
-      }
-      
-      // Only migrate actual clients (not technicians that might be in users collection)
-      if (userData.userType === 'client' || userData.userType === 'customer') {
-        // Copy to clients collection with same document ID
-        const clientRef = doc(db, COLLECTIONS.CLIENTS, documentId);
-        const migrationPromise = setDoc(clientRef, {
-          ...userData,
-          userType: 'client', // Normalize to 'client'
-          migratedAt: new Date(),
-          migratedFrom: 'users'
-        }).then(() => {
-          migrationResults.push({
-            id: documentId,
-            email: userData.email,
-            name: userData.name || userData.displayName,
-            success: true
-          });
-          console.log(`✅ Migrated client: ${userData.email || documentId}`);
-        }).catch((error) => {
-          migrationResults.push({
-            id: documentId,
-            email: userData.email,
-            error: error.message,
-            success: false
-          });
-          console.error(`❌ Failed to migrate ${documentId}:`, error);
-        });
-        
-        migrationPromises.push(migrationPromise);
-      } else {
-        console.log(`⏭️ Skipping technician document: ${documentId} (should be in technicians collection)`);
-      }
-    });
-    
-    // Execute all migrations
-    await Promise.all(migrationPromises);
-    
-    const successCount = migrationResults.filter(r => r.success).length;
-    const failureCount = migrationResults.filter(r => !r.success).length;
-    
-    console.log(`✅ Migration completed! Migrated ${successCount} documents to "clients" collection`);
-    
-    if (failureCount > 0) {
-      console.warn(`⚠️ ${failureCount} documents failed to migrate`);
-    }
-    
-    // Log summary
-    console.log('📋 Migration Summary:');
-    migrationResults.forEach(result => {
-      if (result.success) {
-        console.log(`  ✓ ${result.email || result.id}`);
-      } else {
-        console.log(`  ✗ ${result.email || result.id}: ${result.error}`);
-      }
-    });
-    
-    console.log('');
-    console.log('🚨 IMPORTANT: After verifying the migration worked correctly,');
-    console.log('   you should manually delete the old "users" collection from Firebase Console');
-    console.log('   Go to: Firebase Console → Firestore Database → Delete "users" collection');
-    
-    return { 
-      success: true, 
-      migratedCount: successCount,
-      failedCount: failureCount,
-      results: migrationResults,
-      message: `Successfully migrated ${successCount} documents. ${failureCount} failed.`
-    };
-    
-  } catch (error) {
-    console.error('❌ Migration failed:', error);
-    return { 
-      success: false, 
-      error: error.message,
-      message: 'Migration failed. Please check console for details.'
-    };
-  }
+  // This migration function is obsolete - users collection has been removed
+  logger.warn('Migration function is obsolete - users collection no longer exists');
+  return { success: true, migratedCount: 0, message: 'Migration not needed - new architecture in place' };
 }
 
 /**
@@ -2456,14 +2328,13 @@ export async function migrateUsersToClients() {
  */
 export async function checkMigrationStatus() {
   if (!db) {
-    console.warn('Firebase not configured.');
+    logger.warn('Firebase not configured.');
     return null;
   }
   
   try {
     // Users collection has been removed - no migration needed
     const usersCount = 0;
-    const usersCount = usersSnapshot.size;
     
     // Check clients collection  
     const clientsSnapshot = await getDocs(collection(db, COLLECTIONS.CLIENTS));
@@ -2473,10 +2344,10 @@ export async function checkMigrationStatus() {
     const techSnapshot = await getDocs(collection(db, COLLECTIONS.TECHNICIANS));
     const techCount = techSnapshot.size;
     
-    console.log('📊 Migration Status:');
-    console.log(`  "users" collection: ${usersCount} documents`);
-    console.log(`  "clients" collection: ${clientsCount} documents`);  
-    console.log(`  "technicians" collection: ${techCount} documents`);
+    logger.info('📊 Migration Status:');
+    logger.info(`  "users" collection: ${usersCount} documents`);
+    logger.info(`  "clients" collection: ${clientsCount} documents`);  
+    logger.info(`  "technicians" collection: ${techCount} documents`);
     
     const status = {
       usersCount,
@@ -2487,16 +2358,16 @@ export async function checkMigrationStatus() {
     };
     
     if (status.needsMigration) {
-      console.log('🔄 Migration needed: Run migrateUsersToClients()');
+      logger.info('🔄 Migration needed: Run migrateUsersToClients()');
     } else if (status.migrationComplete) {
-      console.log('✅ Migration appears complete');
+      logger.info('✅ Migration appears complete');
     } else {
-      console.log('❓ No data found in any collection');
+      logger.info('❓ No data found in any collection');
     }
     
     return status;
   } catch (error) {
-    console.error('Error checking migration status:', error);
+    logger.error('Error checking migration status:', error);
     return null;
   }
 }
@@ -2513,3 +2384,4 @@ export const getUserByEmail = getClientByEmail;
 // export { getUserTokenBalance, addTokensToBalance, checkDailyThankYouLimit, sendTokens };
 
 export default app;
+

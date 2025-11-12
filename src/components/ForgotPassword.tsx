@@ -5,6 +5,7 @@
 "use client";
 
 import { useState } from 'react';
+import { logger } from '../lib/logger';
 
 interface ForgotPasswordProps {
   onClose: () => void;
@@ -40,7 +41,7 @@ export default function ForgotPassword({ onClose, onBackToSignIn }: ForgotPasswo
         setError(data.message || 'Failed to send password reset email. Please try again.');
       }
     } catch (error: any) {
-      console.error('Password reset error:', error);
+      logger.error('Password reset error:', error);
       setError('Failed to send password reset email. Please check your connection and try again.');
     } finally {
       setLoading(false);

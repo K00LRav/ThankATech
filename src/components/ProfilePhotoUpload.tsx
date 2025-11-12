@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { uploadTechnicianPhoto, uploadClientPhoto } from '@/lib/firebase';
 import Avatar from './Avatar';
+import { logger } from '@/lib/logger';
 
 interface ProfilePhotoUploadProps {
   userId: string;
@@ -59,7 +60,7 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
       
       alert('Profile photo uploaded successfully!');
     } catch (error) {
-      console.error('❌ Error uploading photo:', error);
+      logger.error('❌ Error uploading photo:', error);
       alert(`Failed to upload photo: ${error.message || 'Please try again.'}`);
     } finally {
       setUploading(false);

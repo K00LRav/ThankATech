@@ -2,6 +2,8 @@
  * Geocoding utilities using Google Maps Geocoding API
  */
 
+import { logger } from './logger';
+
 interface Coordinates {
   lat: number;
   lng: number;
@@ -19,14 +21,14 @@ interface GeocodeResult {
  */
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
   if (!address || address.trim().length === 0) {
-    console.warn('Geocoding: Empty address provided');
+    logger.warn('Geocoding: Empty address provided');
     return null;
   }
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    console.warn('Google Maps API key not configured. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local');
+    logger.warn('Google Maps API key not configured. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local');
     return null;
   }
 
@@ -43,27 +45,27 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     const data = await response.json();
 
     if (data.status === 'ZERO_RESULTS') {
-      console.warn(`Geocoding: No results found for address: ${address}`);
+      logger.warn(`Geocoding: No results found for address: ${address}`);
       return null;
     }
 
     if (data.status === 'OVER_QUERY_LIMIT') {
-      console.error('Geocoding: API quota exceeded');
+      logger.error('Geocoding: API quota exceeded');
       return null;
     }
 
     if (data.status === 'REQUEST_DENIED') {
-      console.error('Geocoding: API request denied. Check your API key and billing settings.');
+      logger.error('Geocoding: API request denied. Check your API key and billing settings.');
       return null;
     }
 
     if (data.status === 'INVALID_REQUEST') {
-      console.error(`Geocoding: Invalid request for address: ${address}`);
+      logger.error(`Geocoding: Invalid request for address: ${address}`);
       return null;
     }
 
     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.warn(`Geocoding failed with status: ${data.status}`);
+      logger.warn(`Geocoding failed with status: ${data.status}`);
       return null;
     }
 
@@ -76,7 +78,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     };
 
   } catch (error) {
-    console.error('Error geocoding address:', error);
+    logger.error('Error geocoding address:', error);
     return null;
   }
 }
@@ -116,7 +118,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    console.warn('Google Maps API key not configured');
+    logger.warn('Google Maps API key not configured');
     return null;
   }
 
@@ -132,7 +134,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
 
     return null;
   } catch (error) {
-    console.error('Error reverse geocoding:', error);
+    logger.error('Error reverse geocoding:', error);
     return null;
   }
 }
@@ -149,3 +151,4 @@ export function isValidCoordinates(lat: number, lng: number): boolean {
     !isNaN(lat) && !isNaN(lng)
   );
 }
+

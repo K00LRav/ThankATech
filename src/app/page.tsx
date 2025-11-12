@@ -1,5 +1,4 @@
 "use client";
-// @ts-nocheck
 
 import { useState, useEffect, useCallback } from 'react';
 
@@ -705,7 +704,7 @@ export default function Home() {
         setShowTokenPurchaseModal(true);
       }
     } catch (error) {
-      console.error('Error checking token balance:', error);
+      logger.error('Error checking token balance:', error);
       // Fallback to purchase modal on error
       setShowTokenPurchaseModal(true);
     }
@@ -1248,6 +1247,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 

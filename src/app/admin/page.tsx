@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db, COLLECTIONS } from '@/lib/firebase';
+import { logger } from '@/lib/logger';
 import { 
   collection, 
   query, 
@@ -219,7 +220,7 @@ export default function AdminPage() {
       
       return !techSnapshot.empty || !customerSnapshot.empty;
     } catch (error) {
-      console.error('Error checking username availability:', error);
+      logger.error('Error checking username availability:', error);
       return true; // Assume taken on error for safety
     }
   };
@@ -295,7 +296,7 @@ export default function AdminPage() {
         setIsAuthorized(false);
       }
     } catch (error) {
-      console.error('Error checking admin access:', error);
+      logger.error('Error checking admin access:', error);
       setIsAuthorized(false);
     } finally {
       setLoading(false);
@@ -322,7 +323,7 @@ export default function AdminPage() {
       setUser(null);
       setIsAuthorized(false);
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
     }
   };
 
@@ -452,7 +453,7 @@ export default function AdminPage() {
 
   const loadAdminData = useCallback(async () => {
     try {
-      console.log('🔄 Loading comprehensive admin analytics...');
+      logger.info('🔄 Loading comprehensive admin analytics...');
       
       // Load technicians (filter out mock/sample data)
       const techniciansRef = collection(db, 'technicians');
@@ -770,10 +771,10 @@ export default function AdminPage() {
         tokenEconomyHealth: calculateTokenEconomyHealth(totalTokensInCirculation, totalTokensPurchased, totalTokensSpent, topTokenSpenders.length)
       });
       
-      console.log('✅ Admin analytics loaded successfully');
+      logger.info('✅ Admin analytics loaded successfully');
       
     } catch (error) {
-      console.error('Error loading admin data:', error);
+      logger.error('Error loading admin data:', error);
     }
   }, []);
 
@@ -797,7 +798,7 @@ export default function AdminPage() {
       setTokenUserId('');
       setTokensToAdd(0);
     } catch (error: any) {
-      console.error('Error adding tokens:', error);
+      logger.error('Error adding tokens:', error);
       setTokenManagementResults(`❌ Failed to add tokens: ${error.message}`);
     }
     setIsProcessingTokens(false);
@@ -814,7 +815,7 @@ export default function AdminPage() {
       setTokenManagementResults(`✅ Retrieved data for user ${userId}:
       TOA: ${balance.tokens} (Total Purchased: ${balance.totalPurchased}, Total Spent: ${balance.totalSpent})`);
     } catch (error: any) {
-      console.error('Error checking user balance:', error);
+      logger.error('Error checking user balance:', error);
       setTokenManagementResults(`❌ Failed to check balance: ${error.message}`);
     }
   };
