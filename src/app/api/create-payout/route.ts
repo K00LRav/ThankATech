@@ -346,6 +346,8 @@ export async function POST(request: NextRequest) {
 
     // Store payout record in Firestore
     try {
+      logger.info(`Attempting to save payout record to Firestore...`);
+      
       const payoutRecord = {
         transferId: transfer.id,
         technicianId: technicianId,
@@ -359,19 +361,22 @@ export async function POST(request: NextRequest) {
         estimatedArrival: new Date(Date.now() + (method === 'express' ? 30 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000)),
       };
 
-      await db.collection('payouts').add(payoutRecord);
-      logger.info(`Payout record created in Firestore`);
+      const payoutRef = await db.collection('payouts').add(payoutRecord);
+      logger.info(`✅ Payout record created in Firestore with ID: ${payoutRef.id}`);
 
       // Update technician's earnings balance (deduct the amount)
       const newBalance = (techData.totalEarnings || 0) - (amount / 100);
+      logger.info(`Updating technician balance: $${techData.totalEarnings} - $${amount / 100} = $${newBalance}`);
+      
       await db.collection('technicians').doc(technicianId).update({
         totalEarnings: newBalance,
         lastPayoutDate: new Date(),
         updatedAt: new Date(),
       });
-      logger.info(`Updated technician balance from $${techData.totalEarnings} to $${newBalance}`);
+      logger.info(`✅ Updated technician balance from $${techData.totalEarnings} to $${newBalance}`);
     } catch (dbError: any) {
-      logger.error('Database update error (transfer already created):', dbError);
+      logger.error('❌ Database update error (transfer already created):', dbError);
+      logger.error('Error details:', JSON.stringify(dbError, null, 2));
       // Transfer succeeded but DB update failed - log but don't fail the request
     }
 
