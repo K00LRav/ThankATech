@@ -524,6 +524,23 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
+  // Check URL parameter to auto-open registration modal
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shouldRegister = urlParams.get('register');
+      
+      if (shouldRegister === 'true') {
+        // Small delay to ensure auth state is loaded
+        setTimeout(() => {
+          setShowRegistration(true);
+          // Clean up URL parameter
+          window.history.replaceState({}, '', '/');
+        }, 500);
+      }
+    }
+  }, []);
+
   const achievementBadges = getAchievementBadges(profile);
 
   // Get available categories - show all main categories plus any that have active technicians
