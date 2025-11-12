@@ -482,7 +482,7 @@ export class EmailService {
       logger.warn('No email service configured. Set BREVO_API_KEY, RESEND_API_KEY, or SENDGRID_API_KEY environment variable.');
       return false;
 
-    } catch (error) {
+    } catch (error: any) {
       logger.error('❌ Failed to send email:', error);
       logger.error('🔍 Environment check:', {
         NODE_ENV: process.env.NODE_ENV,
@@ -490,7 +490,13 @@ export class EmailService {
         hasEmailFrom: !!process.env.EMAIL_FROM,
         hasEmailFromName: !!process.env.EMAIL_FROM_NAME
       });
-      throw error; // Re-throw to get better error messages in API responses
+      logger.error('📧 Email data:', {
+        to: emailData.to,
+        subject: emailData.subject,
+        from: emailData.from
+      });
+      // Return false instead of throwing to prevent 500 errors
+      return false;
     }
   }
 
