@@ -710,8 +710,8 @@ export default function Home() {
     }
 
     try {
-      // Check user's token balance
-      const tokenBalance = await getUserTokenBalance(currentUser.id);
+      // Check user's token balance using Auth UID (not document ID)
+      const tokenBalance = await getUserTokenBalance(currentUser.uid);
       
       if (tokenBalance.tokens > 0) {
         // User has tokens, open token send modal
