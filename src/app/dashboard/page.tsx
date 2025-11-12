@@ -124,6 +124,58 @@ export default function ModernDashboard() {
     return () => unsubscribe();
   }, [router]);
 
+  // Handle token purchase verification from Stripe
+  useEffect(() => {
+    const verifyTokenPurchase = async () => {
+      if (typeof window === 'undefined' || !user) return;
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenPurchaseSuccess = urlParams.get('token_purchase');
+      const sessionId = urlParams.get('session_id');
+      
+      if (tokenPurchaseSuccess === 'success' && sessionId) {
+        logger.info('Verifying token purchase:', sessionId);
+        
+        try {
+          const response = await fetch('/api/verify-token-purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              sessionId, 
+              userId: user.uid 
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            logger.info('Token purchase verified:', data);
+            
+            // If the backend says client should update, add the tokens
+            if (data.requiresClientUpdate && data.tokens) {
+              const { addTokensToBalance } = await import('@/lib/token-firebase');
+              await addTokensToBalance(user.uid, data.tokens, data.amount || 0);
+              
+              // Reload token balance
+              await loadTokenBalance(user.uid);
+              
+              // Show success message
+              alert(`✅ Success! ${data.tokens} TOA tokens added to your balance!`);
+            }
+          } else {
+            logger.error('Token purchase verification failed');
+          }
+        } catch (error) {
+          logger.error('Error verifying token purchase:', error);
+        } finally {
+          // Clean up URL parameters
+          window.history.replaceState({}, '', '/dashboard');
+        }
+      }
+    };
+
+    verifyTokenPurchase();
+  }, [user]);
+
   const loadUserProfile = async (userId: string, authUser?: User) => {
     try {
 
