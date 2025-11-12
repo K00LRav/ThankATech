@@ -137,6 +137,22 @@ export default function ModernDashboard() {
         logger.info('Verifying token purchase:', sessionId);
         
         try {
+          // First check if this session has already been processed
+          const existingTransactionQuery = query(
+            collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+            where('stripeSessionId', '==', sessionId),
+            where('type', '==', 'token_purchase')
+          );
+          const existingSnapshot = await getDocs(existingTransactionQuery);
+          
+          if (!existingSnapshot.empty) {
+            logger.info('Session already processed, skipping duplicate purchase');
+            // Clean up URL and reload balance
+            window.history.replaceState({}, '', '/dashboard');
+            await loadTokenBalance(user.uid);
+            return;
+          }
+          
           const response = await fetch('/api/verify-token-purchase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -153,7 +169,7 @@ export default function ModernDashboard() {
             // If the backend says client should update, add the tokens
             if (data.requiresClientUpdate && data.tokens) {
               const { addTokensToBalance } = await import('@/lib/token-firebase');
-              await addTokensToBalance(user.uid, data.tokens, data.amount || 0);
+              await addTokensToBalance(user.uid, data.tokens, data.amount || 0, sessionId);
               
               // Reload token balance
               await loadTokenBalance(user.uid);
@@ -239,7 +255,10 @@ export default function ModernDashboard() {
         // Load transactions based on user type - use the Firebase Auth UID for transactions
         await loadTransactions(userId, profile.userType);
         
-        // Load token stats for technicians (after transactions are loaded)
+        // Load token balance for technicians (wallet for purchasing/sending)
+        await loadTokenBalance(userId);
+        
+        // Load token stats for technicians (earnings from received tokens)
         if (profile.userType === 'technician') {
           setTimeout(() => loadTechnicianTokenStats(profile.id), 500);
         }
@@ -385,11 +404,13 @@ export default function ModernDashboard() {
         }
       });
       
-      setTokenBalance({
+      // Merge earnings stats with existing wallet balance
+      setTokenBalance(prev => ({
+        ...prev, // Keep existing wallet data (tokens, totalPurchased, totalSpent)
         totalTokensReceived,
         totalTokenEarnings: totalTokenEarnings / 100, // Convert back to dollars for display
         transactionCount: tokenTransactions.length
-      });
+      }));
       
       // Update tip transactions with ALL received transactions (thank_you + toa_token)
       setTipTransactions(allReceivedTransactions);

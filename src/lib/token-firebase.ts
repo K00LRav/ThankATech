@@ -91,7 +91,7 @@ export async function getUserTokenBalance(userId: string): Promise<UserTokenBala
 /**
  * Add tokens to user's balance (after purchase)
  */
-export async function addTokensToBalance(userId: string, tokensToAdd: number, purchaseAmount: number): Promise<void> {
+export async function addTokensToBalance(userId: string, tokensToAdd: number, purchaseAmount: number, sessionId?: string): Promise<void> {
   if (!db) {
     logger.warn('Firebase not configured. Mock tokens added.');
     return;
@@ -119,7 +119,7 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
     }
 
     // 🆕 Create transaction record for token purchase
-    const transaction: Omit<TokenTransaction, 'id'> = {
+    const transaction: Omit<TokenTransaction, 'id'> & { stripeSessionId?: string } = {
       fromUserId: userId,
       toTechnicianId: '', // Token purchase doesn't have a recipient
       tokens: tokensToAdd,
@@ -128,7 +128,8 @@ export async function addTokensToBalance(userId: string, tokensToAdd: number, pu
       timestamp: new Date(),
       type: 'token_purchase', // Changed from 'toa' to 'token_purchase'
       dollarValue: purchaseAmount,
-      pointsAwarded: 0 // Token purchases don't award points, sending tokens does
+      pointsAwarded: 0, // Token purchases don't award points, sending tokens does
+      stripeSessionId: sessionId // Store session ID to prevent duplicate processing
     };
 
     await addDoc(collection(db, COLLECTIONS.TOKEN_TRANSACTIONS), transaction);
