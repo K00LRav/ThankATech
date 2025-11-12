@@ -345,27 +345,35 @@ export async function POST(request: NextRequest) {
     logger.info(`Created transfer ${transfer.id} for $${netAmount / 100} to ${stripeAccountId}`);
 
     // Store payout record in Firestore
-    const payoutRecord = {
-      transferId: transfer.id,
-      technicianId: technicianId,
-      stripeAccountId: stripeAccountId,
-      amount: amount,
-      fee: fee,
-      netAmount: netAmount,
-      method: method,
-      status: 'pending',
-      createdAt: new Date(),
-      estimatedArrival: new Date(Date.now() + (method === 'express' ? 30 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000)),
-    };
+    try {
+      const payoutRecord = {
+        transferId: transfer.id,
+        technicianId: technicianId,
+        stripeAccountId: stripeAccountId,
+        amount: amount,
+        fee: fee,
+        netAmount: netAmount,
+        method: method,
+        status: 'pending',
+        createdAt: new Date(),
+        estimatedArrival: new Date(Date.now() + (method === 'express' ? 30 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000)),
+      };
 
-    await db.collection('payouts').add(payoutRecord);
+      await db.collection('payouts').add(payoutRecord);
+      logger.info(`Payout record created in Firestore`);
 
-    // Update technician's earnings balance (deduct the amount)
-    await db.collection('technicians').doc(technicianId).update({
-      totalEarnings: (techData.totalEarnings || 0) - (amount / 100),
-      lastPayoutDate: new Date(),
-      updatedAt: new Date(),
-    });
+      // Update technician's earnings balance (deduct the amount)
+      const newBalance = (techData.totalEarnings || 0) - (amount / 100);
+      await db.collection('technicians').doc(technicianId).update({
+        totalEarnings: newBalance,
+        lastPayoutDate: new Date(),
+        updatedAt: new Date(),
+      });
+      logger.info(`Updated technician balance from $${techData.totalEarnings} to $${newBalance}`);
+    } catch (dbError: any) {
+      logger.error('Database update error (transfer already created):', dbError);
+      // Transfer succeeded but DB update failed - log but don't fail the request
+    }
 
     return NextResponse.json({
       success: true,
@@ -374,7 +382,7 @@ export async function POST(request: NextRequest) {
         amount: netAmount,
         currency: 'usd',
         status: 'pending',
-        estimated_arrival_date: payoutRecord.estimatedArrival,
+        estimated_arrival_date: new Date(Date.now() + (method === 'express' ? 30 * 60 * 1000 : 2 * 24 * 60 * 60 * 1000)),
         method: method,
         description: transfer.description,
       },
