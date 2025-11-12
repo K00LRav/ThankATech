@@ -445,7 +445,7 @@ export default function ModernDashboard() {
       let totalThankYousReceived = 0;
       let totalPointsEarned = 0;
       
-      technicianSnapshot.docs.forEach(doc => {
+      allDocs.forEach(doc => {
         const data = doc.data();
         
         if (data.type === 'thank_you') {
