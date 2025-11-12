@@ -1388,8 +1388,8 @@ export default function ModernDashboard() {
         />
       )}
 
-      {/* Token Purchase Modal */}
-      {showTokenPurchaseModal && userProfile?.userType === 'client' && (
+      {/* Token Purchase Modal - Available for both clients and technicians */}
+      {showTokenPurchaseModal && userProfile && (
         <TokenPurchaseModal
           isOpen={showTokenPurchaseModal}
           onClose={() => setShowTokenPurchaseModal(false)}
