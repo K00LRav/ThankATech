@@ -265,15 +265,20 @@ export default function ModernDashboard() {
         }
       }
       
-      // Still no user found - this is likely a Google sign-in user who hasn't completed registration
-      logger.error('❌ User document not found in any collection (clients, technicians, users)');      
+      // User not found in any collection - likely incomplete Google sign-in registration
+      logger.warn('User authenticated but no profile found. Redirecting to complete registration.');
       
-      // Sign out the user and redirect to registration
-      await signOut(auth);
-      router.push('/');
+      // Don't sign them out - they're legitimately authenticated
+      // Instead, redirect to homepage where Registration component will detect incomplete registration
+      router.push('/?register=true');
       
     } catch (error) {
       logger.error('Error loading user profile:', error);
+      // Only sign out on actual errors, not missing profiles
+      if (error instanceof Error && error.message.includes('auth')) {
+        await signOut(auth);
+        router.push('/');
+      }
     }
   };
 
