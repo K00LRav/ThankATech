@@ -784,56 +784,138 @@ export default function ModernDashboard() {
           )}
         </div>
 
-        {/* Token Earnings - Technician Only */}
+        {/* Token Management - Technician (Dual Display: Wallet + Earnings) */}
         {userProfile.userType === 'technician' && tokenBalance && (
-          <div className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              🪙 Token Earnings Overview
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Total Tokens Received */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-                <h4 className="text-lg font-semibold text-white mb-4">Total TOA Received</h4>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-amber-400 mb-2">
-                    {tokenBalance.totalTokensReceived || 0}
-                  </p>
-                  <p className="text-slate-300 text-sm">
-                    From {tokenBalance.transactionCount || 0} transactions
-                  </p>
+          <div className="space-y-6">
+            {/* Spending Wallet Section */}
+            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                💳 TOA Spending Wallet
+                <span className="text-sm font-normal text-slate-300">(Purchase & Send to Others)</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Current Balance */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Current Balance</h4>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-purple-400 mb-2">
+                      {formatTokens(tokenBalance.tokens)}
+                    </p>
+                    <p className="text-slate-300 text-sm mb-4">
+                      Available for sending
+                    </p>
+                    <button
+                      onClick={() => setShowTokenPurchaseModal(true)}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                    >
+                      🛒 Purchase More Tokens
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Token Earnings */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-                <h4 className="text-lg font-semibold text-white mb-4">Token Earnings</h4>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-green-400 mb-2">
-                    {formatCurrency(tokenBalance.totalTokenEarnings || 0)}
-                  </p>
-                  <p className="text-slate-300 text-sm">
-                    85% payout rate
-                  </p>
+                {/* Purchase History */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Purchase Summary</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Total Purchased:</span>
+                      <span className="text-green-400 font-bold">
+                        {formatTokens(tokenBalance.totalPurchased || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Total Spent:</span>
+                      <span className="text-orange-400 font-bold">
+                        {formatTokens(tokenBalance.totalSpent || 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-white/20">
+                      <span className="text-white font-medium">Remaining:</span>
+                      <span className="text-purple-400 font-bold">
+                        {formatTokens(tokenBalance.tokens)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Average per Transaction */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-                <h4 className="text-lg font-semibold text-white mb-4">Average TOA</h4>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-400 mb-2">
-                    {tokenBalance.transactionCount > 0 
-                      ? Math.round(tokenBalance.totalTokensReceived / tokenBalance.transactionCount)
-                      : 0
-                    }
-                  </p>
-                  <p className="text-slate-300 text-sm">
-                    Tokens per thank you
-                  </p>
+                {/* Sending Activity */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Sending Stats</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">TOA Sent:</span>
+                      <span className="text-blue-400 font-bold">
+                        {tipTransactions.filter(t => (t.type === 'toa_token' || t.type === 'toa') && t.type).reduce((sum, t) => sum + (t.tokens || 0), 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-300">Transactions:</span>
+                      <span className="text-green-400 font-bold">
+                        {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-white/20">
+                      <span className="text-white font-medium">Available:</span>
+                      <span className="text-cyan-400 font-bold">
+                        {formatTokens(tokenBalance.tokens)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Earnings Section */}
+            <div className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                💰 TOA Earnings & Income
+                <span className="text-sm font-normal text-slate-300">(Received from Clients & Technicians)</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Total Tokens Received */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Total TOA Received</h4>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-amber-400 mb-2">
+                      {tokenBalance.totalTokensReceived || 0}
+                    </p>
+                    <p className="text-slate-300 text-sm">
+                      From {tokenBalance.transactionCount || 0} transactions
+                    </p>
+                  </div>
+                </div>
+
+                {/* Token Earnings (Dollar Value) */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Dollar Earnings</h4>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-green-400 mb-2">
+                      {formatCurrency(tokenBalance.totalTokenEarnings || 0)}
+                    </p>
+                    <p className="text-slate-300 text-sm">
+                      85% payout rate
+                    </p>
+                  </div>
+                </div>
+
+                {/* Average per Transaction */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                  <h4 className="text-lg font-semibold text-white mb-4">Average TOA</h4>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-blue-400 mb-2">
+                      {tokenBalance.transactionCount > 0 
+                        ? Math.round(tokenBalance.totalTokensReceived / tokenBalance.transactionCount)
+                        : 0
+                      }
+                    </p>
+                    <p className="text-slate-300 text-sm">
+                      Tokens per transaction
+                    </p>
+                  </div>
+                </div>
+              </div>
             
             {/* Token Transaction History Preview */}
             <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-lg p-4">
@@ -863,6 +945,7 @@ export default function ModernDashboard() {
                   <p className="text-slate-400 text-center py-4">No token transactions yet</p>
                 )}
               </div>
+            </div>
             </div>
           </div>
         )}
