@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { sendTokens, getUserTokenBalance } from '@/lib/token-firebase';
-import { formatTokens } from '@/lib/tokens';
+import { formatTokens, TOKEN_LIMITS } from '@/lib/tokens';
 import { logger } from '@/lib/logger';
 
 interface TokenSendModalProps {
@@ -20,9 +20,10 @@ export default function TokenSendModal({
   technicianName, 
   userId 
 }: TokenSendModalProps) {
-  const [tokens, setTokens] = useState(5);
+  const [tokens, setTokens] = useState(TOKEN_LIMITS.MIN_TOKENS);
   const [sending, setSending] = useState(false);
   const [userBalance, setUserBalance] = useState(0);
+  const [useCustomAmount, setUseCustomAmount] = useState(false);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -48,7 +49,7 @@ export default function TokenSendModal({
       
       if (result.success) {
         // Show success message
-        alert(`Success! ${formatTokens(tokens)} sent to ${technicianName}! You earned 1 ThankATech Point, they earned 2 ThankATech Points!`);
+        alert(`Success! ${formatTokens(tokens)} ($${(tokens * 0.01).toFixed(2)}) sent to ${technicianName}! You earned 1 ThankATech Point, they earned 2 ThankATech Points!`);
         onClose();
         // Refresh balance
         loadUserData();
@@ -62,6 +63,9 @@ export default function TokenSendModal({
       setSending(false);
     }
   };
+
+  const maxAllowed = Math.min(userBalance, TOKEN_LIMITS.MAX_TOKENS);
+  const usdValue = (tokens * 0.01).toFixed(2);
 
   if (!isOpen) return null;
 
@@ -81,26 +85,60 @@ export default function TokenSendModal({
         <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4">
           <div className="mb-4">
             <p className="text-gray-800 mb-2">To: <span className="font-semibold">{technicianName}</span></p>
-            <p className="text-sm text-gray-600">Your token balance: {formatTokens(userBalance)}</p>
+            <p className="text-sm text-gray-600">Your token balance: {formatTokens(userBalance)} (${(userBalance * 0.01).toFixed(2)})</p>
           </div>
 
           {/* Token Amount Selection */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-800 mb-2">
-              Token Amount: {formatTokens(tokens)}
-            </label>
-            <input
-              type="range"
-              min="5"
-              max="50"
-              value={tokens}
-              onChange={(e) => setTokens(parseInt(e.target.value))}
-              className="w-full h-2 bg-white/30 backdrop-blur-sm rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-600 mt-1">
-              <span>5 tokens</span>
-              <span>50 tokens</span>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-gray-800">
+                Token Amount: {formatTokens(tokens)} <span className="text-green-600 font-bold">${usdValue}</span>
+              </label>
+              <button
+                onClick={() => setUseCustomAmount(!useCustomAmount)}
+                className="text-xs text-blue-600 hover:text-blue-700 underline"
+              >
+                {useCustomAmount ? 'Use slider' : 'Enter custom'}
+              </button>
             </div>
+            
+            {useCustomAmount ? (
+              <div>
+                <input
+                  type="number"
+                  min={TOKEN_LIMITS.MIN_TOKENS}
+                  max={maxAllowed}
+                  value={tokens}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || TOKEN_LIMITS.MIN_TOKENS;
+                    setTokens(Math.min(Math.max(val, TOKEN_LIMITS.MIN_TOKENS), maxAllowed));
+                  }}
+                  className="w-full px-4 py-2 bg-white/30 backdrop-blur-sm border border-white/50 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter token amount"
+                />
+                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                  <span>Min: {TOKEN_LIMITS.MIN_TOKENS} ($1.00)</span>
+                  <span>Max: {maxAllowed.toLocaleString()} (${(maxAllowed * 0.01).toFixed(2)})</span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="range"
+                  min={TOKEN_LIMITS.MIN_TOKENS}
+                  max={maxAllowed}
+                  step="100"
+                  value={tokens}
+                  onChange={(e) => setTokens(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/30 backdrop-blur-sm rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                  <span>{TOKEN_LIMITS.MIN_TOKENS} ($1)</span>
+                  <span>{maxAllowed.toLocaleString()} (${(maxAllowed * 0.01).toFixed(2)})</span>
+                </div>
+              </div>
+            )}
+            
             {userBalance < tokens && (
               <p className="text-red-600 text-sm mt-1 bg-red-100/50 backdrop-blur-sm rounded-lg p-2 border border-red-200/50">
                 Not enough tokens. You have {formatTokens(userBalance)}.
@@ -113,7 +151,7 @@ export default function TokenSendModal({
             <h3 className="font-semibold text-gray-800 mb-3">Message:</h3>
             <div className="p-3 bg-gradient-to-r from-blue-100/20 to-green-100/20 backdrop-blur-md border border-white/30 rounded-xl">
               <p className="text-sm text-gray-700 italic">
-                &quot;Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here&apos;s {tokens} tokens as a token of my appreciation.&quot;
+                &quot;Thank you for your exceptional service! Your expertise and dedication truly make a difference. Here&apos;s {formatTokens(tokens)} (${usdValue}) as a token of my appreciation.&quot;
               </p>
             </div>
           </div>
@@ -132,7 +170,7 @@ export default function TokenSendModal({
             disabled={sending || userBalance < tokens}
             className="iphone-btn-primary flex-1 px-4 py-3 bg-gradient-to-r from-green-500/90 to-blue-600/90 backdrop-blur-md text-white rounded-2xl hover:from-green-600/90 hover:to-blue-700/90 disabled:from-gray-400/50 disabled:to-gray-500/50 disabled:cursor-not-allowed transition-all border border-white/30 active:scale-95"
           >
-            {sending ? 'Sending...' : `Send ${formatTokens(tokens)}`}
+            {sending ? 'Sending...' : `Send ${formatTokens(tokens)} ($${usdValue})`}
           </button>
         </div>
       </div>
