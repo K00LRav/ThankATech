@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerStripe } from '@/lib/stripe';
-import getFirebaseAdmin from '@/lib/firebase-admin';
-
-const { db } = getFirebaseAdmin();
-const stripe = getServerStripe();
+import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!adminDb) {
+      return NextResponse.json(
+        { error: 'Firebase Admin not configured' },
+        { status: 503 }
+      );
+    }
+
+    const stripe = getServerStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 503 }
+      );
+    }
+
     const { technicianId } = await req.json();
 
     if (!technicianId) {
@@ -14,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get technician data
-    const techDoc = await db.collection('technicians').doc(technicianId).get();
+    const techDoc = await adminDb.collection('technicians').doc(technicianId).get();
     if (!techDoc.exists) {
       return NextResponse.json({ error: 'Technician not found' }, { status: 404 });
     }
@@ -33,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Clear from Firestore
-    await db.collection('technicians').doc(technicianId).update({
+    await adminDb.collection('technicians').doc(technicianId).update({
       stripeAccountId: null,
       stripeAccountStatus: null,
       updatedAt: new Date(),
