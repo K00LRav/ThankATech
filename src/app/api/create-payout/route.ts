@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
           },
         },
         tos_acceptance: {
-          service_agreement: 'recipient',
           date: Math.floor(Date.now() / 1000),
           ip: '8.8.8.8', // Test mode - use valid IP format
         },
@@ -126,7 +125,8 @@ export async function POST(request: NextRequest) {
         logger.info(`Updating existing account ${stripeAccountId} with required information`);
         
         try {
-          await stripe.accounts.update(stripeAccountId, {
+          // Update the account with all required fields
+          const updateData: any = {
             business_profile: {
               url: 'https://thankatech.com',
               mcc: '7399',
@@ -147,17 +147,55 @@ export async function POST(request: NextRequest) {
                 postal_code: '94111',
                 country: 'US',
               },
+              phone: '+14155551234',
             },
-            tos_acceptance: {
-              service_agreement: 'recipient',
-              date: Math.floor(Date.now() / 1000),
-              ip: '8.8.8.8',
-            },
+          };
+          
+          // For US platform -> US accounts, don't use service_agreement
+          // Stripe handles TOS differently for domestic accounts
+          const tosData = {
+            date: Math.floor(Date.now() / 1000),
+            ip: '8.8.8.8',
+          };
+          
+          await stripe.accounts.update(stripeAccountId, {
+            ...updateData,
+            tos_acceptance: tosData,
           });
           
-          logger.info(`Updated account ${stripeAccountId} with complete profile`);
+          logger.info(`Updated account ${stripeAccountId} with complete profile and TOS`);
         } catch (updateError: any) {
           logger.warn(`Could not update account: ${updateError.message}`);
+          // If TOS update fails, try without it
+          try {
+            await stripe.accounts.update(stripeAccountId, {
+              business_profile: {
+                url: 'https://thankatech.com',
+                mcc: '7399',
+              },
+              individual: {
+                email: techData.email,
+                first_name: techData.name?.split(' ')[0] || 'Test',
+                last_name: techData.name?.split(' ').slice(1).join(' ') || 'User',
+                dob: {
+                  day: 1,
+                  month: 1,
+                  year: 1990,
+                },
+                address: {
+                  line1: '123 Main St',
+                  city: 'San Francisco',
+                  state: 'CA',
+                  postal_code: '94111',
+                  country: 'US',
+                },
+                phone: '+14155551234',
+              },
+            });
+            logger.info(`Updated account without TOS (may need manual acceptance)`);
+          } catch (secondError: any) {
+            logger.error(`Second update attempt failed: ${secondError.message}`);
+          }
         }
       }
     }
