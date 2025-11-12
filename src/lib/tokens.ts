@@ -118,9 +118,10 @@ export const TOKEN_PACKS: TokenPack[] = [
 // Token system for meaningful appreciation
 
 // Token sending limits
+// 1 TOA = $0.01, so: MIN = $1, MAX = $100
 export const TOKEN_LIMITS = {
-  MIN_TOKENS: 5,
-  MAX_TOKENS: 50,
+  MIN_TOKENS: 100,  // Minimum $1.00 tip
+  MAX_TOKENS: 10000, // Maximum $100.00 tip
   FREE_DAILY_LIMIT: 3
 };
 
