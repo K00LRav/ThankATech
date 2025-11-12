@@ -40,9 +40,10 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   return (
     <>
       {/* Header - Universal Glassmorphism Design */}
-      <header className="bg-black/20 backdrop-blur-sm border-b border-white/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-8 shadow-lg">
-        <div className="max-w-md mx-auto px-3 py-3 sm:max-w-7xl sm:px-4 lg:px-8 sm:py-4">
-          <div className="flex items-center justify-between">
+      <header className="relative max-w-md mx-auto px-3 sm:max-w-7xl sm:px-4 lg:px-8 mt-4 sm:mt-8 mb-4 sm:mb-8">
+        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl sm:rounded-2xl shadow-lg">
+          <div className="px-3 py-3 sm:px-4 sm:py-4">
+            <div className="flex items-center justify-between">
             {/* Logo - Always Visible */}
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer" prefetch={false}>
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -146,13 +147,13 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                 </svg>
               </button>
             )}
+            </div>
           </div>
-        </div>
 
-        {/* Mobile Menu Dropdown */}
-        {showNav && isMobileMenuOpen && (
-          <div className="sm:hidden bg-white/10 backdrop-blur-xl border-t border-white/20">
-            <div className="max-w-md mx-auto px-3 py-4 space-y-3">
+          {/* Mobile Menu Dropdown */}
+          {showNav && isMobileMenuOpen && (
+            <div className="sm:hidden bg-white/10 backdrop-blur-xl border-t border-white/20">
+              <div className="px-3 py-4 space-y-3">
               {currentUser ? (
                 <>
                   {/* User Info */}
@@ -227,9 +228,10 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                   </button>
                 </>
               )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </header>
     </>
   );
