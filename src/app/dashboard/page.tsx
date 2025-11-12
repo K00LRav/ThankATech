@@ -426,7 +426,7 @@ export default function ModernDashboard() {
           totalThankYousReceived++;
           totalPointsEarned += 1; // 1 point per free thank you
         } else if (data.type === 'toa_token' || data.type === 'toa') {
-          totalPointsEarned += 2; // 2 points per TOA token received
+          totalPointsEarned += 2; // 2 points per TOA transaction (not per token)
         }
       });
       

@@ -187,7 +187,7 @@ export default function ConversionWidget({ userId }: ConversionWidgetProps) {
                 <div className="text-4xl mb-3">⚡</div>
                 <p className="text-lg font-medium">Earn {CONVERSION_SYSTEM.minimumConversion} ThankATech Points to start converting!</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Get points by sending thank yous (1 pt) and TOA tokens (1 pt per token sent)
+                  Get points by sending thank yous (1 pt) and TOA tokens (1 pt per transaction)
                 </p>
               </div>
             ) : (

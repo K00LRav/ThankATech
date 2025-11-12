@@ -592,7 +592,8 @@ export async function sendTokens(
     const technicianPayout = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.technicianGetsPerTOA;
     const platformFee = isFreeThankYou ? 0 : tokens * PAYOUT_MODEL.platformFeePerTOA;
     // Points awarded ONLY to technician for free thank yous, both client & technician for TOA
-    const pointsAwarded = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : (tokens * POINTS_LIMITS.POINTS_PER_TOKEN);
+    // TOA transactions award 2 points total per transaction, not per token
+    const pointsAwarded = isFreeThankYou ? POINTS_LIMITS.POINTS_PER_THANK_YOU : POINTS_LIMITS.POINTS_PER_TOA_TRANSACTION;
     
     // Create transaction record with names and TOA business model tracking
     const transaction: Omit<TokenTransaction, 'id'> = {
@@ -688,7 +689,7 @@ export async function sendTokens(
         
         // ONLY award points to client for TOA tokens (paid appreciation)
         if (!isFreeThankYou) {
-          updateData.points = increment(tokens); // 1 point per TOA sent
+          updateData.points = increment(1); // 1 point per TOA transaction (not per token)
           updateData.totalToaSent = increment(tokens);
           updateData.totalSpent = increment(dollarValue);
           updateData.totalTokensSent = increment(tokens);
@@ -711,7 +712,7 @@ export async function sendTokens(
       
       // ONLY award points to technician for TOA tokens (paid appreciation)
       if (!isFreeThankYou) {
-        updateData.points = increment(tokens); // 1 point per TOA sent
+        updateData.points = increment(1); // 1 point per TOA transaction (not per token)
         updateData.totalToaSent = increment(tokens);
         updateData.totalSpent = increment(dollarValue);
         updateData.totalTokensSent = increment(tokens);
@@ -724,7 +725,7 @@ export async function sendTokens(
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
       if (!isFreeThankYou) {
-        logger.info(`✅ Awarded ${tokens} ThankATech Points to ${senderType} ${fromUserId} for sending ${tokens} TOA tokens`);
+        logger.info(`✅ Awarded 1 ThankATech Point to ${senderType} ${fromUserId} for sending ${tokens} TOA tokens (2 points to recipient)`);
       } else {
         logger.info(`✅ Free thank you sent from ${senderType} ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
       }

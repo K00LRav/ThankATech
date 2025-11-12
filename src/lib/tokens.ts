@@ -128,7 +128,7 @@ export const TOKEN_LIMITS = {
 export const POINTS_LIMITS = {
   DAILY_THANK_YOU_LIMIT: 1, // 1 thank you per technician per day (NEW LIMIT)
   POINTS_PER_THANK_YOU: 1, // 1 ThankATech Point per thank you click
-  POINTS_PER_TOKEN: 2 // 2 ThankATech Points per TOA received
+  POINTS_PER_TOA_TRANSACTION: 2 // 2 ThankATech Points per TOA transaction (not per token)
 };
 
 // Closed-loop conversion system
