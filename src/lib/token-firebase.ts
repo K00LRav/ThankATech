@@ -503,8 +503,8 @@ export async function sendFreeThankYou(
  * Send tokens (new thank you system)
  */
 export async function sendTokens(
-  fromUserId: string, 
-  toTechnicianId: string, 
+  fromUserId: string,
+  toTechnicianId: string,
   tokens: number
 ): Promise<{success: boolean, transactionId?: string, error?: string}> {
   if (!db) {
@@ -513,6 +513,14 @@ export async function sendTokens(
   }
 
   try {
+    // Prevent self-thanking
+    if (fromUserId === toTechnicianId) {
+      return {
+        success: false,
+        error: 'You cannot send tokens to yourself'
+      };
+    }
+
     // Check if this is a free thank you or token transaction
     const isFreeThankYou = tokens === 0;
     

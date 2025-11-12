@@ -231,34 +231,60 @@ export default function TechnicianProfile() {
           </div>
 
           <div className="space-y-6">
-            <AppreciationActions 
-              onThankYou={handleThankYou}
-              onSendTOA={async () => {
-                if (!user) {
-                  // Redirect to main page for authentication
-                  router.push('/');
-                  return;
-                }
+            {/* Only show appreciation actions if not viewing own profile */}
+            {user?.uid !== technician.id ? (
+              <AppreciationActions
+                onThankYou={handleThankYou}
+                onSendTOA={async () => {
+                  if (!user) {
+                    // Redirect to main page for authentication
+                    router.push('/');
+                    return;
+                  }
 
-                try {
-                  // Check user's token balance first
-                  const tokenBalance = await getUserTokenBalance(user.uid);
-                  
-                  if (tokenBalance.tokens > 0) {
-                    // User has tokens, open send modal
-                    setShowTokenSendModal(true);
-                  } else {
-                    // User has no tokens, open purchase modal
+                  try {
+                    // Check user's token balance first
+                    const tokenBalance = await getUserTokenBalance(user.uid);
+
+                    if (tokenBalance.tokens > 0) {
+                      // User has tokens, open send modal
+                      setShowTokenSendModal(true);
+                    } else {
+                      // User has no tokens, open purchase modal
+                      setShowTokenPurchaseModal(true);
+                    }
+                  } catch (error) {
+                    console.error('Error checking token balance:', error);
+                    // Fallback to purchase modal on error
                     setShowTokenPurchaseModal(true);
                   }
-                } catch (error) {
-                  console.error('Error checking token balance:', error);
-                  // Fallback to purchase modal on error
-                  setShowTokenPurchaseModal(true);
-                }
-              }}
-              technicianName={technician.name}
-            />
+                }}
+                technicianName={technician.name}
+              />
+            ) : (
+              <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-xl">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
+                    <span className="text-3xl">👤</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">This is your profile</h3>
+                  <p className="text-slate-300 text-sm">
+                    You're viewing your own technician profile. Share your profile link with customers to receive appreciation!
+                  </p>
+                  <div className="pt-3">
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      <span>Go to Dashboard</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <ContactInfo technician={technician} />
           </div>
