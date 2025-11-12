@@ -49,10 +49,21 @@ export default function TokenTransactionHistory({
       let tokenTransactionsQuery;
       
       if (userType === 'technician') {
-        // Load transactions received by this technician
+        // Get technician data to find all identifiers
+        const { doc, getDoc, or } = await import('firebase/firestore');
+        const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
+        const techData = techDoc.exists() ? techDoc.data() : null;
+        
+        logger.info(`Loading transaction history for technician: ${userId}, email: ${techData?.email}`);
+        
+        // Load transactions received by this technician - check by ID, email, and authUid
         tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('toTechnicianId', '==', userId),
+          or(
+            where('toTechnicianId', '==', userId),
+            where('toTechnicianEmail', '==', techData?.email),
+            where('toTechnicianId', '==', techData?.authUid)
+          ),
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
