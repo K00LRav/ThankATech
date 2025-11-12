@@ -46,56 +46,86 @@ export default function TokenTransactionHistory({
   const loadTransactionHistory = async () => {
     setLoading(true);
     try {
-      let tokenTransactionsQuery;
+      let allTransactions: Transaction[] = [];
       
       if (userType === 'technician') {
         // Get technician data to find all identifiers
-        const { doc, getDoc, or } = await import('firebase/firestore');
+        const { doc, getDoc } = await import('firebase/firestore');
         const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
         const techData = techDoc.exists() ? techDoc.data() : null;
         
         logger.info(`Loading transaction history for technician: ${userId}, email: ${techData?.email}`);
         
-        // Load transactions received by this technician - check by ID, email, and authUid
-        tokenTransactionsQuery = query(
+        // Query 1: By document ID
+        const query1 = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          or(
-            where('toTechnicianId', '==', userId),
-            where('toTechnicianEmail', '==', techData?.email),
-            where('toTechnicianId', '==', techData?.authUid)
-          ),
+          where('toTechnicianId', '==', userId),
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
+        const snapshot1 = await getDocs(query1);
+        allTransactions.push(...snapshot1.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Transaction)));
+        
+        // Query 2: By email if available
+        if (techData?.email) {
+          const query2 = query(
+            collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+            where('toTechnicianEmail', '==', techData.email),
+            orderBy('timestamp', 'desc'),
+            firestoreLimit(50)
+          );
+          const snapshot2 = await getDocs(query2);
+          snapshot2.docs.forEach(doc => {
+            // Only add if not already in list
+            if (!allTransactions.find(t => t.id === doc.id)) {
+              allTransactions.push({
+                id: doc.id,
+                ...doc.data()
+              } as Transaction);
+            }
+          });
+        }
+        
+        // Sort by timestamp descending
+        allTransactions.sort((a, b) => {
+          const aTime = a.timestamp?.toDate?.() || new Date(a.timestamp);
+          const bTime = b.timestamp?.toDate?.() || new Date(b.timestamp);
+          return bTime.getTime() - aTime.getTime();
+        });
+        
+        setTransactions(allTransactions);
       } else {
         // Load transactions sent by this client + token purchases
-        tokenTransactionsQuery = query(
+        const tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
           where('fromUserId', '==', userId),
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
+        
+        const snapshot = await getDocs(tokenTransactionsQuery);
+        const transactionList = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            fromUserId: data.fromUserId || '',
+            toTechnicianId: data.toTechnicianId || '',
+            fromName: data.fromName,
+            toName: data.toName,
+            tokens: data.tokens || 0,
+            message: data.message || '',
+            timestamp: data.timestamp,
+            type: data.type || '',
+            dollarValue: data.dollarValue,
+            pointsAwarded: data.pointsAwarded
+          } as Transaction;
+        });
+
+        setTransactions(transactionList);
       }
-
-      const snapshot = await getDocs(tokenTransactionsQuery);
-      const transactionList = snapshot.docs.map(doc => {
-        const data = doc.data() as any;
-        return {
-          id: doc.id,
-          fromUserId: data.fromUserId || '',
-          toTechnicianId: data.toTechnicianId || '',
-          fromName: data.fromName,
-          toName: data.toName,
-          tokens: data.tokens || 0,
-          message: data.message || '',
-          timestamp: data.timestamp,
-          type: data.type || '',
-          dollarValue: data.dollarValue,
-          pointsAwarded: data.pointsAwarded
-        } as Transaction;
-      });
-
-      setTransactions(transactionList);
     } catch (error) {
       logger.error('Error loading transaction history:', error);
     }

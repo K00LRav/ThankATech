@@ -365,7 +365,7 @@ export default function ModernDashboard() {
   const loadTechnicianTokenStats = async (technicianId: string) => {
     try {
       // Import Firebase functions
-      const { collection, getDocs, query, where, or } = await import('firebase/firestore');
+      const { collection, getDocs, query, where } = await import('firebase/firestore');
       
       // Get technician data first to get all identifiers
       const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
@@ -374,19 +374,32 @@ export default function ModernDashboard() {
       logger.info(`Loading transactions for technician: ${technicianId}, email: ${techData?.email}`);
       
       // Load transactions WHERE THIS TECHNICIAN IS THE RECIPIENT
-      // Check by ID, email, and authUid to catch all transactions
-      const technicianTransactionsQuery = query(
+      // Query by ID first
+      const query1 = query(
         collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-        or(
-          where('toTechnicianId', '==', technicianId),
-          where('toTechnicianEmail', '==', techData?.email),
-          where('toTechnicianId', '==', techData?.authUid)
-        )
+        where('toTechnicianId', '==', technicianId)
       );
+      const snapshot1 = await getDocs(query1);
       
-      const technicianSnapshot = await getDocs(technicianTransactionsQuery);
+      // Query by email if available
+      let snapshot2: any = { docs: [] };
+      if (techData?.email) {
+        const query2 = query(
+          collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+          where('toTechnicianEmail', '==', techData.email)
+        );
+        snapshot2 = await getDocs(query2);
+      }
       
-      logger.info(`Found ${technicianSnapshot.docs.length} token transactions for technician`);
+      // Combine results and deduplicate
+      const allDocs = [...snapshot1.docs];
+      snapshot2.docs.forEach((doc: any) => {
+        if (!allDocs.find(d => d.id === doc.id)) {
+          allDocs.push(doc);
+        }
+      });
+      
+      logger.info(`Found ${allDocs.length} token transactions for technician`);
       
       // Process ALL transactions received by this technician
       const allReceivedTransactions = [];
@@ -394,7 +407,7 @@ export default function ModernDashboard() {
       let totalTokensReceived = 0;
       let totalTokenEarnings = 0;
       
-      technicianSnapshot.docs.forEach(doc => {
+      allDocs.forEach(doc => {
         const data = doc.data();
         
         // Add ALL received transactions to the main list
