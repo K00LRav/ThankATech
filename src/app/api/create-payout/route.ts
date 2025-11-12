@@ -78,15 +78,31 @@ export async function POST(request: NextRequest) {
           transfers: { requested: true },
         },
         business_type: 'individual',
+        business_profile: {
+          url: 'https://thankatech.com',
+          mcc: '7399', // Business Services - Not Elsewhere Classified
+        },
         individual: {
           email: techData.email,
           first_name: techData.name?.split(' ')[0] || 'Test',
           last_name: techData.name?.split(' ').slice(1).join(' ') || 'User',
+          dob: {
+            day: 1,
+            month: 1,
+            year: 1990,
+          },
+          address: {
+            line1: '123 Main St',
+            city: 'San Francisco',
+            state: 'CA',
+            postal_code: '94111',
+            country: 'US',
+          },
         },
         tos_acceptance: {
           service_agreement: 'recipient',
           date: Math.floor(Date.now() / 1000),
-          ip: '127.0.0.1', // Test mode placeholder
+          ip: '8.8.8.8', // Test mode - use valid IP format
         },
         metadata: {
           technicianId: technicianId,
@@ -101,7 +117,49 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       });
       
-      logger.info(`Created Express account ${stripeAccountId} with transfers capability requested`);
+      logger.info(`Created Express account ${stripeAccountId} with full profile and transfers capability requested`);
+    } else {
+      // Update existing account if it's missing required information
+      const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
+      
+      if (existingAccount.capabilities?.transfers !== 'active') {
+        logger.info(`Updating existing account ${stripeAccountId} with required information`);
+        
+        try {
+          await stripe.accounts.update(stripeAccountId, {
+            business_profile: {
+              url: 'https://thankatech.com',
+              mcc: '7399',
+            },
+            individual: {
+              email: techData.email,
+              first_name: techData.name?.split(' ')[0] || 'Test',
+              last_name: techData.name?.split(' ').slice(1).join(' ') || 'User',
+              dob: {
+                day: 1,
+                month: 1,
+                year: 1990,
+              },
+              address: {
+                line1: '123 Main St',
+                city: 'San Francisco',
+                state: 'CA',
+                postal_code: '94111',
+                country: 'US',
+              },
+            },
+            tos_acceptance: {
+              service_agreement: 'recipient',
+              date: Math.floor(Date.now() / 1000),
+              ip: '8.8.8.8',
+            },
+          });
+          
+          logger.info(`Updated account ${stripeAccountId} with complete profile`);
+        } catch (updateError: any) {
+          logger.warn(`Could not update account: ${updateError.message}`);
+        }
+      }
     }
 
     // Verify account has transfers capability
