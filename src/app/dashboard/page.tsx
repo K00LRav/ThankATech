@@ -225,7 +225,7 @@ export default function ModernDashboard() {
         setUserProfile(profile);
         setEditedProfile(profile);
         
-        // Load transactions based on user type - use the Firebase Auth UID for transactions
+        // Load transactions based on user type - clients use authUid
         await loadTransactions(userId, profile.userType);
         
         // Load token balance for clients
@@ -252,15 +252,13 @@ export default function ModernDashboard() {
         setUserProfile(profile);
         setEditedProfile(profile);
         
-        // Load transactions based on user type - use the Firebase Auth UID for transactions
-        await loadTransactions(userId, profile.userType);
-        
         // Load token balance for technicians (wallet for purchasing/sending)
         await loadTokenBalance(userId);
         
         // Load token stats for technicians (earnings from received tokens)
+        // Use the DOCUMENT ID not the authUid for technician queries
         if (profile.userType === 'technician') {
-          setTimeout(() => loadTechnicianTokenStats(profile.id), 500);
+          await loadTechnicianTokenStats(techDoc.id);
         }
         return;
       }
@@ -331,7 +329,13 @@ export default function ModernDashboard() {
           
           setUserProfile(profile);
           setEditedProfile(profile);
-          await loadTransactions(userId, profile.userType);
+          
+          // Load token balance for technicians (wallet)
+          await loadTokenBalance(userId);
+          
+          // Load token stats for technicians (earnings from received tokens)
+          // Use the DOCUMENT ID not the authUid
+          await loadTechnicianTokenStats(techDoc.id);
           return;
         }
       }
@@ -485,26 +489,16 @@ export default function ModernDashboard() {
 
   const loadTransactions = async (userId: string, userType: string) => {
     try {
-      // Load NEW tokenTransactions (ThankYou points and TOA tokens)
-      let tokenTransactionsQuery;
+      // This function is now ONLY for clients
+      // Technicians use loadTechnicianTokenStats() instead
       
-      if (userType === 'technician') {
-        // Load transactions received by this technician
-        tokenTransactionsQuery = query(
-          collection(db, 'tokenTransactions'),
-          where('toTechnicianId', '==', userId),
-          orderBy('timestamp', 'desc'),
-          firestoreLimit(20)
-        );
-      } else {
-        // Load transactions sent by this client + token purchases
-        tokenTransactionsQuery = query(
-          collection(db, 'tokenTransactions'),
-          where('fromUserId', '==', userId),
-          orderBy('timestamp', 'desc'),
-          firestoreLimit(20)
-        );
-      }
+      // Load transactions sent by this client + token purchases
+      const tokenTransactionsQuery = query(
+        collection(db, 'tokenTransactions'),
+        where('fromUserId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        firestoreLimit(20)
+      );
 
       const tokenSnapshot = await getDocs(tokenTransactionsQuery);
       const tokenTransactions = await Promise.all(
@@ -558,26 +552,14 @@ export default function ModernDashboard() {
         })
       );
 
-      // Also load LEGACY transactions for backward compatibility
-      let legacyTransactionsQuery;
-      
-      if (userType === 'technician') {
-        legacyTransactionsQuery = query(
-          collection(db, 'transactions'),
-          where('technicianId', '==', userId),
-          where('type', '==', 'tip'),
-          orderBy('timestamp', 'desc'),
-          firestoreLimit(10)
-        );
-      } else {
-        legacyTransactionsQuery = query(
-          collection(db, 'transactions'),
-          where('fromUserId', '==', userId),
-          where('type', '==', 'tip'),
-          orderBy('timestamp', 'desc'),
-          firestoreLimit(10)
-        );
-      }
+      // Also load LEGACY transactions for backward compatibility (clients only)
+      const legacyTransactionsQuery = query(
+        collection(db, 'transactions'),
+        where('fromUserId', '==', userId),
+        where('type', '==', 'tip'),
+        orderBy('timestamp', 'desc'),
+        firestoreLimit(10)
+      );
 
       const legacySnapshot = await getDocs(legacyTransactionsQuery);
       const legacyTransactions = legacySnapshot.docs.map(doc => ({
