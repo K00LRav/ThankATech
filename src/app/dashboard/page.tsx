@@ -63,6 +63,10 @@ interface Transaction {
   pointsAwarded?: number;
   tokens?: number;
   message?: string;
+  // Payout fields
+  status?: string;
+  transferId?: string;
+  stripeAccountId?: string;
 }
 
 // Enhanced Header Component specifically for Dashboard
@@ -405,6 +409,12 @@ export default function ModernDashboard() {
       
       logger.info(`Found ${allDocs.length} token transactions for technician`);
       
+      // DEBUG: Log all found transactions
+      allDocs.forEach(doc => {
+        const data = doc.data();
+        logger.info(`Transaction: ${data.type}, ${data.tokens} TOA, from: ${data.fromName}, amount: $${data.dollarValue || data.technicianPayout}`);
+      });
+      
       // Process ALL transactions received by this technician
       const allReceivedTransactions = [];
       const tokenTransactions = [];
@@ -444,6 +454,46 @@ export default function ModernDashboard() {
       
       // Update tip transactions with ALL received transactions (thank_you + toa_token)
       setTipTransactions(allReceivedTransactions);
+      
+      // ALSO load payouts for this technician to show in activity
+      try {
+        const payoutsQuery = query(
+          collection(db, 'payouts'),
+          where('technicianId', '==', technicianId)
+        );
+        
+        const payoutsSnapshot = await getDocs(payoutsQuery);
+        logger.info(`Found ${payoutsSnapshot.docs.length} payouts for technician`);
+        
+        const payoutTransactions = payoutsSnapshot.docs.map(payoutDoc => {
+          const payoutData = payoutDoc.data();
+          logger.info(`Payout: ${payoutData.status}, amount: $${(payoutData.amount / 100).toFixed(2)}, date: ${payoutData.createdAt?.toDate()}`);
+          
+          return {
+            id: payoutDoc.id,
+            type: 'payout',
+            amount: -(payoutData.amount || 0), // Negative for withdrawals
+            timestamp: payoutData.createdAt,
+            status: payoutData.status,
+            transferId: payoutData.transferId,
+            stripeAccountId: payoutData.stripeAccountId
+          };
+        });
+        
+        // Combine token transactions and payouts, then sort by timestamp
+        const allActivity = [...allReceivedTransactions, ...payoutTransactions].sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+          return bTime.getTime() - aTime.getTime();
+        });
+        
+        setTipTransactions(allActivity);
+        setAllTransactions(allActivity);
+        
+      } catch (payoutError) {
+        logger.error('Error loading payouts:', payoutError);
+        // Fallback to just token transactions if payout query fails
+      }
       
       // Calculate technician points and thank yous received
       let totalThankYousReceived = 0;
@@ -1185,6 +1235,14 @@ export default function ModernDashboard() {
                         title: `Token Purchase`,
                         amount: formatCurrency(transaction.amount || 0),
                         points: transaction.pointsAwarded ? `+${transaction.pointsAwarded} ThankATech Point${transaction.pointsAwarded !== 1 ? 's' : ''}` : null
+                      };
+                    case 'payout':
+                      return {
+                        icon: '💸',
+                        bgColor: 'bg-yellow-500/20',
+                        title: `Payout to Bank (${transaction.status || 'pending'})`,
+                        amount: `-${formatCurrency(Math.abs(transaction.amount || 0) / 100)}`, // Negative, convert cents to dollars
+                        points: null
                       };
                     default:
                       return {
