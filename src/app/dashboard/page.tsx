@@ -108,7 +108,7 @@ export default function ModernDashboard() {
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   // Use earnings hook for technicians
-  const { earnings, loading: earningsLoading } = useTechnicianEarnings(userProfile?.userType === 'technician' ? userProfile?.id || null : null);
+  const { earnings, loading: earningsLoading, refetch: refetchEarnings } = useTechnicianEarnings(userProfile?.userType === 'technician' ? userProfile?.id || null : null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -1543,8 +1543,13 @@ export default function ModernDashboard() {
           onClose={() => setShowPayoutModal(false)}
           availableBalance={earnings?.availableBalance || 0}
           technicianId={userProfile.id}
-          onPayoutSuccess={() => {
+          onPayoutSuccess={(amount) => {
             setShowPayoutModal(false);
+            // Refresh earnings data after successful payout
+            refetchEarnings();
+            // Show success message
+            const amountInDollars = (amount / 100).toFixed(2);
+            alert(`Success! Payout of $${amountInDollars} has been initiated. Funds will arrive in 1-2 business days.`);
           }}
         />
       )}
