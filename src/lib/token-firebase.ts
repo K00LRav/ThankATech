@@ -564,13 +564,26 @@ export async function sendTokens(
       : toaMessages[Math.floor(Math.random() * toaMessages.length)];
     
     // Fetch sender and recipient names
-    // Sender is always a client, recipient is always a technician
-    const senderDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, fromUserId));
+    // Sender can be either a client OR a technician (technicians can send to other technicians)
+    let senderDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, fromUserId));
+    let senderData: any = {};
+    let senderType: 'client' | 'technician' = 'client';
+    
+    if (senderDoc.exists()) {
+      senderData = senderDoc.data();
+      senderType = 'client';
+    } else {
+      // Check if sender is a technician
+      senderDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, fromUserId));
+      if (senderDoc.exists()) {
+        senderData = senderDoc.data();
+        senderType = 'technician';
+      }
+    }
     
     const recipientDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, toTechnicianId));
     
-    const senderData = senderDoc.exists() ? senderDoc.data() : {};
-    const fromName = senderData?.name || senderData?.displayName || 'Customer';
+    const fromName = senderData?.name || senderData?.displayName || senderData?.businessName || (senderType === 'technician' ? 'Technician' : 'Customer');
     const toName = recipientDoc.exists() ? recipientDoc.data()?.name : 'Technician';
     
     // Calculate TOA business model values
@@ -657,55 +670,84 @@ export async function sendTokens(
       }
     }
 
-    // Award ThankATech Points to customer ONLY for TOA tokens (paid appreciation)
-    // Customer is always in clients collection - find by authUid first
-    const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
-    const clientSnapshot = await getDocs(clientsQuery);
-    
-    if (!clientSnapshot.empty) {
-      const customerRef = doc(db, COLLECTIONS.CLIENTS, clientSnapshot.docs[0].id);
-      const customerDoc = clientSnapshot.docs[0];
+    // Award ThankATech Points to sender ONLY for TOA tokens (paid appreciation)
+    // Sender can be either client or technician - check which collection they're in
+    if (senderType === 'client') {
+      // Find client by authUid
+      const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
+      const clientSnapshot = await getDocs(clientsQuery);
+      
+      if (!clientSnapshot.empty) {
+        const customerRef = doc(db, COLLECTIONS.CLIENTS, clientSnapshot.docs[0].id);
+        
+        const updateData: any = {
+          totalThankYousSent: increment(1),
+          lastAppreciationDate: new Date()
+        };
+        
+        // ONLY award points to client for TOA tokens (paid appreciation)
+        if (!isFreeThankYou) {
+          updateData.points = increment(tokens); // 1 point per TOA sent
+          updateData.totalToaSent = increment(tokens);
+          updateData.totalSpent = increment(dollarValue);
+          updateData.totalTokensSent = increment(tokens);
+        }
+        // Free thank yous do NOT award points to clients - only to technicians
+        
+        await updateDoc(customerRef, updateData);
+      } else {
+        // Create customer record if doesn't exist - this shouldn't happen for existing users
+        logger.warn('Customer document not found for authUid:', fromUserId);
+      }
+    } else if (senderType === 'technician') {
+      // Sender is a technician sending to another technician
+      const techSenderRef = doc(db, COLLECTIONS.TECHNICIANS, fromUserId);
       
       const updateData: any = {
         totalThankYousSent: increment(1),
         lastAppreciationDate: new Date()
       };
       
-      // ONLY award points to client for TOA tokens (paid appreciation)
+      // ONLY award points to technician for TOA tokens (paid appreciation)
       if (!isFreeThankYou) {
         updateData.points = increment(tokens); // 1 point per TOA sent
         updateData.totalToaSent = increment(tokens);
         updateData.totalSpent = increment(dollarValue);
         updateData.totalTokensSent = increment(tokens);
       }
-      // Free thank yous do NOT award points to clients - only to technicians
+      // Free thank yous do NOT award points for sending - only receiving
       
-      await updateDoc(customerRef, updateData);
-    } else {
-      // Create customer record if doesn't exist - this shouldn't happen for existing users
-      logger.warn('Customer document not found for authUid:', fromUserId);
+      await updateDoc(techSenderRef, updateData);
     }
     
     // Development only logging
     if (process.env.NODE_ENV === 'development') {
       if (!isFreeThankYou) {
-        logger.info(`✅ Awarded ${tokens} ThankATech Points to customer ${fromUserId} for sending ${tokens} TOA tokens`);
+        logger.info(`✅ Awarded ${tokens} ThankATech Points to ${senderType} ${fromUserId} for sending ${tokens} TOA tokens`);
       } else {
-        logger.info(`✅ Free thank you sent from customer ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
+        logger.info(`✅ Free thank you sent from ${senderType} ${fromUserId} to technician ${toTechnicianId} - only technician gets points`);
       }
     }
 
     // Send email notification
     try {
       const techData = techDoc?.data();
-      // Get client data for email notification
-      const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
-      const fromUserDoc = await getDoc(fromUserRef);
-      const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+      // Get sender data for email notification (could be client or technician)
+      let fromUserData: any = {};
+      if (senderType === 'client') {
+        const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
+        const fromUserDoc = await getDoc(fromUserRef);
+        fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+      } else {
+        // Sender is a technician
+        const fromTechRef = doc(db, COLLECTIONS.TECHNICIANS, fromUserId);
+        const fromTechDoc = await getDoc(fromTechRef);
+        fromUserData = fromTechDoc.exists() ? fromTechDoc.data() : {};
+      }
       
       if (techData?.email) {
         const technicianName = techData.name || 'Technician';
-        const customerName = fromUserData.displayName || fromUserData.name || 'A customer';
+        const customerName = fromUserData.displayName || fromUserData.name || fromUserData.businessName || (senderType === 'technician' ? 'A fellow technician' : 'A customer');
         
         if (isFreeThankYou) {
           // Send regular thank you notification
