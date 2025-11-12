@@ -1036,8 +1036,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex flex-col items-center space-y-6 sm:space-y-8">
         
-        {/* Sample Data Notice */}
-                {/* Location Permission Banner */}
+        {/* Location Permission Banner */}
         {locationPermission === 'denied' && (
           <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-500/20 to-blue-600/20 backdrop-blur-sm border border-blue-300/30 rounded-2xl p-4">
             <div className="text-blue-100">
@@ -1055,60 +1054,92 @@ export default function Home() {
           </div>
         )}
 
-
-
-        {/* RolodexCard Component - Brand-aligned button hierarchy */}
-        <RolodexCard 
-          technician={profile}
-          onThankYou={handleThankYou}
-          onSendTOA={handleSendTOA}
-          showActions={true}
-        />
-      </div>
-
-      {/* Infinite Scroll Navigation - Compact mobile */}
-      <div className="flex items-center justify-center gap-2 mt-4 mb-6 px-4">
-        {/* Previous Button - Compact size */}
-        <button
-          onClick={flipToPrevious}
-          disabled={currentProfileIndex === 0}
-          className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
-            currentProfileIndex === 0
-              ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
-              : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
-          }`}
-        >
-          <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span>Prev</span>
-        </button>
-
-        {/* Compact Info Display */}
-        <div className="flex items-center gap-2">
-          {/* Counter - Compact size */}
-          <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
-            <span className="text-white font-medium text-xs">
-              {currentProfileIndex + 1} of {profiles.length}
-            </span>
+        {/* Show inline no-results message when filtered to zero */}
+        {filteredProfiles.length === 0 && (searchQuery || selectedCategory !== 'all') ? (
+          <div className="w-full max-w-md mx-auto">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-300/30">
+                <span className="text-2xl">🔍</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                {selectedCategory !== 'all' ? (
+                  <>No {getCategoryById(selectedCategory)?.name || formatCategory(selectedCategory)} Found</>
+                ) : (
+                  <>No Results for &quot;{searchQuery}&quot;</>
+                )}
+              </h3>
+              <p className="text-gray-300 text-sm mb-6">
+                Try adjusting your search or browse all categories
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                }}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                🔄 View All Technicians
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* RolodexCard Component - Brand-aligned button hierarchy */}
+            <RolodexCard 
+              technician={profile}
+              onThankYou={handleThankYou}
+              onSendTOA={handleSendTOA}
+              showActions={true}
+            />
+          </>
+        )}
+      
+        {/* Infinite Scroll Navigation - Only show if there are results */}
+        {filteredProfiles.length > 0 && (
+          <div className="flex items-center justify-center gap-2 mt-4 mb-6 px-4">
+          {/* Previous Button - Compact size */}
+          <button
+            onClick={flipToPrevious}
+            disabled={currentProfileIndex === 0}
+            className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
+              currentProfileIndex === 0
+                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
+            }`}
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex === 0 ? '' : 'group-hover:-translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Prev</span>
+          </button>
 
-        {/* Next Button - Compact size */}
-        <button
-          onClick={flipToNext}
-          disabled={currentProfileIndex >= displayedProfiles.length - 1}
-          className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
-            currentProfileIndex >= displayedProfiles.length - 1
-              ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
-              : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
-          }`}
-        >
-          <span>Next</span>
-          <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex >= displayedProfiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+          {/* Compact Info Display */}
+          <div className="flex items-center gap-2">
+            {/* Counter - Compact size */}
+            <div className="bg-white/10 backdrop-blur-lg border border-white/30 rounded-lg px-3 py-1.5 shadow-md" title="Use arrow keys to navigate">
+              <span className="text-white font-medium text-xs">
+                {currentProfileIndex + 1} of {profiles.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Next Button - Compact size */}
+          <button
+            onClick={flipToNext}
+            disabled={currentProfileIndex >= displayedProfiles.length - 1}
+            className={`group flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 shadow-md min-h-[44px] ${
+              currentProfileIndex >= displayedProfiles.length - 1
+                ? 'bg-gray-400/20 text-gray-400 cursor-not-allowed border border-gray-400/20'
+                : 'bg-white/10 backdrop-blur-lg border border-white/30 text-white hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:border-white/40'
+            }`}
+          >
+            <span>Next</span>
+            <svg className={`w-3.5 h-3.5 transition-transform ${currentProfileIndex >= displayedProfiles.length - 1 ? '' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        )}
       </div>
 
       {/* Categories Filter - Moved below technician showcase */}
