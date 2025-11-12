@@ -68,10 +68,10 @@ export async function POST(request: NextRequest) {
 
     // If no Stripe account, create one
     if (!stripeAccountId) {
-      logger.info(`Creating Stripe Express account for technician ${technicianId}`);
+      logger.info(`Creating Stripe Custom account for technician ${technicianId}`);
       
       const account = await stripe.accounts.create({
-        type: 'express',
+        type: 'custom',
         country: 'US',
         email: techData.email,
         capabilities: {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       });
       
-      logger.info(`Created Express account ${stripeAccountId} with full profile and transfers capability requested`);
+      logger.info(`Created Custom account ${stripeAccountId} with full profile and transfers capability requested`);
     } else {
       // Update existing account if it's missing required information
       const existingAccount = await stripe.accounts.retrieve(stripeAccountId);
