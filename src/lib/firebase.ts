@@ -1630,12 +1630,38 @@ export async function getTechnicianEarnings(technicianId) {
       logger.error('Error fetching token earnings:', tokenError);
     }
     
+    // Get completed payouts to subtract from available balance
+    let totalPayouts = 0;
+    try {
+      const payoutsQuery = query(
+        collection(db, 'payouts'),
+        where('technicianId', '==', actualTechnicianId)
+      );
+      
+      const payoutsSnapshot = await getDocs(payoutsQuery);
+      
+      payoutsSnapshot.docs.forEach(payoutDoc => {
+        const payoutData = payoutDoc.data();
+        // Only count completed or pending payouts
+        if (payoutData.status === 'completed' || payoutData.status === 'pending') {
+          totalPayouts += payoutData.amount || 0; // Amount is in cents
+        }
+      });
+      
+      logger.info(`💰 Total payouts for technician ${actualTechnicianId}: $${totalPayouts / 100}`);
+    } catch (payoutError) {
+      logger.error('Error fetching payouts:', payoutError);
+    }
+    
     // Combine legacy tips and token earnings
     const combinedEarnings = totalNetAmount + tokenEarnings;
     
+    // Calculate available balance (total earnings minus payouts)
+    const availableBalance = Math.max(0, combinedEarnings - totalPayouts);
+    
     const result = {
       totalEarnings: combinedEarnings / 100, // Convert to dollars - what technician actually earned
-      availableBalance: combinedEarnings / 100, // Convert to dollars - available to withdraw
+      availableBalance: availableBalance / 100, // Convert to dollars - available to withdraw (after payouts)
       pendingBalance: 0, // For now, no pending payments
       tipCount: allTips.length + tokenTransactionCount // Include both legacy tips and token transactions
     };
