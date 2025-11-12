@@ -48,8 +48,8 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     // Query 1: By technician document ID
     const query1 = query(
       collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-      where('toTechnicianId', '==', technicianId),
-      orderBy('timestamp', 'desc')
+      where('toTechnicianId', '==', technicianId)
+      // Removed orderBy - will sort in memory instead
     );
     const snapshot1 = await getDocs(query1);
     
@@ -59,8 +59,8 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
       try {
         const query2 = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('toTechnicianEmail', '==', techEmail),
-          orderBy('timestamp', 'desc')
+          where('toTechnicianEmail', '==', techEmail)
+          // Removed orderBy - will sort in memory instead
         );
         snapshot2 = await getDocs(query2);
       } catch (error) {
@@ -92,8 +92,8 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     // ====== LOAD PAYOUTS ======
     const payoutQuery = query(
       collection(db, 'payouts'),
-      where('technicianId', '==', technicianId),
-      orderBy('createdAt', 'desc')
+      where('technicianId', '==', technicianId)
+      // Removed orderBy - will sort in memory instead
     );
     
     const payoutSnapshot = await getDocs(payoutQuery);
