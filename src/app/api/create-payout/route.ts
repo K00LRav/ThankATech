@@ -78,6 +78,9 @@ export async function POST(request: NextRequest) {
           transfers: { requested: true },
         },
         business_type: 'individual',
+        tos_acceptance: {
+          service_agreement: 'recipient',
+        },
         metadata: {
           technicianId: technicianId,
         },
@@ -90,6 +93,17 @@ export async function POST(request: NextRequest) {
         stripeAccountStatus: 'pending',
         updatedAt: new Date(),
       });
+      
+      logger.info(`Created Express account ${stripeAccountId} with transfers capability requested`);
+    }
+
+    // Verify account has transfers capability
+    const accountStatus = await stripe.accounts.retrieve(stripeAccountId);
+    if (accountStatus.capabilities?.transfers !== 'active') {
+      logger.warn(`Account ${stripeAccountId} transfers capability status: ${accountStatus.capabilities?.transfers}`);
+      
+      // In test mode, the capability should activate immediately after adding bank account
+      // So we'll proceed and let the bank account addition trigger activation
     }
 
     // Add bank account if provided
