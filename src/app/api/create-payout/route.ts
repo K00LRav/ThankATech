@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
             postal_code: '94111',
             country: 'US',
           },
+          phone: '+14155551234',
+          ssn_last_4: '0000', // Test mode: use 0000 to bypass verification
         },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
@@ -148,6 +150,7 @@ export async function POST(request: NextRequest) {
                 country: 'US',
               },
               phone: '+14155551234',
+              ssn_last_4: '0000', // Test mode: bypass verification
             },
           };
           
@@ -190,6 +193,7 @@ export async function POST(request: NextRequest) {
                   country: 'US',
                 },
                 phone: '+14155551234',
+                ssn_last_4: '0000',
               },
             });
             logger.info(`Updated account without TOS (may need manual acceptance)`);
