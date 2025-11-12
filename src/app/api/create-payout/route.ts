@@ -123,7 +123,15 @@ export async function POST(request: NextRequest) {
           }
         );
         
+        // Set as default payout method
+        await stripe.accounts.update(stripeAccountId, {
+          default_currency: 'usd',
+        });
+        
         logger.info(`Added bank account to Stripe account ${stripeAccountId}`);
+        
+        // Wait a moment for capability to activate in test mode
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (bankError: any) {
         logger.error('Bank account creation error:', bankError);
         return NextResponse.json(
@@ -131,6 +139,21 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // Re-check capability status after adding bank account
+    const updatedAccountStatus = await stripe.accounts.retrieve(stripeAccountId);
+    logger.info(`Transfers capability after bank account: ${updatedAccountStatus.capabilities?.transfers}`);
+    
+    if (updatedAccountStatus.capabilities?.transfers !== 'active') {
+      return NextResponse.json(
+        { 
+          error: 'Account setup incomplete. Transfers capability not yet active. Please try again in a moment.',
+          accountId: stripeAccountId,
+          capabilityStatus: updatedAccountStatus.capabilities?.transfers
+        },
+        { status: 400 }
+      );
     }
 
     // Calculate fee for express payout
