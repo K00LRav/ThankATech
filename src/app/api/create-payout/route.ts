@@ -78,8 +78,15 @@ export async function POST(request: NextRequest) {
           transfers: { requested: true },
         },
         business_type: 'individual',
+        individual: {
+          email: techData.email,
+          first_name: techData.name?.split(' ')[0] || 'Test',
+          last_name: techData.name?.split(' ').slice(1).join(' ') || 'User',
+        },
         tos_acceptance: {
           service_agreement: 'recipient',
+          date: Math.floor(Date.now() / 1000),
+          ip: '127.0.0.1', // Test mode placeholder
         },
         metadata: {
           technicianId: technicianId,
@@ -130,8 +137,23 @@ export async function POST(request: NextRequest) {
         
         logger.info(`Added bank account to Stripe account ${stripeAccountId}`);
         
+        // In test mode, manually activate the transfers capability
+        if (process.env.STRIPE_SECRET_KEY?.includes('test')) {
+          try {
+            // Update account to trigger capability activation
+            await stripe.accounts.update(stripeAccountId, {
+              business_profile: {
+                url: 'https://thankatech.com',
+              },
+            });
+            logger.info('Updated account business profile to trigger activation');
+          } catch (updateError) {
+            logger.warn('Could not update business profile:', updateError);
+          }
+        }
+        
         // Wait a moment for capability to activate in test mode
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Increased to 3 seconds
       } catch (bankError: any) {
         logger.error('Bank account creation error:', bankError);
         return NextResponse.json(
@@ -141,16 +163,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Re-check capability status after adding bank account
-    const updatedAccountStatus = await stripe.accounts.retrieve(stripeAccountId);
-    logger.info(`Transfers capability after bank account: ${updatedAccountStatus.capabilities?.transfers}`);
+    // Re-check capability status after adding bank account (with retries)
+    let retriesLeft = 3;
+    let transfersCapable = false;
     
-    if (updatedAccountStatus.capabilities?.transfers !== 'active') {
+    while (retriesLeft > 0 && !transfersCapable) {
+      const updatedAccountStatus = await stripe.accounts.retrieve(stripeAccountId);
+      const transfersCapability = updatedAccountStatus.capabilities?.transfers;
+      
+      logger.info(`Checking transfers capability (attempt ${4 - retriesLeft}/3): ${transfersCapability}`);
+      
+      if (transfersCapability === 'active') {
+        transfersCapable = true;
+        break;
+      }
+      
+      retriesLeft--;
+      if (retriesLeft > 0) {
+        logger.info(`Capability not active yet, waiting 2 more seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    if (!transfersCapable) {
+      const finalAccount = await stripe.accounts.retrieve(stripeAccountId);
+      logger.warn(`Transfers capability not active after retries for account ${stripeAccountId}`);
       return NextResponse.json(
         { 
           error: 'Account setup incomplete. Transfers capability not yet active. Please try again in a moment.',
           accountId: stripeAccountId,
-          capabilityStatus: updatedAccountStatus.capabilities?.transfers
+          capabilityStatus: finalAccount.capabilities?.transfers
         },
         { status: 400 }
       );
