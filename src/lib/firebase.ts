@@ -653,10 +653,12 @@ export async function sendTip(technicianId, userId, amount, message = '') {
  */
 export async function uploadTechnicianPhoto(technicianId, photoFile) {
   try {
-    const photoRef = ref(storage, `technicians/${technicianId}/profile.jpg`);
+    // Add timestamp to force cache bust when image is updated
+    const timestamp = Date.now();
+    const photoRef = ref(storage, `technicians/${technicianId}/profile_${timestamp}.jpg`);
     await uploadBytes(photoRef, photoFile);
     const downloadURL = await getDownloadURL(photoRef);
-    
+
     // Update technician record with photo URL (with existence check)
     const technicianRef = doc(db, COLLECTIONS.TECHNICIANS, technicianId);
     try {
@@ -664,7 +666,8 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
       if (techDoc.exists()) {
         await updateDoc(technicianRef, {
           image: downloadURL,
-          photoURL: downloadURL
+          photoURL: downloadURL,
+          photoUpdatedAt: new Date() // Track when photo was last updated
         });
       } else {
         console.warn(`Technician document ${technicianId} not found for photo update. This is normal for mock data.`);
@@ -672,7 +675,7 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
     } catch (error) {
       console.warn(`Unable to update technician photo for ${technicianId}:`, error.message);
     }
-    
+
     return downloadURL;
   } catch (error) {
     console.error('Error uploading photo:', error);
@@ -685,17 +688,20 @@ export async function uploadTechnicianPhoto(technicianId, photoFile) {
  */
 export async function uploadClientPhoto(clientId, photoFile) {
   try {
-    const photoRef = ref(storage, `clients/${clientId}/profile.jpg`);
+    // Add timestamp to force cache bust when image is updated
+    const timestamp = Date.now();
+    const photoRef = ref(storage, `clients/${clientId}/profile_${timestamp}.jpg`);
     await uploadBytes(photoRef, photoFile);
     const downloadURL = await getDownloadURL(photoRef);
-    
+
     // Update client record with photo URL (with existence check)
     const clientRef = doc(db, COLLECTIONS.CLIENTS, clientId);
     try {
       const clientDoc = await getDoc(clientRef);
       if (clientDoc.exists()) {
         await updateDoc(clientRef, {
-          photoURL: downloadURL
+          photoURL: downloadURL,
+          photoUpdatedAt: new Date() // Track when photo was last updated
         });
       } else {
         console.warn(`Client document ${clientId} not found for photo update.`);
@@ -703,7 +709,7 @@ export async function uploadClientPhoto(clientId, photoFile) {
     } catch (error) {
       console.warn(`Unable to update client photo for ${clientId}:`, error.message);
     }
-    
+
     return downloadURL;
   } catch (error) {
     console.error('Error uploading photo:', error);
