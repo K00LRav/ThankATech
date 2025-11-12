@@ -1644,13 +1644,16 @@ export async function getTechnicianEarnings(technicianId) {
         const payoutData = payoutDoc.data();
         // Only count completed or pending payouts
         if (payoutData.status === 'completed' || payoutData.status === 'pending') {
-          totalPayouts += payoutData.amount || 0; // Amount is in cents
+          totalPayouts += (payoutData.amount || 0); // Amount is in cents
         }
       });
       
-      logger.info(`💰 Total payouts for technician ${actualTechnicianId}: $${totalPayouts / 100}`);
+      if (totalPayouts > 0) {
+        logger.info(`Total payouts for ${actualTechnicianId}: $${(totalPayouts / 100).toFixed(2)}`);
+      }
     } catch (payoutError) {
       logger.error('Error fetching payouts:', payoutError);
+      // Continue with totalPayouts = 0 if query fails
     }
     
     // Combine legacy tips and token earnings
