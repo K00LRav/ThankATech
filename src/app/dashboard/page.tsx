@@ -130,20 +130,16 @@ export default function ModernDashboard() {
       // First, check if this is an admin user in the admins collection
       const adminsQuery = query(collection(db, COLLECTIONS.ADMINS), where('authUid', '==', userId));
       const adminSnapshot = await getDocs(adminsQuery);
-      console.log('� Admins collection results:', adminSnapshot.size, 'documents found');
       
       if (!adminSnapshot.empty) {
         const adminDoc = adminSnapshot.docs[0];
         const adminData = adminDoc.data();
-        console.log('� Admin user found in admins collection:', adminData.email);
-        console.log('� Redirecting to admin panel...');
         router.push('/admin');
         return;
       }
       
       const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', userId));
       const clientSnapshot = await getDocs(clientsQuery);
-      console.log('👥 Clients collection results:', clientSnapshot.size, 'documents found');
       
       if (!clientSnapshot.empty) {
         const clientDoc = clientSnapshot.docs[0];
@@ -171,7 +167,6 @@ export default function ModernDashboard() {
       // Try to find user in technicians collection
       const techsQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', userId));
       const techSnapshot = await getDocs(techsQuery);
-      console.log('🔧 Technicians collection results:', techSnapshot.size, 'documents found');
       
       if (!techSnapshot.empty) {
         const techDoc = techSnapshot.docs[0];
@@ -201,22 +196,17 @@ export default function ModernDashboard() {
       // Fallback: Try searching by email (for legacy users or those missing authUid)
       const userEmail = authUser?.email || user?.email;
       if (userEmail) {
-        console.log('🔄 Fallback: Searching by email for legacy users...');
-        
         // Search admins by email first
         const adminsByEmailQuery = query(collection(db, COLLECTIONS.ADMINS), where('email', '==', userEmail));
         const adminsByEmailSnapshot = await getDocs(adminsByEmailQuery);
-        console.log('👑 Admins by email results:', adminsByEmailSnapshot.size, 'documents found');
         
         if (!adminsByEmailSnapshot.empty) {
           const adminDoc = adminsByEmailSnapshot.docs[0];
           const adminData = adminDoc.data();
           
           // Update the document with the current authUid for future lookups
-          console.log('📝 Updating admin document with authUid:', userId);
           await updateDoc(doc(db, COLLECTIONS.ADMINS, adminDoc.id), { authUid: userId });
           
-          console.log('🔐 Admin user found by email, redirecting to admin panel...');
           router.push('/admin');
           return;
         }
@@ -224,14 +214,12 @@ export default function ModernDashboard() {
         // Search clients by email
         const clientsByEmailQuery = query(collection(db, COLLECTIONS.CLIENTS), where('email', '==', userEmail));
         const clientsByEmailSnapshot = await getDocs(clientsByEmailQuery);
-        console.log('📧 Clients by email results:', clientsByEmailSnapshot.size, 'documents found');
         
         if (!clientsByEmailSnapshot.empty) {
           const clientDoc = clientsByEmailSnapshot.docs[0];
           const clientData = clientDoc.data();
           
           // Update the document with the current authUid for future lookups
-          console.log('📝 Updating client document with authUid:', userId);
           await updateDoc(doc(db, COLLECTIONS.CLIENTS, clientDoc.id), { authUid: userId });
           
           const profile = { 
@@ -252,14 +240,12 @@ export default function ModernDashboard() {
         // Search technicians by email
         const techsByEmailQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('email', '==', userEmail));
         const techsByEmailSnapshot = await getDocs(techsByEmailQuery);
-        console.log('🔧 Technicians by email results:', techsByEmailSnapshot.size, 'documents found');
         
         if (!techsByEmailSnapshot.empty) {
           const techDoc = techsByEmailSnapshot.docs[0];
           const techData = techDoc.data();
           
           // Update the document with the current authUid for future lookups
-          console.log('📝 Updating technician document with authUid:', userId);
           await updateDoc(doc(db, COLLECTIONS.TECHNICIANS, techDoc.id), { authUid: userId });
           
           const profile = { 
@@ -279,13 +265,9 @@ export default function ModernDashboard() {
       }
       
       // Still no user found - this is likely a Google sign-in user who hasn't completed registration
-      console.error('❌ User document not found in any collection (clients, technicians, users)');
-      console.log('🔍 Checked collections for userId:', userId);
-      console.log('📧 Checked collections for email:', authUser?.email || user?.email);
-      console.log('💡 This might be a Google sign-in user who hasn\'t completed registration yet');
+      console.error('❌ User document not found in any collection (clients, technicians, users)');      
       
       // Sign out the user and redirect to registration
-      console.log('🚪 Signing out user to allow re-registration...');
       await signOut(auth);
       router.push('/');
       
@@ -305,8 +287,6 @@ export default function ModernDashboard() {
 
   const loadTechnicianTokenStats = async (technicianId: string) => {
     try {
-      console.log('🪙 Loading technician token stats for:', technicianId);
-      
       // Import Firebase functions
       const { collection, getDocs, query, where } = await import('firebase/firestore');
       
@@ -317,7 +297,6 @@ export default function ModernDashboard() {
       );
       
       const technicianSnapshot = await getDocs(technicianTransactionsQuery);
-      console.log(`🪙 Found ${technicianSnapshot.size} transactions received by technician`);
       
       // Process ALL transactions received by this technician
       const allReceivedTransactions = [];
@@ -327,7 +306,6 @@ export default function ModernDashboard() {
       
       technicianSnapshot.docs.forEach(doc => {
         const data = doc.data();
-        console.log(`🪙 Processing: ${data.type}, tokens: ${data.tokens}, earnings: $${data.technicianPayout || data.dollarValue}`);
         
         // Add ALL received transactions to the main list
         allReceivedTransactions.push({
@@ -349,11 +327,6 @@ export default function ModernDashboard() {
         }
       });
       
-      console.log(`🪙 Technician token stats:`);
-      console.log(`🪙 Total tokens received: ${totalTokensReceived}`);
-      console.log(`🪙 Total earnings: $${totalTokenEarnings / 100}`);
-      console.log(`🪙 Transaction count: ${tokenTransactions.length}`);
-      
       setTokenBalance({
         totalTokensReceived,
         totalTokenEarnings: totalTokenEarnings / 100, // Convert back to dollars for display
@@ -363,7 +336,7 @@ export default function ModernDashboard() {
       // Update tip transactions with ALL received transactions (thank_you + toa_token)
       setTipTransactions(allReceivedTransactions);
       
-      // ALSO CALCULATE TECHNICIAN POINTS AND THANK YOUS RECEIVED
+      // Calculate technician points and thank yous received
       let totalThankYousReceived = 0;
       let totalPointsEarned = 0;
       
@@ -377,10 +350,6 @@ export default function ModernDashboard() {
           totalPointsEarned += 2; // 2 points per TOA token received
         }
       });
-      
-      console.log(`🪙 Technician appreciation stats:`);
-      console.log(`🪙 Thank yous received: ${totalThankYousReceived}`);
-      console.log(`🪙 Total points earned: ${totalPointsEarned}`);
       
       // Update the user profile data to show correct points and thank yous
       if (userProfile) {
@@ -399,7 +368,6 @@ export default function ModernDashboard() {
             totalThankYousReceived: totalThankYousReceived,
             updatedAt: new Date()
           });
-          console.log(`✅ Updated technician document with ${totalPointsEarned} points and ${totalThankYousReceived} thank yous`);
         } catch (updateError) {
           console.error('Error updating technician document:', updateError);
         }
@@ -456,7 +424,7 @@ export default function ModernDashboard() {
               }
               fromName = userDoc.exists() ? (userDoc.data() as any)?.name : null;
             } catch (error) {
-              console.log('Could not fetch user name:', error);
+              // Silently handle name fetch errors
             }
           }
           
@@ -466,7 +434,7 @@ export default function ModernDashboard() {
               const techDoc = await getDoc(techDocRef);
               toName = techDoc.exists() ? (techDoc.data() as any)?.name : null;
             } catch (error) {
-              console.log('Could not fetch technician name:', error);
+              // Silently handle name fetch errors
             }
           }
           

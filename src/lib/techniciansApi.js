@@ -1,14 +1,18 @@
 // Service for Firebase registered technicians only
 
 import { getRegisteredTechnicians, getTopTechnicians } from './firebase';
+import { geocodeAddress } from './geocoding';
 
 // Default location for fallback
 const DEFAULT_LOCATION = '40.7128,-74.0060'; // New York City coordinates
 
+// Cache for geocoded addresses to reduce API calls
+const geocodeCache = new Map();
+
 /**
  * Calculate distance between two coordinates using Haversine formula
  * @param {number} lat1 - User latitude
- * @param {number} lon1 - User longitude  
+ * @param {number} lon1 - User longitude
  * @param {number} lat2 - Technician latitude
  * @param {number} lon2 - Technician longitude
  * @returns {number} Distance in miles
@@ -17,9 +21,9 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 3959; // Earth's radius in miles
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a = 
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const distance = R * c;
@@ -31,21 +35,40 @@ function toRad(degrees) {
 }
 
 /**
- * Parse address to approximate coordinates (Atlanta area for sample data)
+ * Parse address to coordinates using Google Maps Geocoding API
+ * @param {string} address - The address to geocode
+ * @returns {Promise<{lat: number, lng: number} | null>} Coordinates or null
  */
-function parseAddressToCoords(address) {
-  // For sample data, return random Atlanta area coordinates
-  const atlantaCoords = [
-    { lat: 33.7490, lng: -84.3880 }, // Downtown Atlanta
-    { lat: 33.8034, lng: -84.3963 }, // Midtown
-    { lat: 33.7701, lng: -84.2920 }, // Decatur
-    { lat: 33.8150, lng: -84.5120 }, // Marietta
-    { lat: 33.6839, lng: -84.2641 }  // Stone Mountain
-  ];
-  
-  // For sample data, assign random Atlanta area coordinates
-  const randomCoord = atlantaCoords[Math.floor(Math.random() * atlantaCoords.length)];
-  return randomCoord;
+async function parseAddressToCoords(address) {
+  if (!address) {
+    return null;
+  }
+
+  // Check cache first
+  if (geocodeCache.has(address)) {
+    return geocodeCache.get(address);
+  }
+
+  try {
+    const result = await geocodeAddress(address);
+
+    if (result && result.coordinates) {
+      // Cache the result
+      geocodeCache.set(address, result.coordinates);
+      return result.coordinates;
+    }
+
+    // Fallback to default Atlanta coordinates if geocoding fails
+    console.warn(`Geocoding failed for address: ${address}, using Atlanta default`);
+    const fallback = { lat: 33.7490, lng: -84.3880 }; // Downtown Atlanta
+    geocodeCache.set(address, fallback);
+    return fallback;
+
+  } catch (error) {
+    console.error('Error in parseAddressToCoords:', error);
+    // Return Atlanta default on error
+    return { lat: 33.7490, lng: -84.3880 };
+  }
 }
 
 /**
@@ -57,64 +80,72 @@ function parseAddressToCoords(address) {
 export async function fetchTechnicians(category = 'all', location = null, maxResults = 20) {
   try {
     let technicians = await getRegisteredTechnicians();
-    
+
     // Check if our enhanced function is working
     if (technicians.length > 0 && !technicians[0].hasOwnProperty('totalTips')) {
       console.warn('⚠️ ISSUE: Technician object missing totalTips field - enhanced function not called!');
     }
-    
-    // Process registered technicians with location data
-    let processedTechs = technicians.map(tech => {
-      const techWithLocation = { ...tech };
-      
-      // Try to get coordinates from business address
-      if (tech.businessAddress) {
-        techWithLocation.coordinates = parseAddressToCoords(tech.businessAddress);
-      }
-      
-      // Calculate distance if user location is available
-      if (location && techWithLocation.coordinates) {
-        techWithLocation.distance = calculateDistance(
-          location.lat,
-          location.lng,
-          techWithLocation.coordinates.lat,
-          techWithLocation.coordinates.lng
-        );
-        techWithLocation.isNearby = techWithLocation.distance <= 25; // Within 25 miles
-      }
-      
-      return techWithLocation;
-    });
+
+    // Process registered technicians with location data (async geocoding)
+    const processedTechs = await Promise.all(
+      technicians.map(async (tech) => {
+        const techWithLocation = { ...tech };
+
+        // Try to get coordinates from business address or use stored coordinates
+        if (tech.coordinates && tech.coordinates.lat && tech.coordinates.lng) {
+          // Use stored coordinates from Firestore
+          techWithLocation.coordinates = tech.coordinates;
+        } else if (tech.businessAddress) {
+          // Geocode the address if coordinates not stored
+          techWithLocation.coordinates = await parseAddressToCoords(tech.businessAddress);
+        }
+
+        // Calculate distance if user location is available
+        if (location && techWithLocation.coordinates) {
+          techWithLocation.distance = calculateDistance(
+            location.lat,
+            location.lng,
+            techWithLocation.coordinates.lat,
+            techWithLocation.coordinates.lng
+          );
+          techWithLocation.isNearby = techWithLocation.distance <= 25; // Within 25 miles
+        }
+
+        return techWithLocation;
+      })
+    );
 
     // Get existing technician IDs to prevent duplicates
     const existingIds = new Set(processedTechs.map(tech => tech.id));
-    
+
     // Only include mock data that doesn't duplicate existing registered technicians
-    let mockTechs = getMockTechnicians().filter(tech => !existingIds.has(tech.id));
-    
-    // Add coordinates and calculate distances for sample data
-    mockTechs = mockTechs.map(tech => {
-      const coords = parseAddressToCoords(tech.businessAddress);
-      const techWithCoords = {
-        ...tech,
-        isSample: true,
-        coordinates: coords,
-        about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
-      };
-      
-      // Calculate distance if user location is available
-      if (location) {
-        techWithCoords.distance = calculateDistance(
-          location.lat, 
-          location.lng, 
-          coords.lat, 
-          coords.lng
-        );
-        techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
-      }
-      
-      return techWithCoords;
-    });
+    let mockTechsFiltered = getMockTechnicians().filter(tech => !existingIds.has(tech.id));
+
+    // Add coordinates and calculate distances for sample data (async geocoding)
+    const mockTechs = await Promise.all(
+      mockTechsFiltered.map(async (tech) => {
+        const coords = await parseAddressToCoords(tech.businessAddress);
+        const techWithCoords = {
+          ...tech,
+          isSample: true,
+          coordinates: coords,
+          about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
+        };
+
+        // Calculate distance if user location is available
+        if (location && coords) {
+          techWithCoords.distance = calculateDistance(
+            location.lat,
+            location.lng,
+            coords.lat,
+            coords.lng
+          );
+          techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
+        }
+
+        return techWithCoords;
+      })
+    );
 
     // Combine registered and non-duplicate mock technicians
     let allTechs = [...processedTechs, ...mockTechs];
@@ -138,39 +169,41 @@ export async function fetchTechnicians(category = 'all', location = null, maxRes
 
   } catch (error) {
     console.error('Error fetching technicians:', error);
-    
+
     // Fallback to mock data with location processing
-    let mockTechs = getMockTechnicians();
-    
-    // Add coordinates and calculate distances for sample data
-    mockTechs = mockTechs.map(tech => {
-      const coords = parseAddressToCoords(tech.businessAddress);
-      const techWithCoords = {
-        ...tech,
-        isSample: true,
-        coordinates: coords,
-        about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
-      };
-      
-      // Calculate distance if user location is available
-      if (location) {
-        techWithCoords.distance = calculateDistance(
-          location.lat, 
-          location.lng, 
-          coords.lat, 
-          coords.lng
-        );
-        techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
-      }
-      
-      return techWithCoords;
-    });
-    
+    let mockTechsData = getMockTechnicians();
+
+    // Add coordinates and calculate distances for sample data (async geocoding)
+    const mockTechs = await Promise.all(
+      mockTechsData.map(async (tech) => {
+        const coords = await parseAddressToCoords(tech.businessAddress);
+        const techWithCoords = {
+          ...tech,
+          isSample: true,
+          coordinates: coords,
+          about: tech.about + ' (Sample profile - Real technicians can register to appear here!)'
+        };
+
+        // Calculate distance if user location is available
+        if (location && coords) {
+          techWithCoords.distance = calculateDistance(
+            location.lat,
+            location.lng,
+            coords.lat,
+            coords.lng
+          );
+          techWithCoords.isNearby = techWithCoords.distance <= 25; // Within 25 miles
+        }
+
+        return techWithCoords;
+      })
+    );
+
     // Sort by distance if location is available
     if (location) {
       mockTechs.sort((a, b) => (a.distance || 999) - (b.distance || 999));
     }
-    
+
     return mockTechs.slice(0, maxResults);
   }
 }

@@ -159,21 +159,40 @@ export async function registerTechnician(technicianData) {
         throw new Error(`Failed to create login account: ${authError.message}`);
       }
     }
+
+    // Geocode business address if provided
+    let coordinates = null;
+    if (technicianData.businessAddress) {
+      try {
+        const { geocodeAddress } = await import('./geocoding');
+        const geocodeResult = await geocodeAddress(technicianData.businessAddress);
+        if (geocodeResult && geocodeResult.coordinates) {
+          coordinates = geocodeResult.coordinates;
+          console.log(`✅ Geocoded address for ${technicianData.businessName}: ${coordinates.lat}, ${coordinates.lng}`);
+        } else {
+          console.warn(`⚠️ Could not geocode address: ${technicianData.businessAddress}`);
+        }
+      } catch (geocodeError) {
+        console.error('Error geocoding address during registration:', geocodeError);
+        // Continue with registration even if geocoding fails
+      }
+    }
+
     // Create a complete technician profile
     const technicianProfile = {
       // Unique identifier
       uniqueId: uniqueId,
       username: normalizedUsername, // Required for technicians
-      
+
       // Firebase Auth UID (if created)
       authUid: authUser?.uid || null,
-      
+
       // Basic info
       name: technicianData.name,
       email: technicianData.email,
       phone: technicianData.phone,
       location: technicianData.location,
-      
+
       // Business info
       businessName: technicianData.businessName,
       title: `${technicianData.businessName} - ${technicianData.category}`,
@@ -182,7 +201,10 @@ export async function registerTechnician(technicianData) {
       businessPhone: technicianData.businessPhone,
       businessEmail: technicianData.businessEmail,
       website: technicianData.website,
-      
+
+      // Location coordinates (geocoded from businessAddress)
+      ...(coordinates && { coordinates }),
+
       // Service details
       experience: technicianData.experience,
       certifications: technicianData.certifications,
@@ -190,10 +212,10 @@ export async function registerTechnician(technicianData) {
       serviceArea: technicianData.serviceArea,
       hourlyRate: technicianData.hourlyRate,
       availability: technicianData.availability,
-      
+
       // Use Google profile image if available, otherwise default
       image: technicianData.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      
+
       // System fields
       points: 0,
       // Rating system removed - now using ThankATech Points
