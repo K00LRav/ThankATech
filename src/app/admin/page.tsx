@@ -1077,10 +1077,10 @@ export default function AdminPage() {
       
 Found:
 - Stripe Payments: $${stats.tokenPurchaseRevenue.toFixed(2)}
-- Token Liability: $${(stats.totalTokensInCirculation * 0.1).toFixed(2)}
-- Variance: $${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)).toFixed(2)}
+- Token Liability: $${(stats.totalTokensInCirculation * 0.01).toFixed(2)}
+- Variance: $${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01)).toFixed(2)}
       
-${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) < 1 ? '✅ Books are balanced!' : '⚠️ Discrepancy found - manual review needed'}`);
+${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01)) < 1 ? '✅ Books are balanced!' : '⚠️ Discrepancy found - manual review needed'}`);
     }, 2000);
   };
 
@@ -1701,18 +1701,20 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
               <div className="flex justify-between">
                 <span className="text-slate-300">Revenue/Liability Ratio:</span>
                 <span className={`font-bold ${
-                  (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.1)) >= 1 ? 'text-green-400' : 'text-red-400'
+                  (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.01)) >= 1 ? 'text-green-400' : 'text-red-400'
                 }`}>
                   {stats.totalTokensInCirculation > 0 
-                    ? (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.1)).toFixed(2)
+                    ? (stats.tokenPurchaseRevenue / (stats.totalTokensInCirculation * 0.01)).toFixed(2)
                     : '0.00'
                   }
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-300">Platform Profit:</span>
-                <span className="text-green-400 font-bold">
-                  ${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)).toFixed(2)}
+                <span className={`font-bold ${
+                  (stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01)) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  ${(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01)).toFixed(2)}
                 </span>
               </div>
             </div>
