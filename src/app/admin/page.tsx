@@ -1615,38 +1615,141 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
     setDeletingUserId(userId);
     setDeleteResult(null);
 
+    const deletionResults: string[] = [];
+    const errors: string[] = [];
+
     try {
-      const response = await fetch('/api/admin/delete-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, userType, userName, userEmail })
-      });
+      // Step 1: Delete from appropriate collection
+      try {
+        const collection = userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.CLIENTS;
+        await deleteDoc(doc(db, collection, userId));
+        deletionResults.push(`✅ Deleted ${userType} document`);
+        logger.info(`Deleted user document from ${collection}`);
+      } catch (error: any) {
+        errors.push(`❌ Failed to delete user document: ${error.message}`);
+        logger.error('Error deleting user document:', error);
+      }
 
-      const data = await response.json();
+      // Step 2: Delete token balance
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.TOKEN_BALANCES, userId));
+        deletionResults.push('✅ Deleted token balance');
+        logger.info('Deleted token balance');
+      } catch (error: any) {
+        // Not critical if doesn't exist
+        logger.warn('Token balance not found:', error);
+      }
 
-      if (data.success) {
+      // Step 3: Anonymize transactions (preserve for accounting)
+      try {
+        const transactionsQuery = query(
+          collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+          where(userType === 'technician' ? 'toTechnicianId' : 'fromUserId', '==', userId)
+        );
+        const snapshot = await getDocs(transactionsQuery);
+        
+        if (!snapshot.empty) {
+          const updatePromises = snapshot.docs.map(docSnapshot => 
+            updateDoc(docSnapshot.ref, {
+              [userType === 'technician' ? 'toName' : 'fromName']: '[Deleted User]',
+              [userType === 'technician' ? 'toTechnicianId' : 'fromUserId']: 'deleted_' + userId,
+              anonymized: true,
+              anonymizedAt: new Date()
+            })
+          );
+          await Promise.all(updatePromises);
+          deletionResults.push(`✅ Anonymized ${snapshot.size} token transactions`);
+          logger.info(`Anonymized ${snapshot.size} transactions`);
+        }
+      } catch (error: any) {
+        errors.push(`⚠️ Error anonymizing transactions: ${error.message}`);
+        logger.error('Error anonymizing transactions:', error);
+      }
+
+      // Step 4: Delete thank you records
+      try {
+        const thankYousQuery = query(
+          collection(db, 'thankYous'),
+          where(userType === 'technician' ? 'technicianId' : 'fromUserId', '==', userId)
+        );
+        const snapshot = await getDocs(thankYousQuery);
+        
+        if (!snapshot.empty) {
+          const deletePromises = snapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref));
+          await Promise.all(deletePromises);
+          deletionResults.push(`✅ Deleted ${snapshot.size} thank you records`);
+        }
+      } catch (error: any) {
+        errors.push(`⚠️ Error deleting thank yous: ${error.message}`);
+      }
+
+      // Step 5: Delete legacy transactions
+      try {
+        const legacyQuery = query(
+          collection(db, 'transactions'),
+          where(userType === 'technician' ? 'technicianId' : 'fromUserId', '==', userId)
+        );
+        const snapshot = await getDocs(legacyQuery);
+        
+        if (!snapshot.empty) {
+          const deletePromises = snapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref));
+          await Promise.all(deletePromises);
+          deletionResults.push(`✅ Deleted ${snapshot.size} legacy transactions`);
+        }
+      } catch (error: any) {
+        errors.push(`⚠️ Error deleting legacy transactions: ${error.message}`);
+      }
+
+      // Step 6: Call API for email notification and audit log
+      try {
+        const response = await fetch('/api/admin/delete-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId, 
+            userType, 
+            userName, 
+            userEmail,
+            clientSideResults: deletionResults 
+          })
+        });
+
+        const data = await response.json();
+        if (data.results) {
+          deletionResults.push(...data.results);
+        }
+        if (data.errors) {
+          errors.push(...data.errors);
+        }
+      } catch (error: any) {
+        errors.push(`⚠️ Failed to send deletion notification: ${error.message}`);
+      }
+
+      // Show results
+      if (errors.length === 0) {
         setDeleteResult({
           type: 'success',
-          message: `✅ Successfully deleted ${userType} ${userName}\n\n${data.results?.join('\n') || ''}`
+          message: `✅ Successfully deleted ${userType} ${userName}\n\n${deletionResults.join('\n')}`
         });
-        
-        // Remove from local state
-        if (userType === 'technician') {
-          setTechnicians(prev => prev.filter(t => t.id !== userId));
-        } else {
-          setCustomers(prev => prev.filter(c => c.id !== userId));
-        }
-        
-        // Reload admin data after a delay
-        setTimeout(() => {
-          loadAdminData();
-        }, 2000);
       } else {
         setDeleteResult({
           type: 'error',
-          message: `⚠️ Deletion completed with warnings:\n\n${data.results?.join('\n') || ''}\n\nErrors:\n${data.errors?.join('\n') || ''}`
+          message: `⚠️ Deletion completed with warnings:\n\n${deletionResults.join('\n')}\n\nErrors:\n${errors.join('\n')}`
         });
       }
+
+      // Remove from local state
+      if (userType === 'technician') {
+        setTechnicians(prev => prev.filter(t => t.id !== userId));
+      } else {
+        setCustomers(prev => prev.filter(c => c.id !== userId));
+      }
+      
+      // Reload admin data after delay
+      setTimeout(() => {
+        loadAdminData();
+      }, 2000);
+
     } catch (error: any) {
       setDeleteResult({
         type: 'error',
