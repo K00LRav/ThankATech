@@ -36,6 +36,8 @@ export default function TokenTransactionHistory({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'purchases' | 'conversions'>('all');
+  const [technicianDocId, setTechnicianDocId] = useState<string>('');
+  const [clientDocId, setClientDocId] = useState<string>('');
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -67,6 +69,8 @@ export default function TokenTransactionHistory({
         const techDoc = techSnapshot.docs[0];
         const techDocId = techDoc.id;
         const techData = techDoc.data();
+        
+        setTechnicianDocId(techDocId); // Store for filtering
         
         logger.info(`Loading transaction history for technician: ${techDocId}, authUid: ${userId}, email: ${techData?.email}`);
         
@@ -102,6 +106,33 @@ export default function TokenTransactionHistory({
           });
         }
         
+        // Load points conversion history for technician using authUid
+        const conversionsQuery = query(
+          collection(db, 'pointsConversions'),
+          where('userId', '==', userId),
+          firestoreLimit(50)
+        );
+        const conversionsSnapshot = await getDocs(conversionsQuery);
+        const conversionTransactions = conversionsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            fromUserId: userId,
+            toTechnicianId: '',
+            fromName: 'System',
+            toName: 'You',
+            tokens: data.tokensGenerated,
+            message: `Converted ${data.pointsConverted} points to ${data.tokensGenerated} TOA`,
+            timestamp: data.createdAt,
+            type: 'points_conversion',
+            dollarValue: 0,
+            pointsAwarded: -data.pointsConverted
+          } as Transaction;
+        });
+        
+        // Add conversions to transactions
+        allTransactions.push(...conversionTransactions);
+        
         // Sort by timestamp descending
         allTransactions.sort((a, b) => {
           const aTime = a.timestamp?.toDate?.() || new Date(a.timestamp);
@@ -126,6 +157,7 @@ export default function TokenTransactionHistory({
         }
         
         const clientDocId = clientSnapshot.docs[0].id;
+        setClientDocId(clientDocId); // Store for filtering
         logger.info(`Loading transaction history for client: ${clientDocId}, authUid: ${userId}`);
         
         // Load transactions sent by this client
@@ -195,8 +227,8 @@ export default function TokenTransactionHistory({
 
   const filteredTransactions = transactions.filter(transaction => {
     if (filter === 'all') return true;
-    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === userId && transaction.type !== 'token_purchase' && transaction.type !== 'points_conversion';
-    if (filter === 'received' && userType === 'technician') return transaction.toTechnicianId === userId;
+    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === clientDocId && transaction.type !== 'token_purchase' && transaction.type !== 'points_conversion';
+    if (filter === 'received' && userType === 'technician') return transaction.toTechnicianId === technicianDocId;
     if (filter === 'purchases') return transaction.type === 'token_purchase';
     if (filter === 'conversions') return transaction.type === 'points_conversion';
     return true;
