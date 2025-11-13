@@ -17,6 +17,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   orderBy 
 } from 'firebase/firestore';
 import UniversalHeader from '@/components/UniversalHeader';
@@ -1680,37 +1681,35 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
         }
       });
 
-      console.log(`🗑️ Found ${incompleteClients.length} incomplete clients to delete`);
+      console.log(`🗑️ Found ${incompleteClients.length} incomplete clients to delete`, incompleteClients);
 
-      // Delete each incomplete client
+      if (incompleteClients.length === 0) {
+        alert('✅ No incomplete clients found!');
+        setLoading(false);
+        return;
+      }
+
+      // Simple direct delete - these are incomplete records with no name
+      // No need for full user deletion process
       for (const client of incompleteClients) {
         try {
-          const response = await fetch('/api/admin/delete-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              userId: client.id, 
-              userType: 'customer',
-              userName: client.email || 'Unknown',
-              userEmail: client.email || ''
-            })
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            deletedCount++;
-            console.log(`✅ Deleted incomplete client: ${client.id}`);
-          } else {
-            errors.push(`Failed to delete ${client.id}: ${data.error}`);
-          }
+          console.log(`🔄 Deleting incomplete client: ${client.id}`);
+          
+          // Direct Firestore delete
+          await deleteDoc(doc(db, COLLECTIONS.CLIENTS, client.id));
+          
+          deletedCount++;
+          console.log(`✅ Deleted: ${client.id}`);
         } catch (error) {
-          errors.push(`Error deleting ${client.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMsg = `Error deleting ${client.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          console.error(errorMsg, error);
+          errors.push(errorMsg);
         }
       }
 
       // Show results
-      const message = `✅ Cleanup complete!\n\nDeleted: ${deletedCount} client(s)\nErrors: ${errors.length}\n\n${errors.length > 0 ? 'Errors:\n' + errors.join('\n') : ''}`;
+      const message = `✅ Cleanup complete!\n\nDeleted: ${deletedCount} incomplete client(s)\nErrors: ${errors.length}\n\n${errors.length > 0 ? 'Errors:\n' + errors.join('\n') : ''}`;
+      console.log(message);
       alert(message);
 
       // Reload admin data
