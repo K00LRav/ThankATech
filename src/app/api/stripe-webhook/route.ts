@@ -177,6 +177,7 @@ async function handleCheckoutCompleted(session: any) {
     if (type === 'token_purchase' && userId && tokens) {
       // Import server-side token functions
       const { addTokensToBalance } = await import('@/lib/token-admin');
+      const EmailService = (await import('@/lib/email')).default;
       
       // Add tokens to user's balance
       const tokensToAdd = parseInt(tokens);
@@ -185,7 +186,29 @@ async function handleCheckoutCompleted(session: any) {
       await addTokensToBalance(userId, tokensToAdd, purchaseAmount, session.id);
       
       console.log(`✅ Token purchase completed: ${tokensToAdd} tokens for user ${userId}`);
-      // TODO: Send purchase confirmation email
+      
+      // Send purchase confirmation email
+      try {
+        // Get user email from session or fetch from database
+        const customerEmail = session.customer_email || session.customer_details?.email;
+        const customerName = session.customer_details?.name || 'Customer';
+        
+        if (customerEmail) {
+          await EmailService.sendTokenPurchaseConfirmation(
+            customerEmail,
+            customerName,
+            tokensToAdd,
+            purchaseAmount,
+            session.id
+          );
+          console.log(`✅ Purchase confirmation email sent to ${customerEmail}`);
+        } else {
+          console.warn(`⚠️ No customer email found for session ${session.id}`);
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send purchase confirmation email:', emailError);
+        // Don't fail the webhook if email fails
+      }
     }
     
   } catch (error) {
