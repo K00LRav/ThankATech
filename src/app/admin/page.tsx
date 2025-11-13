@@ -1918,6 +1918,38 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
 
   const renderCustomers = () => (
     <div className="space-y-6">
+      {/* Delete confirmation modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-red-500/50">
+            <h3 className="text-xl font-bold text-white mb-4">⚠️ Confirm Deletion</h3>
+            <p className="text-slate-300 mb-4">
+              Are you sure you want to delete this {deleteConfirmation.userType}?
+            </p>
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-4">
+              <p className="text-red-200 text-sm"><strong>Name:</strong> {deleteConfirmation.userName}</p>
+              <p className="text-red-200 text-sm"><strong>Email:</strong> {deleteConfirmation.userEmail}</p>
+              <p className="text-red-200 text-sm mt-2">⚠️ This action cannot be undone!</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmation(null)}
+                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={!!deletingUserId}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-900 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                {deletingUserId ? 'Deleting...' : 'Delete User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete result notification */}
       {deleteResult && (
         <div className={`rounded-lg p-4 ${deleteResult.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
