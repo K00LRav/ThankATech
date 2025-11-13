@@ -507,27 +507,10 @@ export default function AdminPage() {
       const tokenSpenders: {[key: string]: {name: string, spent: number}} = {};
       const tokenEarners: {[key: string]: {name: string, earned: number}} = {};
       
-      // Debug: Log transaction data structure
-      let debugTransactionCount = 0;
-      
       tokenTransactionsSnapshot.forEach((doc) => {
         const transaction = doc.data();
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
-        
-        // Debug first few transactions
-        if (debugTransactionCount < 3) {
-          console.log('🔍 Transaction sample:', {
-            type: transaction.type,
-            tokens,
-            fromUserId: transaction.fromUserId,
-            fromName: transaction.fromName,
-            toTechnicianId: transaction.toTechnicianId,
-            toName: transaction.toName,
-            technicianName: transaction.technicianName
-          });
-          debugTransactionCount++;
-        }
         
         // Match actual transaction types from token-firebase.ts
         if (transaction.type === 'token_purchase') {
@@ -569,18 +552,6 @@ export default function AdminPage() {
       const topTokenEarners = Object.values(tokenEarners)
         .sort((a, b) => b.earned - a.earned)
         .slice(0, 5);
-      
-      // Debug: Log leaderboard data
-      console.log('🏆 Token Spenders:', tokenSpenders);
-      console.log('🏆 Token Earners:', tokenEarners);
-      console.log('📊 Top Token Spenders:', topTokenSpenders);
-      console.log('📊 Top Token Earners:', topTokenEarners);
-      console.log('📊 Token Stats:', {
-        purchased: totalTokensPurchased,
-        spent: totalTokensSpent,
-        circulation: totalTokensInCirculation,
-        revenue: tokenPurchaseRevenue
-      });
       
       // Calculate Thank You Metrics
       let totalThankYous = 0;
