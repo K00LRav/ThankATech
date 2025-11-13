@@ -185,6 +185,17 @@ export default function AdminPage() {
     mostThankedTechnicians: [],
     dailyThankYouUsage: 0,
     
+    // Points Conversion Metrics
+    totalConversions: 0,
+    totalPointsConverted: 0,
+    totalTokensFromConversions: 0,
+    conversionRate: 0,
+    topConverters: [],
+    averageConversionSize: 0,
+    dailyConversions: 0,
+    weeklyConversions: 0,
+    pointsInCirculation: 0,
+    
     // Transaction Analytics
     transactionsByType: {thankYous: 0, tips: 0, tokenPurchases: 0},
     recentTransactionTrends: [],
