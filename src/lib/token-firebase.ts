@@ -580,18 +580,23 @@ export async function sendTokens(
     
     // Fetch sender and recipient names
     // Sender can be either a client OR a technician (technicians can send to other technicians)
-    let senderDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, fromUserId));
     let senderData: any = {};
     let senderType: 'client' | 'technician' = 'client';
     
-    if (senderDoc.exists()) {
-      senderData = senderDoc.data();
+    // First try to find client by authUid (since document ID might be different from userId)
+    const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
+    const clientSnapshot = await getDocs(clientsQuery);
+    
+    if (!clientSnapshot.empty) {
+      senderData = clientSnapshot.docs[0].data();
       senderType = 'client';
     } else {
-      // Check if sender is a technician
-      senderDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, fromUserId));
-      if (senderDoc.exists()) {
-        senderData = senderDoc.data();
+      // Check if sender is a technician by authUid
+      const techQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', fromUserId));
+      const techSnapshot = await getDocs(techQuery);
+      
+      if (!techSnapshot.empty) {
+        senderData = techSnapshot.docs[0].data();
         senderType = 'technician';
       }
     }
