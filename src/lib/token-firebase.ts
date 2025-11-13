@@ -828,6 +828,8 @@ export async function sendTokens(
 
 export const convertPointsToTOA = async (userId: string, pointsToConvert: number) => {
   try {
+    logger.info(`Starting conversion for user ${userId}, converting ${pointsToConvert} points`);
+    
     // Validation
     if (pointsToConvert < CONVERSION_SYSTEM.minimumConversion) {
       return { 
@@ -844,6 +846,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
     }
 
     const tokensToGenerate = Math.floor(pointsToConvert / CONVERSION_SYSTEM.pointsToTOARate);
+    logger.info(`Will generate ${tokensToGenerate} TOA tokens`);
 
     // Get user's current points balance (check all collections using authUid)
     let userDocSnapshot = null;
@@ -880,6 +883,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 
     const userData = userDocSnapshot.data() as any;
     const currentPoints = userData.points || 0;
+    logger.info(`User found with ${currentPoints} points`);
 
     if (currentPoints < pointsToConvert) {
       return { 
@@ -892,9 +896,12 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
     const tokenBalance = await getUserTokenBalance(userId);
     const tokenDocRef = doc(db, COLLECTIONS.TOKEN_BALANCES, userId);
     const tokenDoc = await getDoc(tokenDocRef);
+    logger.info(`Current token balance: ${tokenBalance.tokens}, will add ${tokensToGenerate}`);
 
     // Perform the conversion in a transaction
     await runTransaction(db, async (transaction) => {
+      logger.info(`Starting transaction - deducting ${pointsToConvert} points, adding ${tokensToGenerate} tokens`);
+      
       // Deduct points from user profile
       transaction.update(userRef, {
         points: currentPoints - pointsToConvert,
@@ -932,10 +939,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
       });
     });
 
-    // Development only logging
-    if (process.env.NODE_ENV === 'development') {
-      logger.info(`Converted ${pointsToConvert} points to ${tokensToGenerate} TOA for user ${userId}`);
-    }
+    logger.info(`Transaction completed successfully`);
 
     return { 
       success: true, 
