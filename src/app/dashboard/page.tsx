@@ -199,6 +199,7 @@ export default function ModernDashboard() {
 
   const loadUserProfile = async (userId: string, authUser?: User) => {
     try {
+      logger.info(`[loadUserProfile] Starting reload for user ${userId}`);
 
       
       // First, check if this is an admin user in the admins collection
@@ -218,6 +219,7 @@ export default function ModernDashboard() {
       if (!clientSnapshot.empty) {
         const clientDoc = clientSnapshot.docs[0];
         const clientData = clientDoc.data();
+        logger.info(`[loadUserProfile] Found client with ${clientData.points || 0} points`);
         const profile = { 
           id: clientDoc.id, 
           name: clientData.name || clientData.displayName || 'User',
@@ -227,6 +229,7 @@ export default function ModernDashboard() {
           ...clientData 
         } as UserProfile;
         
+        logger.info(`[loadUserProfile] Setting profile state with ${profile.points} points`);
         setUserProfile(profile);
         setEditedProfile(profile);
         
@@ -364,8 +367,11 @@ export default function ModernDashboard() {
 
   const loadTokenBalance = async (userId: string) => {
     try {
+      logger.info(`[loadTokenBalance] Loading balance for user ${userId}`);
       const balance = await getUserTokenBalance(userId);
+      logger.info(`[loadTokenBalance] Got balance: ${balance.tokens} tokens`);
       setTokenBalance(balance);
+      logger.info(`[loadTokenBalance] Set token balance state`);
     } catch (error) {
       logger.error('Error loading token balance:', error);
     }
