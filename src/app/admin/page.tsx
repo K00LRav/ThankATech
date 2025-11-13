@@ -1216,7 +1216,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
               {stats.mostThankedTechnicians.slice(0, 5).map((tech, index) => (
                 <div key={index} className="flex justify-between items-center">
                   <span className="text-slate-300">{tech.name}</span>
-                  <span className="text-green-400 font-bold">{tech.thanks} thanks</span>
+                  <span className="text-green-400 font-bold">{tech.thanks} ThankYou{tech.thanks !== 1 ? "'s" : ""}</span>
                 </div>
               ))}
             </div>
