@@ -358,9 +358,10 @@ export default function AdminPage() {
       }
       
       if (balance.tokens > hoardingThreshold) {
-        // Look up name from customers or technicians array
-        const customer = customers.find(c => c.id === doc.id);
-        const technician = technicians.find(t => t.id === doc.id);
+        // Look up name from customers or technicians array by authUid
+        // tokenBalances uses auth userId as document ID, but clients/technicians use different IDs
+        const customer = customers.find(c => c.authUid === doc.id);
+        const technician = technicians.find(t => t.authUid === doc.id);
         const userName = customer?.name || technician?.name || `User ${doc.id.slice(0, 8)}`;
         
         hoardingUsers.push({
