@@ -120,6 +120,17 @@ export default function AdminPage() {
   const [sending, setSending] = useState<string | null>(null);
   const [emailResult, setEmailResult] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
+  // User deletion states
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    show: boolean;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userType: 'technician' | 'customer';
+  } | null>(null);
+  const [deleteResult, setDeleteResult] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
   // Data states
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -1546,8 +1557,117 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
     </div>
   );
 
+  // User deletion functions
+  const handleDeleteUser = async (userId: string, userName: string, userEmail: string, userType: 'technician' | 'customer') => {
+    setDeleteConfirmation({
+      show: true,
+      userId,
+      userName,
+      userEmail,
+      userType
+    });
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteConfirmation) return;
+
+    const { userId, userName, userEmail, userType } = deleteConfirmation;
+    
+    setDeletingUserId(userId);
+    setDeleteResult(null);
+
+    try {
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, userType, userName, userEmail })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDeleteResult({
+          type: 'success',
+          message: `✅ Successfully deleted ${userType} ${userName}\n\n${data.results?.join('\n') || ''}`
+        });
+        
+        // Remove from local state
+        if (userType === 'technician') {
+          setTechnicians(prev => prev.filter(t => t.id !== userId));
+        } else {
+          setCustomers(prev => prev.filter(c => c.id !== userId));
+        }
+        
+        // Reload admin data after a delay
+        setTimeout(() => {
+          loadAdminData();
+        }, 2000);
+      } else {
+        setDeleteResult({
+          type: 'error',
+          message: `⚠️ Deletion completed with warnings:\n\n${data.results?.join('\n') || ''}\n\nErrors:\n${data.errors?.join('\n') || ''}`
+        });
+      }
+    } catch (error: any) {
+      setDeleteResult({
+        type: 'error',
+        message: `❌ Failed to delete user: ${error.message}`
+      });
+    } finally {
+      setDeletingUserId(null);
+      setDeleteConfirmation(null);
+    }
+  };
+
   const renderTechnicians = () => (
     <div className="space-y-6">
+      {/* Delete confirmation modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 border border-red-500/50">
+            <h3 className="text-xl font-bold text-white mb-4">⚠️ Confirm Deletion</h3>
+            <p className="text-slate-300 mb-4">
+              Are you sure you want to delete this {deleteConfirmation.userType}?
+            </p>
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-4">
+              <p className="text-red-200 text-sm"><strong>Name:</strong> {deleteConfirmation.userName}</p>
+              <p className="text-red-200 text-sm"><strong>Email:</strong> {deleteConfirmation.userEmail}</p>
+              <p className="text-red-200 text-sm mt-2">⚠️ This action cannot be undone!</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmation(null)}
+                className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={!!deletingUserId}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-900 text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                {deletingUserId ? 'Deleting...' : 'Delete User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete result notification */}
+      {deleteResult && (
+        <div className={`rounded-lg p-4 ${deleteResult.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+          <pre className={`text-sm whitespace-pre-wrap ${deleteResult.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
+            {deleteResult.message}
+          </pre>
+          <button
+            onClick={() => setDeleteResult(null)}
+            className="mt-3 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
         <h2 className="text-xl font-bold text-white mb-4">👨‍🔧 Technicians Management</h2>
         <div className="overflow-x-auto">
@@ -1559,6 +1679,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                 <th className="pb-3 text-slate-300 font-medium">Username</th>
                 <th className="pb-3 text-slate-300 font-medium">Category</th>
                 <th className="pb-3 text-slate-300 font-medium">Points</th>
+                <th className="pb-3 text-slate-300 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1569,6 +1690,16 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                   <td className="py-3 text-blue-400">{tech.username || 'Not set'}</td>
                   <td className="py-3 text-slate-300">{tech.category || 'General'}</td>
                   <td className="py-3 text-green-400">{tech.points || 0}</td>
+                  <td className="py-3">
+                    <button
+                      onClick={() => handleDeleteUser(tech.id, tech.name, tech.email, 'technician')}
+                      disabled={!!deletingUserId}
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-red-900 text-white px-3 py-1 rounded text-sm transition-colors"
+                      title="Delete technician"
+                    >
+                      {deletingUserId === tech.id ? '...' : '🗑️ Delete'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1684,6 +1815,21 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
 
   const renderCustomers = () => (
     <div className="space-y-6">
+      {/* Delete result notification */}
+      {deleteResult && (
+        <div className={`rounded-lg p-4 ${deleteResult.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+          <pre className={`text-sm whitespace-pre-wrap ${deleteResult.type === 'success' ? 'text-green-200' : 'text-red-200'}`}>
+            {deleteResult.message}
+          </pre>
+          <button
+            onClick={() => setDeleteResult(null)}
+            className="mt-3 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
         <h2 className="text-xl font-bold text-white mb-4">👥 Customers Management</h2>
         <div className="overflow-x-auto">
@@ -1695,6 +1841,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                 <th className="pb-3 text-slate-300 font-medium">Username</th>
                 <th className="pb-3 text-slate-300 font-medium">Tips Sent</th>
                 <th className="pb-3 text-slate-300 font-medium">Total Spent</th>
+                <th className="pb-3 text-slate-300 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1705,6 +1852,16 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                   <td className="py-3 text-blue-400">{customer.username || 'Not set'}</td>
                   <td className="py-3 text-green-400">{customer.totalTipsSent || 0}</td>
                   <td className="py-3 text-yellow-400">${(customer.totalSpent || 0).toFixed(2)}</td>
+                  <td className="py-3">
+                    <button
+                      onClick={() => handleDeleteUser(customer.id, customer.name, customer.email, 'customer')}
+                      disabled={!!deletingUserId}
+                      className="bg-red-600 hover:bg-red-700 disabled:bg-red-900 text-white px-3 py-1 rounded text-sm transition-colors"
+                      title="Delete customer"
+                    >
+                      {deletingUserId === customer.id ? '...' : '🗑️ Delete'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
