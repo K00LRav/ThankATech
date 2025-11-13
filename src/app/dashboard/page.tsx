@@ -898,7 +898,7 @@ export default function ModernDashboard() {
                       {tokenBalance.totalTokensReceived || 0}
                     </p>
                     <p className="text-slate-300 text-sm">
-                      From {tokenBalance.transactionCount || 0} transactions
+                      From {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').length} transactions
                     </p>
                   </div>
                 </div>

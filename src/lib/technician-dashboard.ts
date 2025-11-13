@@ -162,11 +162,11 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
         totalTokens += tx.tokens;
         totalEarningsCents += Math.round(tx.dollarAmount * 100); // Convert to cents for precision
         points += 2; // 2 points per token transaction
-        receivedTransactionCount++; // Count only received TOA transactions
+        receivedTransactionCount++; // Count only paid TOA transactions (not free thank yous)
       } else if (tx.dataType === 'thank_you') {
         thankYous++;
         points += 1; // 1 point per thank you
-        receivedTransactionCount++; // Count free thank yous too
+        // Don't increment receivedTransactionCount for free thank yous
       }
     });
     
