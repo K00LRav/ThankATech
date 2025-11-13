@@ -888,19 +888,20 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
       };
     }
 
+    // Get token balance before transaction
+    const tokenBalance = await getUserTokenBalance(userId);
+    const tokenDocRef = doc(db, COLLECTIONS.TOKEN_BALANCES, userId);
+    const tokenDoc = await getDoc(tokenDocRef);
+
     // Perform the conversion in a transaction
     await runTransaction(db, async (transaction) => {
-      // Deduct points
+      // Deduct points from user profile
       transaction.update(userRef, {
         points: currentPoints - pointsToConvert,
         updatedAt: new Date()
       });
 
       // Add TOA tokens to tokenBalances collection
-      const tokenBalance = await getUserTokenBalance(userId);
-      const tokenDocRef = doc(db, COLLECTIONS.TOKEN_BALANCES, userId);
-      const tokenDoc = await getDoc(tokenDocRef);
-      
       if (tokenDoc.exists()) {
         transaction.update(tokenDocRef, {
           tokens: (tokenBalance.tokens || 0) + tokensToGenerate,
