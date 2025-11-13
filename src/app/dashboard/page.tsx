@@ -746,7 +746,7 @@ export default function ModernDashboard() {
                     </p>
                   </div>
                   <div className="bg-green-500/20 p-3 rounded-lg">
-                    <span className="text-2xl"></span>
+                    <span className="text-2xl">🙏</span>
                   </div>
                 </div>
               </div>
