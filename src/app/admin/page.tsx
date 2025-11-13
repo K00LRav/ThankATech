@@ -660,10 +660,13 @@ export default function AdminPage() {
       
       // Calculate Business Intelligence
       const categoryRevenue: {[key: string]: number} = {};
+      const TOA_TO_DOLLAR = 0.01; // 1 TOA = $0.01 (since $9.99 = 1000 TOA)
+      
       techData.forEach(tech => {
         const category = tech.category || 'General';
-        const earnings = tech.totalTips || 0;
-        categoryRevenue[category] = (categoryRevenue[category] || 0) + earnings;
+        const toaTokens = tech.totalTips || 0; // totalTips stores TOA tokens earned
+        const dollarValue = toaTokens * TOA_TO_DOLLAR; // Convert TOA to dollars
+        categoryRevenue[category] = (categoryRevenue[category] || 0) + dollarValue;
       });
       
       const revenueByCategory = Object.entries(categoryRevenue)
@@ -671,12 +674,16 @@ export default function AdminPage() {
         .sort((a, b) => b.revenue - a.revenue);
       
       const technicianPerformance = techData
-        .map(tech => ({
-          name: tech.name,
-          earnings: tech.totalTips || 0,
-          thanks: tech.totalThankYous || 0,
-          tips: tech.totalTips || 0
-        }))
+        .map(tech => {
+          const toaTokens = tech.totalTips || 0;
+          const dollarEarnings = toaTokens * TOA_TO_DOLLAR;
+          return {
+            name: tech.name,
+            earnings: dollarEarnings,
+            thanks: tech.totalThankYous || 0,
+            tips: toaTokens // Show TOA tokens, not dollars
+          };
+        })
         .sort((a, b) => b.earnings - a.earnings)
         .slice(0, 10);
       
@@ -1226,7 +1233,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                 <div key={index} className="flex justify-between items-center">
                   <div>
                     <p className="text-slate-300 text-sm">{tech.name}</p>
-                    <p className="text-slate-500 text-xs">{tech.thanks} thanks, {tech.tips} tips</p>
+                    <p className="text-slate-500 text-xs">{tech.thanks} thanks, {tech.tips} TOA</p>
                   </div>
                   <span className="text-green-400 font-bold">${tech.earnings.toFixed(2)}</span>
                 </div>
