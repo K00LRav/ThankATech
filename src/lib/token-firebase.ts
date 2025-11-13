@@ -750,32 +750,42 @@ export async function sendTokens(
       }
     }
 
-    // Send email notification
+    // Send email notifications to both sender and recipient
     try {
       const techData = techDoc?.data();
       // Get sender data for email notification (could be client or technician)
       let fromUserData: any = {};
+      let senderEmail: string | undefined;
+      
       if (senderType === 'client') {
-        const fromUserRef = doc(db, COLLECTIONS.CLIENTS, fromUserId);
-        const fromUserDoc = await getDoc(fromUserRef);
-        fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+        // Lookup client by authUid (since doc ID might differ)
+        const clientsQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', fromUserId));
+        const clientSnapshot = await getDocs(clientsQuery);
+        if (!clientSnapshot.empty) {
+          fromUserData = clientSnapshot.docs[0].data();
+          senderEmail = fromUserData.email;
+        }
       } else {
-        // Sender is a technician
-        const fromTechRef = doc(db, COLLECTIONS.TECHNICIANS, fromUserId);
-        const fromTechDoc = await getDoc(fromTechRef);
-        fromUserData = fromTechDoc.exists() ? fromTechDoc.data() : {};
+        // Lookup technician by authUid
+        const techQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', fromUserId));
+        const techSnapshot = await getDocs(techQuery);
+        if (!techSnapshot.empty) {
+          fromUserData = techSnapshot.docs[0].data();
+          senderEmail = fromUserData.email;
+        }
       }
       
+      const technicianName = techData?.name || 'Technician';
+      const senderName = fromUserData.displayName || fromUserData.name || fromUserData.businessName || (senderType === 'technician' ? 'A fellow technician' : 'A customer');
+      
+      // Send email to recipient (technician)
       if (techData?.email) {
-        const technicianName = techData.name || 'Technician';
-        const customerName = fromUserData.displayName || fromUserData.name || fromUserData.businessName || (senderType === 'technician' ? 'A fellow technician' : 'A customer');
-        
         if (isFreeThankYou) {
           // Send regular thank you notification
           await EmailService.sendThankYouNotification(
             techData.email,
             technicianName,
-            customerName,
+            senderName,
             message
           );
         } else {
@@ -783,11 +793,23 @@ export async function sendTokens(
           await EmailService.sendToaReceivedNotification(
             techData.email,
             technicianName,
-            customerName,
+            senderName,
             tokens,
             message
           );
         }
+      }
+      
+      // Send confirmation email to sender
+      if (senderEmail && !isFreeThankYou) {
+        // Only send TOA sent confirmation for paid tokens (not free thank yous)
+        await EmailService.sendToaSentNotification(
+          senderEmail,
+          senderName,
+          technicianName,
+          tokens,
+          message
+        );
       }
     } catch (emailError) {
       logger.error('❌ Failed to send notification email:', emailError);
