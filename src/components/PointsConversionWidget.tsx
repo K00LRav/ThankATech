@@ -79,15 +79,15 @@ export default function PointsConversionWidget({
         });
         setPointsToConvert('');
         
-        // Small delay to ensure Firebase has propagated changes
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Delay to ensure Firebase has fully propagated changes
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Reload status
         await loadConversionStatus();
         
-        // Notify parent component to reload everything
+        // Notify parent component to reload everything (await it!)
         if (onConversionComplete) {
-          onConversionComplete();
+          await onConversionComplete();
         }
       } else {
         setMessage({ type: 'error', text: result.error || 'Conversion failed' });
