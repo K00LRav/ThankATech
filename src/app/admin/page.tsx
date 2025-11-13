@@ -51,6 +51,7 @@ interface Customer {
   createdAt?: number;
   totalThankYous?: number;
   totalTips?: number;
+  points?: number;
 }
 
 interface AdminStats {
@@ -786,7 +787,7 @@ export default function AdminPage() {
         .sort((a, b) => b.pointsConverted - a.pointsConverted)
         .slice(0, 5);
       
-      // Calculate points in circulation (total points users currently have)
+      // Calculate points in circulation (total points technicians and customers currently have)
       let pointsInCirculation = 0;
       techData.forEach(tech => {
         pointsInCirculation += tech.points || 0;
