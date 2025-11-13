@@ -561,7 +561,7 @@ export default function AdminPage() {
             let spenderName = transaction.fromName;
             if (!spenderName) {
               const customer = customerData.find(c => c.id === transaction.fromUserId);
-              spenderName = customer?.name || customer?.displayName || customer?.businessName || 'Unknown User';
+              spenderName = customer?.name || 'Unknown User';
             }
             if (!tokenSpenders[transaction.fromUserId]) {
               tokenSpenders[transaction.fromUserId] = {name: spenderName, spent: 0};
