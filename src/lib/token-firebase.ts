@@ -896,9 +896,9 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
         updatedAt: new Date()
       });
 
-      // Add TOA tokens
+      // Add TOA tokens to tokenBalances collection
       const tokenBalance = await getUserTokenBalance(userId);
-      const tokenDocRef = doc(db, 'userTokens', userId);
+      const tokenDocRef = doc(db, COLLECTIONS.TOKEN_BALANCES, userId);
       const tokenDoc = await getDoc(tokenDocRef);
       
       if (tokenDoc.exists()) {
