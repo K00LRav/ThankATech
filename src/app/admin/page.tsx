@@ -115,6 +115,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Email testing states
+  const [testEmail, setTestEmail] = useState('');
+  const [sending, setSending] = useState<string | null>(null);
+  const [emailResult, setEmailResult] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
   // Data states
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -1727,10 +1732,6 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
   );
 
   const renderEmailTemplates = () => {
-    const [testEmail, setTestEmail] = useState('');
-    const [sending, setSending] = useState<string | null>(null);
-    const [result, setResult] = useState<{type: 'success' | 'error', message: string} | null>(null);
-
     const emailTemplates = [
       { id: 'welcome-customer', name: 'Welcome Email (Customer)', icon: '👋', description: 'Sent when a customer registers' },
       { id: 'welcome-technician', name: 'Welcome Email (Technician)', icon: '🔧', description: 'Sent when a technician registers' },
@@ -1745,12 +1746,12 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
 
     const sendTestEmail = async (templateType: string) => {
       if (!testEmail) {
-        setResult({ type: 'error', message: 'Please enter an email address' });
+        setEmailResult({ type: 'error', message: 'Please enter an email address' });
         return;
       }
 
       setSending(templateType);
-      setResult(null);
+      setEmailResult(null);
 
       try {
         const response = await fetch('/api/admin/test-emails', {
@@ -1762,12 +1763,12 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
         const data = await response.json();
 
         if (response.ok) {
-          setResult({ type: 'success', message: data.message });
+          setEmailResult({ type: 'success', message: data.message });
         } else {
-          setResult({ type: 'error', message: data.error || 'Failed to send email' });
+          setEmailResult({ type: 'error', message: data.error || 'Failed to send email' });
         }
       } catch (error: any) {
-        setResult({ type: 'error', message: error.message || 'Network error' });
+        setEmailResult({ type: 'error', message: error.message || 'Network error' });
       } finally {
         setSending(null);
       }
@@ -1793,9 +1794,9 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
           </div>
 
           {/* Result Message */}
-          {result && (
-            <div className={`mb-6 p-4 rounded-lg ${result.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
-              <p className={result.type === 'success' ? 'text-green-300' : 'text-red-300'}>{result.message}</p>
+          {emailResult && (
+            <div className={`mb-6 p-4 rounded-lg ${emailResult.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+              <p className={emailResult.type === 'success' ? 'text-green-300' : 'text-red-300'}>{emailResult.message}</p>
             </div>
           )}
 
