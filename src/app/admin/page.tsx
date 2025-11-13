@@ -660,13 +660,14 @@ export default function AdminPage() {
       
       // Calculate Business Intelligence
       const categoryRevenue: {[key: string]: number} = {};
-      const TOA_TO_DOLLAR = 0.01; // 1 TOA = $0.01 (since $9.99 = 1000 TOA)
+      // Payout model: $0.01 per TOA, technician gets 85% ($0.0085), platform gets 15% ($0.0015)
+      const TOA_TO_TECHNICIAN_PAYOUT = 0.0085; // Actual technician earnings per TOA
       
       techData.forEach(tech => {
         const category = tech.category || 'General';
         const toaTokens = tech.totalTips || 0; // totalTips stores TOA tokens earned
-        const dollarValue = toaTokens * TOA_TO_DOLLAR; // Convert TOA to dollars
-        categoryRevenue[category] = (categoryRevenue[category] || 0) + dollarValue;
+        const technicianPayout = toaTokens * TOA_TO_TECHNICIAN_PAYOUT; // 85% of token value
+        categoryRevenue[category] = (categoryRevenue[category] || 0) + technicianPayout;
       });
       
       const revenueByCategory = Object.entries(categoryRevenue)
@@ -676,12 +677,12 @@ export default function AdminPage() {
       const technicianPerformance = techData
         .map(tech => {
           const toaTokens = tech.totalTips || 0;
-          const dollarEarnings = toaTokens * TOA_TO_DOLLAR;
+          const technicianPayout = toaTokens * TOA_TO_TECHNICIAN_PAYOUT; // 85% payout
           return {
             name: tech.name,
-            earnings: dollarEarnings,
+            earnings: technicianPayout, // Actual technician earnings (85%)
             thanks: tech.totalThankYous || 0,
-            tips: toaTokens // Show TOA tokens, not dollars
+            tips: toaTokens // Show TOA tokens received
           };
         })
         .sort((a, b) => b.earnings - a.earnings)
@@ -847,9 +848,9 @@ export default function AdminPage() {
     const reportData = [
       ['Metric', 'Value', 'Date Generated'],
       ['Token Revenue', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, new Date().toISOString()],
-      ['Outstanding Token Liability', `$${(stats.totalTokensInCirculation * 0.1).toFixed(2)}`, new Date().toISOString()],
-      ['Platform Fees Earned', `$${(stats.totalTokensSpent * 0.015).toFixed(2)}`, new Date().toISOString()],
-      ['Technician Payouts Due', `$${(stats.totalTokensSpent * 0.085).toFixed(2)}`, new Date().toISOString()],
+      ['Outstanding Token Liability', `$${(stats.totalTokensInCirculation * 0.01).toFixed(2)}`, new Date().toISOString()],
+      ['Platform Fees Earned', `$${(stats.totalTokensSpent * 0.0015).toFixed(2)}`, new Date().toISOString()],
+      ['Technician Payouts Due', `$${(stats.totalTokensSpent * 0.0085).toFixed(2)}`, new Date().toISOString()],
       ['Total Transactions', stats.totalTransactions.toString(), new Date().toISOString()],
       ['Active Users', stats.totalCustomers.toString(), new Date().toISOString()]
     ];
@@ -871,7 +872,7 @@ export default function AdminPage() {
     const taxData = [
       ['Transaction Type', 'Gross Revenue', 'Platform Fee', 'Net Revenue', 'Date'],
       ['Token Sales', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, '$0.00', `$${stats.tokenPurchaseRevenue.toFixed(2)}`, new Date().toISOString()],
-      ['Service Fees (15%)', `$${(stats.totalTokensSpent * 0.1).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.015).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.085).toFixed(2)}`, new Date().toISOString()]
+      ['Service Fees (15%)', `$${(stats.totalTokensSpent * 0.01).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.0015).toFixed(2)}`, `$${(stats.totalTokensSpent * 0.0085).toFixed(2)}`, new Date().toISOString()]
     ];
 
     const csvContent = taxData.map(row => row.join(',')).join('\n');
@@ -1388,17 +1389,17 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
           </div>
           <div className="text-center bg-black/20 rounded-lg p-4">
             <p className="text-emerald-200 text-sm font-medium">Outstanding Liability</p>
-            <p className="text-yellow-400 text-2xl font-bold">${(stats.totalTokensInCirculation * 0.1).toFixed(2)}</p>
-            <p className="text-emerald-300 text-xs">{stats.totalTokensInCirculation} tokens @ $0.10</p>
+            <p className="text-yellow-400 text-2xl font-bold">${(stats.totalTokensInCirculation * 0.01).toFixed(2)}</p>
+            <p className="text-emerald-300 text-xs">{stats.totalTokensInCirculation} tokens @ $0.01</p>
           </div>
           <div className="text-center bg-black/20 rounded-lg p-4">
             <p className="text-emerald-200 text-sm font-medium">Platform Fees</p>
-            <p className="text-green-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.015).toFixed(2)}</p>
+            <p className="text-green-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.0015).toFixed(2)}</p>
             <p className="text-emerald-300 text-xs">15% of spent tokens</p>  
           </div>
           <div className="text-center bg-black/20 rounded-lg p-4">
             <p className="text-emerald-200 text-sm font-medium">Technician Payouts</p>
-            <p className="text-blue-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.085).toFixed(2)}</p>
+            <p className="text-blue-400 text-2xl font-bold">${(stats.totalTokensSpent * 0.0085).toFixed(2)}</p>
             <p className="text-emerald-300 text-xs">85% of spent tokens</p>
           </div>
         </div>
