@@ -175,8 +175,8 @@ async function handleCheckoutCompleted(session: any) {
     
     // Handle token purchases
     if (type === 'token_purchase' && userId && tokens) {
-      // Import token functions
-      const { addTokensToBalance } = await import('@/lib/token-firebase');
+      // Import server-side token functions
+      const { addTokensToBalance } = await import('@/lib/token-admin');
       
       // Add tokens to user's balance
       const tokensToAdd = parseInt(tokens);
@@ -184,6 +184,7 @@ async function handleCheckoutCompleted(session: any) {
       
       await addTokensToBalance(userId, tokensToAdd, purchaseAmount, session.id);
       
+      console.log(`✅ Token purchase completed: ${tokensToAdd} tokens for user ${userId}`);
       // TODO: Send purchase confirmation email
     }
     
