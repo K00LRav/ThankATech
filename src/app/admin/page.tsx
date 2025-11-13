@@ -30,6 +30,7 @@ interface Technician {
   id: string;
   name: string;
   email: string;
+  authUid?: string;
   username?: string;
   businessName?: string;
   category?: string;
@@ -43,6 +44,7 @@ interface Customer {
   id: string;
   name: string;
   email: string;
+  authUid?: string;
   username?: string;
   totalTipsSent?: number;
   totalSpent?: number;
