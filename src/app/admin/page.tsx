@@ -1726,6 +1726,111 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
     </div>
   );
 
+  const renderEmailTemplates = () => {
+    const [testEmail, setTestEmail] = useState('');
+    const [sending, setSending] = useState<string | null>(null);
+    const [result, setResult] = useState<{type: 'success' | 'error', message: string} | null>(null);
+
+    const emailTemplates = [
+      { id: 'welcome-customer', name: 'Welcome Email (Customer)', icon: '👋', description: 'Sent when a customer registers' },
+      { id: 'welcome-technician', name: 'Welcome Email (Technician)', icon: '🔧', description: 'Sent when a technician registers' },
+      { id: 'thank-you-received', name: 'Thank You Received', icon: '👍', description: 'Technician receives a thank you' },
+      { id: 'points-received', name: 'Points Received', icon: '⭐', description: 'Technician receives ThankATech Points' },
+      { id: 'toa-sent', name: 'TOA Sent (Customer)', icon: '🎁', description: 'Customer sends Tokens of Appreciation' },
+      { id: 'toa-received', name: 'TOA Received (Technician)', icon: '💰', description: 'Technician receives TOA tokens' },
+      { id: 'account-deletion', name: 'Account Deletion', icon: '🗑️', description: 'Account deletion confirmation' },
+      { id: 'password-reset', name: 'Password Reset', icon: '🔑', description: 'Password reset link email' },
+      { id: 'contact-form', name: 'Contact Form Submission', icon: '📧', description: 'Contact form notification to admin' }
+    ];
+
+    const sendTestEmail = async (templateType: string) => {
+      if (!testEmail) {
+        setResult({ type: 'error', message: 'Please enter an email address' });
+        return;
+      }
+
+      setSending(templateType);
+      setResult(null);
+
+      try {
+        const response = await fetch('/api/admin/test-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ templateType, email: testEmail })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setResult({ type: 'success', message: data.message });
+        } else {
+          setResult({ type: 'error', message: data.error || 'Failed to send email' });
+        }
+      } catch (error: any) {
+        setResult({ type: 'error', message: error.message || 'Network error' });
+      } finally {
+        setSending(null);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+          <h2 className="text-2xl font-bold text-white mb-4">📧 Email Template Testing</h2>
+          <p className="text-slate-300 mb-6">Test all email templates by sending them to any email address. Perfect for verifying email delivery and template rendering.</p>
+          
+          {/* Email Input */}
+          <div className="mb-6">
+            <label className="block text-white font-medium mb-2">Test Email Address</label>
+            <input
+              type="email"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              placeholder="your.email@example.com"
+              className="w-full max-w-md px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-slate-400 text-sm mt-2">Emails will be sent to this address for testing</p>
+          </div>
+
+          {/* Result Message */}
+          {result && (
+            <div className={`mb-6 p-4 rounded-lg ${result.type === 'success' ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'}`}>
+              <p className={result.type === 'success' ? 'text-green-300' : 'text-red-300'}>{result.message}</p>
+            </div>
+          )}
+
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {emailTemplates.map((template) => (
+              <div key={template.id} className="bg-white/5 rounded-lg p-4 border border-white/10 hover:border-white/30 transition-all">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{template.icon}</span>
+                    <h3 className="text-white font-medium">{template.name}</h3>
+                  </div>
+                </div>
+                <p className="text-slate-400 text-sm mb-4">{template.description}</p>
+                <button
+                  onClick={() => sendTestEmail(template.id)}
+                  disabled={!testEmail || sending === template.id}
+                  className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                    !testEmail 
+                      ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
+                      : sending === template.id
+                      ? 'bg-blue-600/50 text-white cursor-wait'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {sending === template.id ? '📤 Sending...' : '📧 Send Test'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCustomers = () => (
     <div className="space-y-6">
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
@@ -1784,7 +1889,8 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
             {[
               { id: 'overview', label: '📊 Overview', icon: '📊' },
               { id: 'technicians', label: '🔧 Technicians', icon: '🔧' },
-              { id: 'customers', label: '👥 Customers', icon: '👥' }
+              { id: 'customers', label: '👥 Customers', icon: '👥' },
+              { id: 'emails', label: '📧 Email Templates', icon: '📧' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1805,6 +1911,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'technicians' && renderTechnicians()}
         {activeTab === 'customers' && renderCustomers()}
+        {activeTab === 'emails' && renderEmailTemplates()}
       </main>
     </div>
   );
