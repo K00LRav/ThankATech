@@ -941,6 +941,17 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 
     logger.info(`Transaction completed successfully`);
 
+    // Verify the changes were actually written
+    const updatedUserDoc = await getDoc(userRef);
+    const updatedUserData = updatedUserDoc.data() as any;
+    logger.info(`After transaction - User points in DB: ${updatedUserData.points}`);
+    
+    const updatedTokenDoc = await getDoc(tokenDocRef);
+    if (updatedTokenDoc.exists()) {
+      const updatedTokenData = updatedTokenDoc.data() as any;
+      logger.info(`After transaction - Token balance in DB: ${updatedTokenData.tokens}`);
+    }
+
     return { 
       success: true, 
       tokensGenerated: tokensToGenerate,
