@@ -556,18 +556,26 @@ export default function AdminPage() {
         } else if (transaction.type === 'toa_token' || transaction.type === 'thank_you') {
           totalTokensSpent += tokens;
           
-          // Track spenders - use fromName or fetch from user data
+          // Track spenders - look up name from customerData
           if (transaction.fromUserId) {
-            const spenderName = transaction.fromName || 'Unknown User';
+            let spenderName = transaction.fromName;
+            if (!spenderName) {
+              const customer = customerData.find(c => c.id === transaction.fromUserId);
+              spenderName = customer?.name || customer?.displayName || customer?.businessName || 'Unknown User';
+            }
             if (!tokenSpenders[transaction.fromUserId]) {
               tokenSpenders[transaction.fromUserId] = {name: spenderName, spent: 0};
             }
             tokenSpenders[transaction.fromUserId].spent += tokens;
           }
           
-          // Track earners - use toName, technicianName, or fetch from user data
+          // Track earners - look up name from techData
           if (transaction.toTechnicianId) {
-            const earnerName = transaction.toName || transaction.technicianName || 'Unknown Technician';
+            let earnerName = transaction.toName || transaction.technicianName;
+            if (!earnerName) {
+              const tech = techData.find(t => t.id === transaction.toTechnicianId);
+              earnerName = tech?.name || 'Unknown Technician';
+            }
             if (!tokenEarners[transaction.toTechnicianId]) {
               tokenEarners[transaction.toTechnicianId] = {name: earnerName, earned: 0};
             }
@@ -586,11 +594,20 @@ export default function AdminPage() {
         totalTokensInCirculation += balance.tokens || 0;
       });
       
-      // Get top spenders and earners
+      // Get top spenders and earners (filter out unknown/deleted users)
       const topTokenSpenders = Object.values(tokenSpenders)
+        .filter(spender => 
+          spender.name !== 'Unknown User' && 
+          spender.name !== '[Deleted User]' &&
+          spender.spent > 0
+        )
         .sort((a, b) => b.spent - a.spent)
         .slice(0, 5);
       const topTokenEarners = Object.values(tokenEarners)
+        .filter(earner => 
+          earner.name !== 'Unknown Technician' &&
+          earner.earned > 0
+        )
         .sort((a, b) => b.earned - a.earned)
         .slice(0, 5);
       
@@ -658,6 +675,10 @@ export default function AdminPage() {
       });
       
       const mostThankedTechnicians = Object.values(thankedTechnicians)
+        .filter(tech => 
+          tech.name !== 'Unknown Technician' &&
+          tech.thanks > 0
+        )
         .sort((a, b) => b.thanks - a.thanks)
         .slice(0, 5);
       
