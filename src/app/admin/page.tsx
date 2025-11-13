@@ -90,6 +90,17 @@ interface AdminStats {
   mostThankedTechnicians: Array<{name: string, thanks: number}>;
   dailyThankYouUsage: number;
   
+  // Points Conversion Metrics
+  totalConversions: number;
+  totalPointsConverted: number;
+  totalTokensFromConversions: number;
+  conversionRate: number; // Percentage of points that get converted vs accumulated
+  topConverters: Array<{name: string, conversions: number, pointsConverted: number}>;
+  averageConversionSize: number;
+  dailyConversions: number;
+  weeklyConversions: number;
+  pointsInCirculation: number; // Total points users currently have
+  
   // Transaction Analytics
   transactionsByType: {thankYous: number, tips: number, tokenPurchases: number};
   recentTransactionTrends: Array<{date: string, count: number, revenue: number}>;
@@ -708,6 +719,77 @@ export default function AdminPage() {
         legacyRevenue += transaction.amount || 0;
       });
       
+      // Load Points Conversion Data
+      const conversionsRef = collection(db, 'pointsConversions');
+      const conversionsSnapshot = await getDocs(conversionsRef);
+      
+      let totalConversions = 0;
+      let totalPointsConverted = 0;
+      let totalTokensFromConversions = 0;
+      const converters: {[key: string]: {name: string, conversions: number, pointsConverted: number}} = {};
+      let dailyConversions = 0;
+      let weeklyConversions = 0;
+      
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      conversionsSnapshot.forEach((doc) => {
+        const conversion = doc.data();
+        
+        // Filter out mock data
+        if (conversion.userId?.startsWith('mock-')) {
+          return;
+        }
+        
+        totalConversions++;
+        totalPointsConverted += conversion.pointsConverted || 0;
+        totalTokensFromConversions += conversion.tokensGenerated || 0;
+        
+        // Track conversion date
+        const conversionDate = conversion.createdAt?.toDate ? conversion.createdAt.toDate() : new Date(conversion.createdAt);
+        if (conversionDate > oneDayAgo) {
+          dailyConversions++;
+        }
+        if (conversionDate > oneWeekAgo) {
+          weeklyConversions++;
+        }
+        
+        // Track top converters
+        if (conversion.userId) {
+          // Look up user name from customers or technicians
+          const customer = customerData.find(c => c.authUid === conversion.userId);
+          const technician = techData.find(t => t.authUid === conversion.userId);
+          const userName = customer?.name || technician?.name || 'Unknown User';
+          
+          if (!converters[conversion.userId]) {
+            converters[conversion.userId] = {name: userName, conversions: 0, pointsConverted: 0};
+          }
+          converters[conversion.userId].conversions++;
+          converters[conversion.userId].pointsConverted += conversion.pointsConverted || 0;
+        }
+      });
+      
+      const topConverters = Object.values(converters)
+        .filter(converter => converter.name !== 'Unknown User')
+        .sort((a, b) => b.pointsConverted - a.pointsConverted)
+        .slice(0, 5);
+      
+      // Calculate points in circulation (total points users currently have)
+      let pointsInCirculation = 0;
+      techData.forEach(tech => {
+        pointsInCirculation += tech.points || 0;
+      });
+      customerData.forEach(customer => {
+        pointsInCirculation += customer.points || 0;
+      });
+      
+      // Calculate conversion rate (points converted vs points earned)
+      const totalPointsEarned = totalThankYouPoints + pointsInCirculation + totalPointsConverted;
+      const conversionRate = totalPointsEarned > 0 ? (totalPointsConverted / totalPointsEarned) * 100 : 0;
+      
+      const averageConversionSize = totalConversions > 0 ? totalPointsConverted / totalConversions : 0;
+      
       // Calculate User Engagement Metrics
       const now = new Date();
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -800,6 +882,17 @@ export default function AdminPage() {
         totalThankYouPoints,
         mostThankedTechnicians,
         dailyThankYouUsage: 0, // Would need daily limits data
+        
+        // Points Conversion Metrics
+        totalConversions,
+        totalPointsConverted,
+        totalTokensFromConversions,
+        conversionRate,
+        topConverters,
+        averageConversionSize,
+        dailyConversions,
+        weeklyConversions,
+        pointsInCirculation,
         
         // Transaction Analytics
         transactionsByType: {
@@ -1247,6 +1340,108 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
                   <span className="text-blue-400 font-bold">{tip.count} times</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Points Conversion Analytics */}
+      <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          🔄 Points Conversion Analytics
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Total Conversions</p>
+            <p className="text-white text-3xl font-bold">{stats.totalConversions.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">All time</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Points Converted</p>
+            <p className="text-purple-400 text-3xl font-bold">{stats.totalPointsConverted.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">Into TOA tokens</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">TOA from Conversions</p>
+            <p className="text-blue-400 text-3xl font-bold">{stats.totalTokensFromConversions.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">5 points = 1 TOA</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-300 text-sm font-medium">Conversion Rate</p>
+            <p className="text-green-400 text-3xl font-bold">{stats.conversionRate.toFixed(1)}%</p>
+            <p className="text-slate-400 text-xs mt-1">Of points earned</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-slate-300 text-sm font-medium">Daily Conversions</p>
+            <p className="text-yellow-400 text-2xl font-bold">{stats.dailyConversions}</p>
+            <p className="text-slate-400 text-xs mt-1">Last 24 hours</p>
+          </div>
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-slate-300 text-sm font-medium">Weekly Conversions</p>
+            <p className="text-orange-400 text-2xl font-bold">{stats.weeklyConversions}</p>
+            <p className="text-slate-400 text-xs mt-1">Last 7 days</p>
+          </div>
+          <div className="text-center bg-black/20 rounded-lg p-4">
+            <p className="text-slate-300 text-sm font-medium">Avg Conversion Size</p>
+            <p className="text-pink-400 text-2xl font-bold">{stats.averageConversionSize.toFixed(1)}</p>
+            <p className="text-slate-400 text-xs mt-1">Points per conversion</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Top Converters */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">🏆 Top Converters</h4>
+            <div className="space-y-2">
+              {stats.topConverters.slice(0, 5).map((converter, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="text-slate-300">{converter.name}</span>
+                  <div className="text-right">
+                    <span className="text-purple-400 font-bold">{converter.pointsConverted} pts</span>
+                    <span className="text-slate-500 text-xs ml-2">({converter.conversions}x)</span>
+                  </div>
+                </div>
+              ))}
+              {stats.topConverters.length === 0 && (
+                <p className="text-slate-500 text-center py-4">No conversions yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Points Economy Health */}
+          <div className="bg-black/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-white mb-3">💎 Points Economy</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Points in Circulation</span>
+                <span className="text-blue-400 font-bold">{stats.pointsInCirculation.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Points Earned (Total)</span>
+                <span className="text-green-400 font-bold">{stats.totalThankYouPoints.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Points Converted</span>
+                <span className="text-purple-400 font-bold">{stats.totalPointsConverted.toLocaleString()}</span>
+              </div>
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-300 font-semibold">Conversion Activity</span>
+                  <span className={`font-bold ${
+                    stats.conversionRate > 50 ? 'text-green-400' : 
+                    stats.conversionRate > 20 ? 'text-yellow-400' : 
+                    'text-red-400'
+                  }`}>
+                    {stats.conversionRate > 50 ? 'High' : 
+                     stats.conversionRate > 20 ? 'Moderate' : 
+                     'Low'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
