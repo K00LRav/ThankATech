@@ -536,10 +536,12 @@ export default function AdminPage() {
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
         
-        // Filter out mock data transactions
+        // Filter out mock data transactions (check all ID fields)
         if (transaction.fromUserId?.startsWith('mock-') || 
             transaction.toUserId?.startsWith('mock-') ||
-            transaction.userId?.startsWith('mock-')) {
+            transaction.userId?.startsWith('mock-') ||
+            transaction.toTechnicianId?.startsWith('mock-') ||
+            transaction.fromTechnicianId?.startsWith('mock-')) {
           return; // Skip mock transactions
         }
         
