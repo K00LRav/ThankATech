@@ -1203,7 +1203,7 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
             <p className="text-green-400 text-3xl font-bold">{stats.totalThankYouPoints.toLocaleString()}</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-300 text-sm font-medium">Tips</p>
+            <p className="text-slate-300 text-sm font-medium">TOA Transactions</p>
             <p className="text-blue-400 text-3xl font-bold">{stats.transactionsByType.tips.toLocaleString()}</p>
           </div>
         </div>
