@@ -507,10 +507,27 @@ export default function AdminPage() {
       const tokenSpenders: {[key: string]: {name: string, spent: number}} = {};
       const tokenEarners: {[key: string]: {name: string, earned: number}} = {};
       
+      // Debug: Log transaction data structure
+      let debugTransactionCount = 0;
+      
       tokenTransactionsSnapshot.forEach((doc) => {
         const transaction = doc.data();
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
+        
+        // Debug first few transactions
+        if (debugTransactionCount < 3) {
+          console.log('🔍 Transaction sample:', {
+            type: transaction.type,
+            tokens,
+            fromUserId: transaction.fromUserId,
+            fromName: transaction.fromName,
+            toTechnicianId: transaction.toTechnicianId,
+            toName: transaction.toName,
+            technicianName: transaction.technicianName
+          });
+          debugTransactionCount++;
+        }
         
         // Match actual transaction types from token-firebase.ts
         if (transaction.type === 'token_purchase') {
@@ -519,18 +536,20 @@ export default function AdminPage() {
         } else if (transaction.type === 'toa_token' || transaction.type === 'thank_you') {
           totalTokensSpent += tokens;
           
-          // Track spenders
-          if (transaction.fromUserId && transaction.fromName) {
+          // Track spenders - use fromName or fetch from user data
+          if (transaction.fromUserId) {
+            const spenderName = transaction.fromName || 'Unknown User';
             if (!tokenSpenders[transaction.fromUserId]) {
-              tokenSpenders[transaction.fromUserId] = {name: transaction.fromName, spent: 0};
+              tokenSpenders[transaction.fromUserId] = {name: spenderName, spent: 0};
             }
             tokenSpenders[transaction.fromUserId].spent += tokens;
           }
           
-          // Track earners
-          if (transaction.toTechnicianId && transaction.toName) {
+          // Track earners - use toName, technicianName, or fetch from user data
+          if (transaction.toTechnicianId) {
+            const earnerName = transaction.toName || transaction.technicianName || 'Unknown Technician';
             if (!tokenEarners[transaction.toTechnicianId]) {
-              tokenEarners[transaction.toTechnicianId] = {name: transaction.toName, earned: 0};
+              tokenEarners[transaction.toTechnicianId] = {name: earnerName, earned: 0};
             }
             tokenEarners[transaction.toTechnicianId].earned += tokens;
           }
@@ -550,6 +569,18 @@ export default function AdminPage() {
       const topTokenEarners = Object.values(tokenEarners)
         .sort((a, b) => b.earned - a.earned)
         .slice(0, 5);
+      
+      // Debug: Log leaderboard data
+      console.log('🏆 Token Spenders:', tokenSpenders);
+      console.log('🏆 Token Earners:', tokenEarners);
+      console.log('📊 Top Token Spenders:', topTokenSpenders);
+      console.log('📊 Top Token Earners:', topTokenEarners);
+      console.log('📊 Token Stats:', {
+        purchased: totalTokensPurchased,
+        spent: totalTokensSpent,
+        circulation: totalTokensInCirculation,
+        revenue: tokenPurchaseRevenue
+      });
       
       // Calculate Thank You Metrics
       let totalThankYous = 0;
