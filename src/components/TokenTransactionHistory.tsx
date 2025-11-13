@@ -49,17 +49,31 @@ export default function TokenTransactionHistory({
       let allTransactions: Transaction[] = [];
       
       if (userType === 'technician') {
-        // Get technician data to find all identifiers
+        // First, find the technician's document ID using authUid
         const { doc, getDoc } = await import('firebase/firestore');
-        const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
-        const techData = techDoc.exists() ? techDoc.data() : null;
+        const techniciansQuery = query(
+          collection(db, COLLECTIONS.TECHNICIANS),
+          where('authUid', '==', userId)
+        );
+        const techSnapshot = await getDocs(techniciansQuery);
         
-        logger.info(`Loading transaction history for technician: ${userId}, email: ${techData?.email}`);
+        if (techSnapshot.empty) {
+          logger.warn('No technician found with authUid:', userId);
+          setTransactions([]);
+          setLoading(false);
+          return;
+        }
         
-        // Query 1: By document ID
+        const techDoc = techSnapshot.docs[0];
+        const techDocId = techDoc.id;
+        const techData = techDoc.data();
+        
+        logger.info(`Loading transaction history for technician: ${techDocId}, authUid: ${userId}, email: ${techData?.email}`);
+        
+        // Query transactions by document ID
         const query1 = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('toTechnicianId', '==', userId),
+          where('toTechnicianId', '==', techDocId),
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
@@ -69,7 +83,7 @@ export default function TokenTransactionHistory({
           ...doc.data()
         } as Transaction)));
         
-        // Query 2: By email if available
+        // Query by email if available (for legacy transactions)
         if (techData?.email) {
           const query2 = query(
             collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
@@ -79,7 +93,6 @@ export default function TokenTransactionHistory({
           );
           const snapshot2 = await getDocs(query2);
           snapshot2.docs.forEach(doc => {
-            // Only add if not already in list
             if (!allTransactions.find(t => t.id === doc.id)) {
               allTransactions.push({
                 id: doc.id,
@@ -98,10 +111,27 @@ export default function TokenTransactionHistory({
         
         setTransactions(allTransactions);
       } else {
-        // Load transactions sent by this client + token purchases + conversions
+        // For clients, find document ID using authUid
+        const clientsQuery = query(
+          collection(db, COLLECTIONS.CLIENTS),
+          where('authUid', '==', userId)
+        );
+        const clientSnapshot = await getDocs(clientsQuery);
+        
+        if (clientSnapshot.empty) {
+          logger.warn('No client found with authUid:', userId);
+          setTransactions([]);
+          setLoading(false);
+          return;
+        }
+        
+        const clientDocId = clientSnapshot.docs[0].id;
+        logger.info(`Loading transaction history for client: ${clientDocId}, authUid: ${userId}`);
+        
+        // Load transactions sent by this client
         const tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('fromUserId', '==', userId),
+          where('fromUserId', '==', clientDocId),
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
@@ -124,7 +154,7 @@ export default function TokenTransactionHistory({
           } as Transaction;
         });
 
-        // Load points conversion history
+        // Load points conversion history using authUid
         const conversionsQuery = query(
           collection(db, 'pointsConversions'),
           where('userId', '==', userId),
