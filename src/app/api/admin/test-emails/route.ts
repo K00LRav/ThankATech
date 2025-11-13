@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         result = await EmailService.sendPasswordResetEmail(
           email,
           'Test User',
-          `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=test-token-123`
+          `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/reset-password?token=test-token-123`
         );
         message = 'Password reset email sent';
         break;

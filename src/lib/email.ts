@@ -66,7 +66,7 @@ export const EmailTemplates = {
                 <p style="margin: 0; color: #166534; font-size: 14px;">Start building your reputation and earning tips from satisfied customers.</p>
               </div>
               <div style="text-align: center; margin: 20px 0;">
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🚀 View Your Dashboard</a>
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🚀 View Your Dashboard</a>
               </div>
             `
             : `
@@ -75,7 +75,7 @@ export const EmailTemplates = {
                 <p style="margin: 0; color: #1e40af; font-size: 14px;">Discover skilled technicians in your area and support them with thanks and tips.</p>
               </div>
               <div style="text-align: center; margin: 20px 0;">
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🔍 Explore Technicians</a>
+                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🔍 Explore Technicians</a>
               </div>
             `
           }
@@ -116,7 +116,7 @@ export const EmailTemplates = {
           <p style="margin: 24px 0; color: #475569; text-align: center;">Keep up the great work! Every thank you builds your reputation and helps you stand out to potential clients.</p>
           
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">📊 View Dashboard</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">📊 View Dashboard</a>
           </div>
         </div>
         
@@ -157,7 +157,7 @@ export const EmailTemplates = {
           </div>
           
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">⭐ View Points Balance</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">⭐ View Points Balance</a>
           </div>
         </div>
         
@@ -198,7 +198,7 @@ export const EmailTemplates = {
           </div>
           
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🎁 View Your Activity</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🎁 View Your Activity</a>
           </div>
         </div>
         
@@ -239,7 +239,7 @@ export const EmailTemplates = {
           </div>
           
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" style="display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🎁 View Token Balance</a>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">🎁 View Token Balance</a>
           </div>
         </div>
         
