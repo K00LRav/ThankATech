@@ -6,7 +6,9 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "export-test-data": "node src/scripts/export-test-data.js",
+        "reset-for-live": "node src/scripts/reset-for-live.js"
     },
     "dependencies": {
         "@stripe/react-stripe-js": "^4.0.2",
