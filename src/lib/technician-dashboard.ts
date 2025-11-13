@@ -145,6 +145,7 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     const transactionResults = await Promise.all(transactionPromises);
     
     // Build final array and calculate totals
+    let receivedTransactionCount = 0;
     transactionResults.forEach(tx => {
       tokenTransactions.push({
         id: tx.id,
@@ -161,9 +162,11 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
         totalTokens += tx.tokens;
         totalEarningsCents += Math.round(tx.dollarAmount * 100); // Convert to cents for precision
         points += 2; // 2 points per token transaction
+        receivedTransactionCount++; // Count only received TOA transactions
       } else if (tx.dataType === 'thank_you') {
         thankYous++;
         points += 1; // 1 point per thank you
+        receivedTransactionCount++; // Count free thank yous too
       }
     });
     
@@ -230,7 +233,7 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
       availableBalance,
       totalPoints: points,
       totalThankYous: thankYous,
-      transactionCount: tokenTransactions.length,
+      transactionCount: receivedTransactionCount, // Only count received transactions, not purchases
       payoutCount: payoutTransactions.length
     };
     
