@@ -409,17 +409,18 @@ export default function ModernDashboard() {
         };
       });
       
-      // Update Firestore with calculated points to keep cached value in sync
+      // REMOVED: Don't update Firestore points - they're managed by conversions
+      // The calculated dashboardData.totalPoints would overwrite manual point deductions
+      // Only update thankYous count
       try {
         const { updateDoc, doc } = await import('firebase/firestore');
         await updateDoc(doc(db, 'technicians', technicianId), {
-          points: dashboardData.totalPoints,
           totalThankYousReceived: dashboardData.totalThankYous,
           updatedAt: new Date()
         });
       } catch (firestoreError) {
         // Silent fail - dashboard still works even if Firestore update fails
-        logger.error('Failed to sync points to Firestore:', firestoreError);
+        logger.error('Failed to sync thankYous to Firestore:', firestoreError);
       }
       
     } catch (error) {
