@@ -845,23 +845,40 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 
     const tokensToGenerate = Math.floor(pointsToConvert / CONVERSION_SYSTEM.pointsToTOARate);
 
-    // Get user's current points balance (check all collections)
-    let userRef = doc(db, 'technicians', userId);
-    let userDoc = await getDoc(userRef);
+    // Get user's current points balance (check all collections using authUid)
+    let userDocSnapshot = null;
+    let userRef = null;
     
-    if (!userDoc.exists()) {
-      userRef = doc(db, COLLECTIONS.CLIENTS, userId);
-      userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) {
-        userRef = doc(db, COLLECTIONS.ADMINS, userId);
-        userDoc = await getDoc(userRef);
-        if (!userDoc.exists()) {
+    // Check technicians collection
+    const techQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', userId));
+    const techDocs = await getDocs(techQuery);
+    
+    if (!techDocs.empty) {
+      userDocSnapshot = techDocs.docs[0];
+      userRef = userDocSnapshot.ref;
+    } else {
+      // Check clients collection
+      const clientQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', userId));
+      const clientDocs = await getDocs(clientQuery);
+      
+      if (!clientDocs.empty) {
+        userDocSnapshot = clientDocs.docs[0];
+        userRef = userDocSnapshot.ref;
+      } else {
+        // Check admins collection
+        const adminQuery = query(collection(db, COLLECTIONS.ADMINS), where('authUid', '==', userId));
+        const adminDocs = await getDocs(adminQuery);
+        
+        if (!adminDocs.empty) {
+          userDocSnapshot = adminDocs.docs[0];
+          userRef = adminDocs.docs[0].ref;
+        } else {
           return { success: false, error: 'User not found' };
         }
       }
     }
 
-    const userData = userDoc.data() as any;
+    const userData = userDocSnapshot.data() as any;
     const currentPoints = userData.points || 0;
 
     if (currentPoints < pointsToConvert) {
@@ -935,23 +952,36 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 // Check user's conversion status
 export const getConversionStatus = async (userId: string) => {
   try {
-    // Get user's current points (check all collections)
-    let userRef = doc(db, 'technicians', userId);
-    let userDoc = await getDoc(userRef);
+    // Get user's current points (check all collections using authUid)
+    let userDocSnapshot = null;
     
-    if (!userDoc.exists()) {
-      userRef = doc(db, COLLECTIONS.CLIENTS, userId);
-      userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) {
-        userRef = doc(db, COLLECTIONS.ADMINS, userId);
-        userDoc = await getDoc(userRef);
-        if (!userDoc.exists()) {
+    // Check technicians collection
+    const techQuery = query(collection(db, COLLECTIONS.TECHNICIANS), where('authUid', '==', userId));
+    const techDocs = await getDocs(techQuery);
+    
+    if (!techDocs.empty) {
+      userDocSnapshot = techDocs.docs[0];
+    } else {
+      // Check clients collection
+      const clientQuery = query(collection(db, COLLECTIONS.CLIENTS), where('authUid', '==', userId));
+      const clientDocs = await getDocs(clientQuery);
+      
+      if (!clientDocs.empty) {
+        userDocSnapshot = clientDocs.docs[0];
+      } else {
+        // Check admins collection
+        const adminQuery = query(collection(db, COLLECTIONS.ADMINS), where('authUid', '==', userId));
+        const adminDocs = await getDocs(adminQuery);
+        
+        if (!adminDocs.empty) {
+          userDocSnapshot = adminDocs.docs[0];
+        } else {
           return { availablePoints: 0, canConvert: 0 };
         }
       }
     }
 
-    const userData = userDoc.data() as any;
+    const userData = userDocSnapshot.data() as any;
     const availablePoints = userData.points || 0;
 
     const maxConvertableFromPoints = Math.floor(availablePoints / CONVERSION_SYSTEM.pointsToTOARate);
