@@ -248,15 +248,17 @@ export default function ModernDashboard() {
       if (!techSnapshot.empty) {
         const techDoc = techSnapshot.docs[0];
         const techData = techDoc.data();
+        logger.info(`[loadUserProfile] Found technician with ${techData.points || 0} points in DB`);
         const profile = { 
           id: techDoc.id, 
           name: techData.name || techData.displayName || 'Technician',
           email: techData.email,
           userType: 'technician',
           ...techData,
-          points: 0 // Will be updated from transaction calculation (must be after spread)
+          points: techData.points || 0 // Use points from document (updated by conversions)
         } as UserProfile;
         
+        logger.info(`[loadUserProfile] Setting technician profile state with ${profile.points} points`);
         setUserProfile(profile);
         setEditedProfile(profile);
         
@@ -396,12 +398,13 @@ export default function ModernDashboard() {
       setTipTransactions(dashboardData.allActivity);
       setAllTransactions(dashboardData.allActivity);
       
-      // Update profile points
+      // Update profile points - but preserve manually set points (from conversions)
       setUserProfile(prev => {
         if (!prev) return prev;
+        logger.info(`[loadTechnicianTokenStats] Keeping existing points: ${prev.points} (not overwriting with calculated ${dashboardData.totalPoints})`);
         return {
           ...prev,
-          points: dashboardData.totalPoints,
+          // Don't overwrite points - they're stored in the document and updated by conversions
           totalThankYousReceived: dashboardData.totalThankYous
         };
       });
