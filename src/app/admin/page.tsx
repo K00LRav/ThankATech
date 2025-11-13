@@ -790,9 +790,7 @@ export default function AdminPage() {
       
       const averageConversionSize = totalConversions > 0 ? totalPointsConverted / totalConversions : 0;
       
-      // Calculate User Engagement Metrics
-      const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      // Calculate User Engagement Metrics (reuse 'now' and 'oneWeekAgo' from above)
       const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       
       let newUsersThisWeek = 0;
