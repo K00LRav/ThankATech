@@ -512,10 +512,11 @@ export default function AdminPage() {
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
         
-        if (transaction.type === 'purchase') {
+        // Match actual transaction types from token-firebase.ts
+        if (transaction.type === 'token_purchase') {
           totalTokensPurchased += tokens;
           tokenPurchaseRevenue += dollarValue;
-        } else if (transaction.type === 'tip' || transaction.type === 'thankYou') {
+        } else if (transaction.type === 'toa_token' || transaction.type === 'thank_you') {
           totalTokensSpent += tokens;
           
           // Track spenders
