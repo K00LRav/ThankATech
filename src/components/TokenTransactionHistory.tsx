@@ -169,8 +169,10 @@ export default function TokenTransactionHistory({
         );
         
         const snapshot = await getDocs(tokenTransactionsQuery);
+        logger.info(`Found ${snapshot.docs.length} sent transactions for client ${clientDocId}`);
         const transactionList = snapshot.docs.map(doc => {
           const data = doc.data() as any;
+          logger.info('Sent transaction:', { id: doc.id, type: data.type, fromUserId: data.fromUserId, tokens: data.tokens });
           return {
             id: doc.id,
             fromUserId: data.fromUserId || '',
