@@ -1591,7 +1591,7 @@ export default function ModernDashboard() {
         <TokenTransactionHistory
           isOpen={showTransactionHistory}
           onClose={() => setShowTransactionHistory(false)}
-          userId={user?.uid || ''}
+          userId={userProfile.id || ''}
           userType={userProfile.userType === 'technician' ? 'technician' : 'client'}
         />
       )}
