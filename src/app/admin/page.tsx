@@ -1204,16 +1204,19 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="text-center">
-            <p className="text-slate-300 text-sm font-medium">Total Thank Yous</p>
+            <p className="text-slate-300 text-sm font-medium">Free Thank Yous</p>
             <p className="text-white text-3xl font-bold">{stats.totalThankYous.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">No tokens sent</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-300 text-sm font-medium">Thank You Points</p>
+            <p className="text-slate-300 text-sm font-medium">Thank You Points Awarded</p>
             <p className="text-green-400 text-3xl font-bold">{stats.totalThankYouPoints.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">From all appreciation</p>
           </div>
           <div className="text-center">
             <p className="text-slate-300 text-sm font-medium">TOA Transactions</p>
             <p className="text-blue-400 text-3xl font-bold">{stats.transactionsByType.tips.toLocaleString()}</p>
+            <p className="text-slate-400 text-xs mt-1">Tokens sent</p>
           </div>
         </div>
 
