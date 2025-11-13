@@ -45,7 +45,21 @@ export default function TokenSendModal({
     setSending(true);
     
     try {
-      const result = await sendTokens(userId, technicianId, tokens);
+      const response = await fetch('/api/send-tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromUserId: userId,
+          toTechnicianId: technicianId,
+          tokens,
+          message: '', // Add message field if needed
+          isFreeThankYou: false
+        })
+      });
+
+      const result = await response.json();
       
       if (result.success) {
         // Show success message

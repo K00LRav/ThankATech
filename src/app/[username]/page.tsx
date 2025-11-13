@@ -122,7 +122,21 @@ export default function TechnicianProfile() {
     if (!technician) return;
 
     try {
-      const result = await sendFreeThankYou(user.uid, technician.id);
+      const response = await fetch('/api/send-tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromUserId: user.uid,
+          toTechnicianId: technician.id,
+          tokens: 0,
+          message: '',
+          isFreeThankYou: true
+        })
+      });
+
+      const result = await response.json();
       
       if (!result.success) {
         setError(result.error || 'Failed to send thank you. Please try again.');

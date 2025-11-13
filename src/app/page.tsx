@@ -674,8 +674,22 @@ export default function Home() {
     try {
       const currentTechnician = displayedProfiles[currentProfileIndex];
       
-      // Use new consolidated ThankATech Points system
-      const result = await sendFreeThankYou(currentUser.uid, currentTechnician.id);
+      // Use API to send free thank you
+      const response = await fetch('/api/send-tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromUserId: currentUser.uid,
+          toTechnicianId: currentTechnician.id,
+          tokens: 0,
+          message: '',
+          isFreeThankYou: true
+        })
+      });
+
+      const result = await response.json();
       
       if (!result.success) {
         setError(result.error || 'Failed to send thank you. Please try again.');
@@ -693,8 +707,7 @@ export default function Home() {
           : tech
       ));
 
-      const remainingThanks = result.pointsRemaining || 0;
-      setThankYouMessage(`🎉 Thank you sent! Technician earned 1 ThankATech Point! ${remainingThanks > 0 ? `(You can thank ${remainingThanks} more technicians today)` : '(Daily thank you limit reached)'}`);
+      setThankYouMessage(`🎉 Thank you sent! Technician earned 1 ThankATech Point!`);
       setShowThankYou(true);
       setTimeout(() => setShowThankYou(false), 4000);
     } catch (error) {
