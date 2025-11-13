@@ -806,7 +806,11 @@ export default function ModernDashboard() {
           <PointsConversionWidget
             userId={user.uid}
             currentPoints={userProfile.points || 0}
-            onConversionComplete={() => loadUserProfile(user.uid, user)}
+            onConversionComplete={async () => {
+              // Force reload both profile and token balance
+              await loadUserProfile(user.uid, user);
+              await loadTokenBalance(user.uid);
+            }}
           />
         )}
 
