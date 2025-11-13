@@ -855,24 +855,24 @@ export default function ModernDashboard() {
                   </div>
                 </div>
 
-                {/* Sending Activity */}
+                {/* Receiving Activity for Technicians */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-                  <h4 className="text-lg font-semibold text-white mb-4">Sending Stats</h4>
+                  <h4 className="text-lg font-semibold text-white mb-4">Receiving Stats</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-slate-300">TOA Sent:</span>
-                      <span className="text-blue-400 font-bold">
+                      <span className="text-slate-300">TOA Received:</span>
+                      <span className="text-green-400 font-bold">
                         {tipTransactions.filter(t => (t.type === 'toa_token' || t.type === 'toa') && t.type).reduce((sum, t) => sum + (t.tokens || 0), 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-300">Transactions:</span>
-                      <span className="text-green-400 font-bold">
+                      <span className="text-amber-400 font-bold">
                         {tipTransactions.filter(t => t.type === 'toa_token' || t.type === 'toa').length}
                       </span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-white/20">
-                      <span className="text-white font-medium">Available:</span>
+                      <span className="text-white font-medium">Available to Send:</span>
                       <span className="text-cyan-400 font-bold">
                         {formatTokens(tokenBalance.tokens)}
                       </span>
