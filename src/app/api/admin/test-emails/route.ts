@@ -94,6 +94,43 @@ export async function POST(request: NextRequest) {
         message = 'Contact form notification sent';
         break;
 
+      case 'token-purchase':
+        result = await EmailService.sendTokenPurchaseConfirmation(
+          email,
+          'Test Customer',
+          100,
+          10.00,
+          'tx_test_' + Date.now()
+        );
+        message = 'Token purchase confirmation sent';
+        break;
+
+      case 'payout-requested':
+        result = await EmailService.sendPayoutRequestedNotification(
+          email,
+          'Test Technician',
+          85.00,
+          1000,
+          new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })
+        );
+        message = 'Payout requested notification sent';
+        break;
+
+      case 'payout-completed':
+        result = await EmailService.sendPayoutCompletedNotification(
+          email,
+          'Test Technician',
+          85.00,
+          'po_test_' + Date.now()
+        );
+        message = 'Payout completed notification sent';
+        break;
+
       default:
         return NextResponse.json(
           { error: 'Invalid template type' },

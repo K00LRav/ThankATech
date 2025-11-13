@@ -357,6 +357,134 @@ export const EmailTemplates = {
         ${EmailFooter}
       </div>
     `
+  }),
+
+  // Token purchase confirmation for customers
+  tokenPurchase: (customerName: string, tokenAmount: number, dollarAmount: number, transactionId: string) => ({
+    subject: `Your ${tokenAmount} TOA Token${tokenAmount > 1 ? 's' : ''} Purchase Confirmed! 🎉`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 24px; background: white;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 60px; height: 60px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">
+              💰
+            </div>
+            <h2 style="color: #1e293b; margin: 0; font-size: 22px;">Purchase Successful!</h2>
+          </div>
+          
+          <p style="font-size: 16px; margin-bottom: 16px; color: #475569; text-align: center;">Hi ${customerName},</p>
+          
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 6px; margin: 16px 0; text-align: center; border-left: 3px solid #10b981;">
+            <p style="margin: 0 0 12px 0; color: #166534; font-size: 18px;">Your purchase of <strong style="color: #059669;">${tokenAmount} Token${tokenAmount > 1 ? 's' : ''} of Appreciation</strong> was successful! 🎉</p>
+            <p style="margin: 0; color: #166534; font-size: 14px;">Total: <strong>$${dollarAmount.toFixed(2)}</strong></p>
+          </div>
+          
+          <div style="background: #eff6ff; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #3b82f6;">
+            <p style="margin: 0 0 8px 0; color: #1e40af; text-align: center; font-size: 14px;"><strong>Transaction ID:</strong> ${transactionId}</p>
+            <p style="margin: 0; color: #1e40af; text-align: center; font-size: 14px;">Your tokens are now available in your account balance!</p>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; text-align: center; font-size: 14px;">💡 Use your tokens to send appreciation to amazing technicians in our community!</p>
+          </div>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">💰 View Token Balance</a>
+          </div>
+        </div>
+        
+        ${EmailFooter}
+      </div>
+    `
+  }),
+
+  // Payout request submitted for technicians
+  payoutRequested: (technicianName: string, payoutAmount: number, tokenAmount: number, estimatedDate: string) => ({
+    subject: `Your $${payoutAmount.toFixed(2)} Payout Request Received! 💸`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 24px; background: white;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 60px; height: 60px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">
+              💸
+            </div>
+            <h2 style="color: #1e293b; margin: 0; font-size: 22px;">Payout Request Submitted!</h2>
+          </div>
+          
+          <p style="font-size: 16px; margin-bottom: 16px; color: #475569; text-align: center;">Hi ${technicianName},</p>
+          
+          <div style="background: #faf5ff; padding: 20px; border-radius: 6px; margin: 16px 0; text-align: center; border-left: 3px solid #8b5cf6;">
+            <p style="margin: 0 0 12px 0; color: #6b21a8; font-size: 18px;">Your payout request for <strong style="color: #7c3aed;">$${payoutAmount.toFixed(2)}</strong> has been received! 🎊</p>
+            <p style="margin: 0; color: #6b21a8; font-size: 14px;">Converting <strong>${tokenAmount} tokens</strong> to cash</p>
+          </div>
+          
+          <div style="background: #eff6ff; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #3b82f6;">
+            <p style="margin: 0 0 8px 0; color: #1e40af; text-align: center; font-size: 14px;"><strong>📅 Estimated Arrival:</strong> ${estimatedDate}</p>
+            <p style="margin: 0; color: #1e40af; text-align: center; font-size: 14px;">We'll process your payout within 1-2 business days</p>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #f59e0b;">
+            <p style="margin: 0 0 8px 0; color: #92400e; text-align: center; font-size: 14px;"><strong>💡 What happens next?</strong></p>
+            <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
+              <li>We'll verify your payout request</li>
+              <li>Funds will be transferred to your connected bank account</li>
+              <li>You'll receive a confirmation email once completed</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">📊 View Payout Status</a>
+          </div>
+        </div>
+        
+        ${EmailFooter}
+      </div>
+    `
+  }),
+
+  // Payout completed notification for technicians
+  payoutCompleted: (technicianName: string, payoutAmount: number, transactionId: string) => ({
+    subject: `Your $${payoutAmount.toFixed(2)} Payout is Complete! ✅`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+        ${EmailHeader}
+        
+        <div style="padding: 24px; background: white;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 60px; height: 60px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">
+              ✅
+            </div>
+            <h2 style="color: #1e293b; margin: 0; font-size: 22px;">Payout Completed!</h2>
+          </div>
+          
+          <p style="font-size: 16px; margin-bottom: 16px; color: #475569; text-align: center;">Hi ${technicianName},</p>
+          
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 6px; margin: 16px 0; text-align: center; border-left: 3px solid #10b981;">
+            <p style="margin: 0 0 12px 0; color: #166534; font-size: 18px;">Your payout of <strong style="color: #059669;">$${payoutAmount.toFixed(2)}</strong> has been processed! 💰</p>
+            <p style="margin: 0; color: #166534; font-size: 14px;">Funds are on their way to your bank account</p>
+          </div>
+          
+          <div style="background: #eff6ff; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #3b82f6;">
+            <p style="margin: 0 0 8px 0; color: #1e40af; text-align: center; font-size: 14px;"><strong>Transaction ID:</strong> ${transactionId}</p>
+            <p style="margin: 0; color: #1e40af; text-align: center; font-size: 14px;">⏱️ Funds typically arrive in 1-3 business days</p>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 16px; border-radius: 6px; margin: 16px 0; border-left: 3px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; text-align: center; font-size: 14px;">🎉 Thank you for being part of the ThankATech community! Keep up the great work!</p>
+          </div>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.thankatech.com'}/dashboard" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">📊 View Transaction History</a>
+          </div>
+        </div>
+        
+        ${EmailFooter}
+      </div>
+    `
   })
 };
 
@@ -540,6 +668,21 @@ export class EmailService {
     const template = EmailTemplates.contactFormSubmission(formData.name, formData.email, formData.subject, formData.message, formData.userType);
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@thankatech.com';
     return this.sendEmail({ to: adminEmail, ...template });
+  }
+
+  static async sendTokenPurchaseConfirmation(to: string, customerName: string, tokenAmount: number, dollarAmount: number, transactionId: string): Promise<boolean> {
+    const template = EmailTemplates.tokenPurchase(customerName, tokenAmount, dollarAmount, transactionId);
+    return this.sendEmail({ to, ...template });
+  }
+
+  static async sendPayoutRequestedNotification(to: string, technicianName: string, payoutAmount: number, tokenAmount: number, estimatedDate: string): Promise<boolean> {
+    const template = EmailTemplates.payoutRequested(technicianName, payoutAmount, tokenAmount, estimatedDate);
+    return this.sendEmail({ to, ...template });
+  }
+
+  static async sendPayoutCompletedNotification(to: string, technicianName: string, payoutAmount: number, transactionId: string): Promise<boolean> {
+    const template = EmailTemplates.payoutCompleted(technicianName, payoutAmount, transactionId);
+    return this.sendEmail({ to, ...template });
   }
 
   // Public method for sending raw HTML emails (for testing)

@@ -1586,6 +1586,9 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
       { id: 'points-received', name: 'Points Received', icon: '⭐', description: 'Technician receives ThankATech Points' },
       { id: 'toa-sent', name: 'TOA Sent (Customer)', icon: '🎁', description: 'Customer sends Tokens of Appreciation' },
       { id: 'toa-received', name: 'TOA Received (Technician)', icon: '💰', description: 'Technician receives TOA tokens' },
+      { id: 'token-purchase', name: 'Token Purchase Confirmation', icon: '💳', description: 'Customer purchases TOA tokens' },
+      { id: 'payout-requested', name: 'Payout Requested', icon: '💸', description: 'Technician requests payout' },
+      { id: 'payout-completed', name: 'Payout Completed', icon: '✅', description: 'Payout successfully processed' },
       { id: 'account-deletion', name: 'Account Deletion', icon: '🗑️', description: 'Account deletion confirmation' },
       { id: 'password-reset', name: 'Password Reset', icon: '🔑', description: 'Password reset link email' },
       { id: 'contact-form', name: 'Contact Form Submission', icon: '📧', description: 'Contact form notification to admin' }
