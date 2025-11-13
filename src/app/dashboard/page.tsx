@@ -109,7 +109,7 @@ export default function ModernDashboard() {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
   const [tokenBalance, setTokenBalance] = useState<any>(null);
-  const [activityFilter, setActivityFilter] = useState<'all' | 'tokens' | 'thank_you' | 'purchases'>('all');
+  const [activityFilter, setActivityFilter] = useState<'all' | 'tokens' | 'thank_you' | 'purchases' | 'conversions'>('all');
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   // Use earnings hook for technicians
@@ -261,6 +261,9 @@ export default function ModernDashboard() {
         logger.info(`[loadUserProfile] Setting technician profile state with ${profile.points} points`);
         setUserProfile(profile);
         setEditedProfile(profile);
+        
+        // Load transactions for technicians - use authUid
+        await loadTransactions(userId, profile.userType);
         
         // Load token balance for technicians (wallet for purchasing/sending)
         await loadTokenBalance(userId);
@@ -508,8 +511,31 @@ export default function ModernDashboard() {
         ...(doc.data() as object)
       })) as Transaction[];
 
+      // Load points conversion history
+      const conversionsQuery = query(
+        collection(db, 'pointsConversions'),
+        where('userId', '==', userId),
+        firestoreLimit(20)
+      );
+      const conversionsSnapshot = await getDocs(conversionsQuery);
+      const conversionTransactions = conversionsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          amount: 0,
+          timestamp: data.createdAt,
+          type: 'points_conversion',
+          fromName: 'System',
+          toName: 'You',
+          technicianName: '',
+          pointsAwarded: -data.pointsConverted, // Negative to show deduction
+          tokens: data.tokensGenerated,
+          message: `Converted ${data.pointsConverted} points to ${data.tokensGenerated} TOA`
+        } as Transaction;
+      });
+
       // Combine and sort all transactions by timestamp
-      const allTransactions = [...tokenTransactions, ...legacyTransactions].sort((a, b) => {
+      const allTransactions = [...tokenTransactions, ...legacyTransactions, ...conversionTransactions].sort((a, b) => {
         const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
         const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
         return bTime.getTime() - aTime.getTime();
@@ -559,10 +585,25 @@ export default function ModernDashboard() {
 
   const handleSignOut = async () => {
     try {
+      // Sign out from Firebase first
       await signOut(auth);
-      router.push('/');
+      
+      // Clear local state
+      setUser(null);
+      setUserProfile(null);
+      setTokenBalance(null);
+      setTipTransactions([]);
+      
+      // Navigate away immediately
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     } catch (error) {
       logger.error('Error signing out:', error);
+      // Force redirect even on error
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
@@ -1084,6 +1125,7 @@ export default function ModernDashboard() {
                 <option value="tokens" className="bg-slate-800">TOA Tokens</option>
                 <option value="thank_you" className="bg-slate-800">Thank Yous</option>
                 <option value="purchases" className="bg-slate-800">Purchases</option>
+                <option value="conversions" className="bg-slate-800">Conversions</option>
               </select>
               <button
                 onClick={() => setShowTransactionHistory(true)}
@@ -1102,6 +1144,7 @@ export default function ModernDashboard() {
                   if (activityFilter === 'tokens') return transaction.type === 'toa_token' || transaction.type === 'toa';
                   if (activityFilter === 'thank_you') return transaction.type === 'thank_you';
                   if (activityFilter === 'purchases') return transaction.type === 'token_purchase';
+                  if (activityFilter === 'conversions') return transaction.type === 'points_conversion';
                   return true;
                 })
                 .slice(0, 8)
@@ -1139,6 +1182,15 @@ export default function ModernDashboard() {
                         title: `Token Purchase`,
                         amount: formatCurrency(transaction.amount || 0),
                         points: transaction.pointsAwarded ? `+${transaction.pointsAwarded} ThankATech Point${transaction.pointsAwarded !== 1 ? 's' : ''}` : null
+                      };
+                    case 'points_conversion':
+                      const pointsConverted = Math.abs(transaction.pointsAwarded || 0);
+                      return {
+                        icon: '🔄',
+                        bgColor: 'bg-purple-600/20',
+                        title: `Points Conversion`,
+                        amount: `${transaction.tokens || 0} TOA`,
+                        points: pointsConverted ? `-${pointsConverted} ThankATech Point${pointsConverted !== 1 ? 's' : ''}` : null
                       };
                     case 'payout':
                       return {

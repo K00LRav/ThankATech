@@ -35,7 +35,7 @@ export default function TokenTransactionHistory({
 }: TokenTransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'purchases'>('all');
+  const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'purchases' | 'conversions'>('all');
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -98,7 +98,7 @@ export default function TokenTransactionHistory({
         
         setTransactions(allTransactions);
       } else {
-        // Load transactions sent by this client + token purchases
+        // Load transactions sent by this client + token purchases + conversions
         const tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
           where('fromUserId', '==', userId),
@@ -124,7 +124,38 @@ export default function TokenTransactionHistory({
           } as Transaction;
         });
 
-        setTransactions(transactionList);
+        // Load points conversion history
+        const conversionsQuery = query(
+          collection(db, 'pointsConversions'),
+          where('userId', '==', userId),
+          firestoreLimit(50)
+        );
+        const conversionsSnapshot = await getDocs(conversionsQuery);
+        const conversionTransactions = conversionsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            fromUserId: userId,
+            toTechnicianId: '',
+            fromName: 'System',
+            toName: 'You',
+            tokens: data.tokensGenerated,
+            message: `Converted ${data.pointsConverted} points to ${data.tokensGenerated} TOA`,
+            timestamp: data.createdAt,
+            type: 'points_conversion',
+            dollarValue: 0,
+            pointsAwarded: -data.pointsConverted
+          } as Transaction;
+        });
+
+        // Combine and sort by timestamp descending
+        allTransactions = [...transactionList, ...conversionTransactions].sort((a, b) => {
+          const aTime = a.timestamp?.toDate?.() || new Date(a.timestamp);
+          const bTime = b.timestamp?.toDate?.() || new Date(b.timestamp);
+          return bTime.getTime() - aTime.getTime();
+        });
+
+        setTransactions(allTransactions);
       }
     } catch (error) {
       logger.error('Error loading transaction history:', error);
@@ -134,9 +165,10 @@ export default function TokenTransactionHistory({
 
   const filteredTransactions = transactions.filter(transaction => {
     if (filter === 'all') return true;
-    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === userId;
+    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === userId && transaction.type !== 'token_purchase' && transaction.type !== 'points_conversion';
     if (filter === 'received' && userType === 'technician') return transaction.toTechnicianId === userId;
     if (filter === 'purchases') return transaction.type === 'token_purchase';
+    if (filter === 'conversions') return transaction.type === 'points_conversion';
     return true;
   });
 
@@ -172,8 +204,8 @@ export default function TokenTransactionHistory({
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-4">
             <span className="text-white font-medium">Filter:</span>
-            <div className="flex gap-2">
-              {['all', userType === 'client' ? 'sent' : 'received', 'purchases'].map((filterOption) => (
+            <div className="flex gap-2 flex-wrap">
+              {['all', userType === 'client' ? 'sent' : 'received', 'purchases', 'conversions'].map((filterOption) => (
                 <button
                   key={filterOption}
                   onClick={() => setFilter(filterOption as any)}
@@ -210,17 +242,20 @@ export default function TokenTransactionHistory({
                         <div className="flex items-center gap-3 mb-2">
                           <div className={`p-2 rounded-lg ${
                             transaction.type === 'token_purchase' ? 'bg-purple-500/20' :
+                            transaction.type === 'points_conversion' ? 'bg-purple-600/20' :
                             transaction.type === 'thank_you' ? 'bg-green-500/20' :
                             'bg-blue-500/20'
                           }`}>
                             <span className="text-lg">
                               {transaction.type === 'token_purchase' ? '🛒' :
+                               transaction.type === 'points_conversion' ? '🔄' :
                                transaction.type === 'thank_you' ? '🙏' : '🪙'}
                             </span>
                           </div>
                           <div>
                             <p className="text-white font-semibold">
                               {transaction.type === 'token_purchase' ? 'Token Purchase' :
+                               transaction.type === 'points_conversion' ? 'Points Conversion' :
                                isReceived ? `From ${transaction.fromName || 'Client'}` :
                                `To ${transaction.toName || 'Technician'}`}
                             </p>
@@ -243,18 +278,22 @@ export default function TokenTransactionHistory({
                             {formatTokens(transaction.tokens)}
                           </span>
                         </div>
-                        <p className="text-green-400 font-bold">
-                          {formatCurrency(transaction.dollarValue || 0)}
-                        </p>
+                        {transaction.type !== 'points_conversion' && (
+                          <p className="text-green-400 font-bold">
+                            {formatCurrency(transaction.dollarValue || 0)}
+                          </p>
+                        )}
                         {transaction.pointsAwarded && (
-                          <p className="text-blue-400 text-sm">
-                            +{transaction.pointsAwarded} points
+                          <p className={`text-sm ${transaction.pointsAwarded > 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                            {transaction.pointsAwarded > 0 ? '+' : ''}{transaction.pointsAwarded} points
                           </p>
                         )}
                         <p className={`text-xs mt-1 ${
+                          transaction.type === 'points_conversion' ? 'text-purple-400' :
                           isReceived ? 'text-green-400' : 'text-blue-400'
                         }`}>
                           {transaction.type === 'token_purchase' ? 'Purchased' :
+                           transaction.type === 'points_conversion' ? 'Converted' :
                            isReceived ? 'Received' : 'Sent'}
                         </p>
                       </div>

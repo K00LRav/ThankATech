@@ -999,6 +999,12 @@ export const authHelpers = {
   // Sign out
   signOut: async () => {
     try {
+      // Set persistence to NONE before signing out
+      if (auth) {
+        const { setPersistence, browserSessionPersistence } = await import('firebase/auth');
+        await setPersistence(auth, browserSessionPersistence);
+      }
+      
       // Firebase sign out
       await signOut(auth);
       

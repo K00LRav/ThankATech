@@ -216,8 +216,40 @@ export async function loadTechnicianDashboard(technicianId: string): Promise<Tec
     const totalPayouts = totalPayoutsCents / 100; // Convert to dollars
     const availableBalance = Math.max(0, totalEarnings - totalPayouts);
     
+    // ====== STEP 3B: Load points conversions ======
+    const authUid = techData.uid || techData.authUid;
+    const conversionTransactions: any[] = [];
+    
+    if (authUid) {
+      try {
+        const conversionsQuery = query(
+          collection(db, 'pointsConversions'),
+          where('userId', '==', authUid)
+        );
+        const conversionsSnapshot = await getDocs(conversionsQuery);
+        
+        conversionsSnapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          conversionTransactions.push({
+            id: docSnap.id,
+            type: 'points_conversion',
+            amount: 0,
+            timestamp: data.createdAt,
+            fromName: 'System',
+            toName: 'You',
+            tokens: data.tokensGenerated,
+            pointsAwarded: -data.pointsConverted, // Negative to show deduction
+            message: `Converted ${data.pointsConverted} points to ${data.tokensGenerated} TOA`
+          });
+        });
+      } catch (error) {
+        logger.error('Error loading conversions:', error);
+        // Don't fail the whole dashboard if conversions fail to load
+      }
+    }
+    
     // ====== STEP 4: Combine all activity ======
-    const allActivity = [...tokenTransactions, ...payoutTransactions].sort((a, b) => {
+    const allActivity = [...tokenTransactions, ...payoutTransactions, ...conversionTransactions].sort((a, b) => {
       const aTime = a.timestamp?.toDate?.() || new Date(0);
       const bTime = b.timestamp?.toDate?.() || new Date(0);
       return bTime.getTime() - aTime.getTime();
