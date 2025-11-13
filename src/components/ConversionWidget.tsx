@@ -234,7 +234,7 @@ export default function ConversionWidget({ userId }: ConversionWidgetProps) {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-300">4.</span>
-              <span>Daily limit: {CONVERSION_SYSTEM.maxDailyConversions} TOA conversions (prevents abuse)</span>
+              <span>No daily limits - convert anytime you want!</span>
             </li>
           </ul>
           <div className="mt-3 p-2 bg-purple-500/10 rounded border border-purple-500/20">
