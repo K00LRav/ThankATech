@@ -160,7 +160,7 @@ export default function TokenTransactionHistory({
         setClientDocId(clientDocId); // Store for filtering
         logger.info(`Loading transaction history for client: ${clientDocId}, authUid: ${userId}`);
         
-        // Load transactions sent by this client
+        // Load transactions sent by this client (using document ID)
         const tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
           where('fromUserId', '==', clientDocId),
@@ -170,6 +170,31 @@ export default function TokenTransactionHistory({
         
         const snapshot = await getDocs(tokenTransactionsQuery);
         const transactionList = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            fromUserId: data.fromUserId || '',
+            toTechnicianId: data.toTechnicianId || '',
+            fromName: data.fromName,
+            toName: data.toName,
+            tokens: data.tokens || 0,
+            message: data.message || '',
+            timestamp: data.timestamp,
+            type: data.type || '',
+            dollarValue: data.dollarValue,
+            pointsAwarded: data.pointsAwarded
+          } as Transaction;
+        });
+
+        // Load token purchases (stored with authUid, not document ID)
+        const purchasesQuery = query(
+          collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
+          where('fromUserId', '==', userId),
+          where('type', '==', 'token_purchase'),
+          firestoreLimit(50)
+        );
+        const purchasesSnapshot = await getDocs(purchasesQuery);
+        const purchaseTransactions = purchasesSnapshot.docs.map(doc => {
           const data = doc.data() as any;
           return {
             id: doc.id,
@@ -211,7 +236,7 @@ export default function TokenTransactionHistory({
         });
 
         // Combine and sort by timestamp descending
-        allTransactions = [...transactionList, ...conversionTransactions].sort((a, b) => {
+        allTransactions = [...transactionList, ...purchaseTransactions, ...conversionTransactions].sort((a, b) => {
           const aTime = a.timestamp?.toDate?.() || new Date(a.timestamp);
           const bTime = b.timestamp?.toDate?.() || new Date(b.timestamp);
           return bTime.getTime() - aTime.getTime();
