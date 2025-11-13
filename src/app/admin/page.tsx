@@ -473,15 +473,30 @@ export default function AdminPage() {
         techData.push({ id: doc.id, ...data } as Technician);
       });
       
-      // Load customers from clients collection (filter out mock/sample data)
+      // Load customers from clients collection
       const clientsRef = collection(db, COLLECTIONS.CLIENTS);
       const clientsSnapshot = await getDocs(clientsRef);
       
       const customerData: Customer[] = [];
+      const incompleteClients: any[] = []; // Clients without names
+      
       clientsSnapshot.forEach((doc) => {
         const data = doc.data();
-        customerData.push({ id: doc.id, ...data } as Customer);
+        const client = { id: doc.id, ...data };
+        
+        // Filter out clients without name, displayName, or businessName
+        if (data.name || data.displayName || data.businessName) {
+          customerData.push(client as Customer);
+        } else {
+          incompleteClients.push(client);
+          logger.warn(`Client without name found: ${doc.id}`, data);
+        }
       });
+      
+      // Log incomplete clients for review
+      if (incompleteClients.length > 0) {
+        console.log(`⚠️ Found ${incompleteClients.length} incomplete clients (no name):`, incompleteClients);
+      }
       
       // Load all token transactions
       const tokenTransactionsRef = collection(db, 'tokenTransactions');
@@ -1642,6 +1657,72 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
     }
   };
 
+  const handleCleanupIncompleteClients = async () => {
+    if (!confirm('⚠️ This will delete all client accounts without names. This action cannot be undone. Continue?')) {
+      return;
+    }
+
+    setLoading(true);
+    let deletedCount = 0;
+    let errors: string[] = [];
+
+    try {
+      // Reload clients to get current data
+      const clientsRef = collection(db, COLLECTIONS.CLIENTS);
+      const clientsSnapshot = await getDocs(clientsRef);
+      
+      const incompleteClients: any[] = [];
+      
+      clientsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.name && !data.displayName && !data.businessName) {
+          incompleteClients.push({ id: doc.id, ...data });
+        }
+      });
+
+      console.log(`🗑️ Found ${incompleteClients.length} incomplete clients to delete`);
+
+      // Delete each incomplete client
+      for (const client of incompleteClients) {
+        try {
+          const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              userId: client.id, 
+              userType: 'customer',
+              userName: client.email || 'Unknown',
+              userEmail: client.email || ''
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            deletedCount++;
+            console.log(`✅ Deleted incomplete client: ${client.id}`);
+          } else {
+            errors.push(`Failed to delete ${client.id}: ${data.error}`);
+          }
+        } catch (error) {
+          errors.push(`Error deleting ${client.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Show results
+      const message = `✅ Cleanup complete!\n\nDeleted: ${deletedCount} client(s)\nErrors: ${errors.length}\n\n${errors.length > 0 ? 'Errors:\n' + errors.join('\n') : ''}`;
+      alert(message);
+
+      // Reload admin data
+      await loadAdminData();
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      alert('Failed to cleanup incomplete clients: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderTechnicians = () => (
     <div className="space-y-6">
       {/* Delete confirmation modal */}
@@ -1854,7 +1935,16 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
       )}
 
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-        <h2 className="text-xl font-bold text-white mb-4">👥 Customers Management</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">👥 Customers Management</h2>
+          <button
+            onClick={handleCleanupIncompleteClients}
+            disabled={loading}
+            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            🗑️ Clean Up Incomplete Clients
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
