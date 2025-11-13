@@ -348,11 +348,14 @@ export default function AdminPage() {
     
     balancesSnapshot.forEach((doc: any) => {
       const balance = doc.data();
-      if (balance.tokens > hoardingThreshold && 
-          !balance.userId?.includes('mock') && 
-          !balance.userId?.includes('test')) {
+      // Filter out mock users by document ID
+      if (doc.id.startsWith('mock-')) {
+        return; // Skip mock users
+      }
+      
+      if (balance.tokens > hoardingThreshold) {
         hoardingUsers.push({
-          name: balance.userName || `User ${balance.userId.slice(0, 8)}`,
+          name: balance.userName || balance.displayName || balance.name || `User ${doc.id.slice(0, 8)}`,
           hoardedTokens: balance.tokens
         });
       }
@@ -370,7 +373,8 @@ export default function AdminPage() {
       const transaction = doc.data();
       const userId = transaction.fromUserId;
       
-      if (!userId || userId.includes('mock') || userId.includes('test')) return;
+      // Filter out mock users by checking if ID starts with 'mock-'
+      if (!userId || userId.startsWith('mock-')) return;
       
       if (!userActivity[userId]) {
         userActivity[userId] = {count: 0, totalTokens: 0, lastActivity: new Date(0)};
@@ -615,7 +619,12 @@ export default function AdminPage() {
           
           // Track most thanked technicians
           if (transaction.toTechnicianId) {
-            const techName = transaction.toName || transaction.technicianName || 'Unknown Technician';
+            // Try to get tech name from transaction, or look up in techData
+            let techName = transaction.toName || transaction.technicianName;
+            if (!techName) {
+              const tech = techData.find(t => t.id === transaction.toTechnicianId);
+              techName = tech?.name || 'Unknown Technician';
+            }
             if (!thankedTechnicians[transaction.toTechnicianId]) {
               thankedTechnicians[transaction.toTechnicianId] = {name: techName, thanks: 0};
             }
@@ -628,7 +637,12 @@ export default function AdminPage() {
           
           // Track most thanked technicians for TOA too
           if (transaction.toTechnicianId) {
-            const techName = transaction.toName || transaction.technicianName || 'Unknown Technician';
+            // Try to get tech name from transaction, or look up in techData
+            let techName = transaction.toName || transaction.technicianName;
+            if (!techName) {
+              const tech = techData.find(t => t.id === transaction.toTechnicianId);
+              techName = tech?.name || 'Unknown Technician';
+            }
             if (!thankedTechnicians[transaction.toTechnicianId]) {
               thankedTechnicians[transaction.toTechnicianId] = {name: techName, thanks: 0};
             }
