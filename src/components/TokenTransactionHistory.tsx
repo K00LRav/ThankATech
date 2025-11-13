@@ -160,16 +160,16 @@ export default function TokenTransactionHistory({
         setClientDocId(clientDocId); // Store for filtering
         logger.info(`Loading transaction history for client: ${clientDocId}, authUid: ${userId}`);
         
-        // Load transactions sent by this client (using document ID)
+        // Load transactions sent by this client (using authUid, not document ID!)
         const tokenTransactionsQuery = query(
           collection(db, COLLECTIONS.TOKEN_TRANSACTIONS),
-          where('fromUserId', '==', clientDocId),
+          where('fromUserId', '==', userId), // Use authUid, not clientDocId
           orderBy('timestamp', 'desc'),
           firestoreLimit(50)
         );
         
         const snapshot = await getDocs(tokenTransactionsQuery);
-        logger.info(`Found ${snapshot.docs.length} sent transactions for client ${clientDocId}`);
+        logger.info(`Found ${snapshot.docs.length} sent transactions for client authUid ${userId}`);
         const transactionList = snapshot.docs.map(doc => {
           const data = doc.data() as any;
           logger.info('Sent transaction:', { id: doc.id, type: data.type, fromUserId: data.fromUserId, tokens: data.tokens });
@@ -254,7 +254,7 @@ export default function TokenTransactionHistory({
 
   const filteredTransactions = transactions.filter(transaction => {
     if (filter === 'all') return true;
-    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === clientDocId && transaction.type !== 'token_purchase' && transaction.type !== 'points_conversion';
+    if (filter === 'sent' && userType === 'client') return transaction.fromUserId === userId && transaction.type !== 'token_purchase' && transaction.type !== 'points_conversion';
     if (filter === 'received' && userType === 'technician') return transaction.toTechnicianId === technicianDocId;
     if (filter === 'purchases') return transaction.type === 'token_purchase';
     if (filter === 'conversions') return transaction.type === 'points_conversion';
