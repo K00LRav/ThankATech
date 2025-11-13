@@ -191,15 +191,6 @@ export default function AdminPage() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetResults, setResetResults] = useState<string>('');
   const [resetEmail, setResetEmail] = useState<string>('');
-  
-  // Email testing states
-  const [emailTestResults, setEmailTestResults] = useState<string>('');
-  const [isTestingEmail, setIsTestingEmail] = useState(false);
-  const [testEmailData, setTestEmailData] = useState({
-    to: '',
-    subject: 'Test Email from ThankATech Admin',
-    message: 'This is a test email sent from the ThankATech admin panel.'
-  });
 
   // Brevo status states
   const [brevoStatus, setBrevoStatus] = useState<any>(null);
@@ -468,16 +459,7 @@ export default function AdminPage() {
       const techData: Technician[] = [];
       techSnapshot.forEach((doc) => {
         const data = doc.data();
-        // Filter out mock/sample/test data
-        if (!data.isSample && 
-            !data.isTest && 
-            !doc.id.includes('mock') && 
-            !doc.id.includes('test') && 
-            !data.email?.includes('test') &&
-            !data.email?.includes('example.com') &&
-            !data.name?.toLowerCase().includes('test')) {
-          techData.push({ id: doc.id, ...data } as Technician);
-        }
+        techData.push({ id: doc.id, ...data } as Technician);
       });
       
       // Load customers from clients collection (filter out mock/sample data)
@@ -487,16 +469,7 @@ export default function AdminPage() {
       const customerData: Customer[] = [];
       clientsSnapshot.forEach((doc) => {
         const data = doc.data();
-        // Filter out mock/sample/test data
-        if (!data.isSample && 
-            !data.isTest && 
-            !doc.id.includes('mock') && 
-            !doc.id.includes('test') && 
-            !data.email?.includes('test') &&
-            !data.email?.includes('example.com') &&
-            !data.name?.toLowerCase().includes('test')) {
-          customerData.push({ id: doc.id, ...data } as Customer);
-        }
+        customerData.push({ id: doc.id, ...data } as Customer);
       });
       
       // Load all token transactions
@@ -525,20 +498,6 @@ export default function AdminPage() {
       
       tokenTransactionsSnapshot.forEach((doc) => {
         const transaction = doc.data();
-        
-        // Filter out mock/test/sample transactions
-        if (transaction.fromUserId?.includes('mock') || 
-            transaction.fromUserId?.includes('test') ||
-            transaction.fromUserId?.includes('client-') ||  // Sample client data
-            transaction.toTechnicianId?.includes('mock') ||
-            transaction.toTechnicianId?.includes('test') ||
-            doc.id.includes('mock') ||
-            doc.id.includes('test') ||
-            doc.id.includes('tx-') ||  // Sample transaction IDs
-            doc.id.includes('client-')) {
-          return;
-        }
-        
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
         
@@ -566,21 +525,9 @@ export default function AdminPage() {
         }
       });
       
-      // Calculate total tokens in circulation from balances (filter out mock/test data)
+      // Calculate total tokens in circulation from balances
       tokenBalancesSnapshot.forEach((doc) => {
         const balance = doc.data();
-        
-        // Filter out mock/test/sample token balances
-        if (balance.userId?.includes('mock') || 
-            balance.userId?.includes('test') ||
-            balance.userId?.includes('client-') ||  // Sample client data
-            doc.id.includes('mock') ||
-            doc.id.includes('test') ||
-            doc.id.includes('client-') ||
-            doc.id === 'guest') {
-          return;
-        }
-        
         totalTokensInCirculation += balance.tokens || 0;
       });
       
@@ -599,21 +546,6 @@ export default function AdminPage() {
       
       thankYousSnapshot.forEach((doc) => {
         const thankYou = doc.data();
-        
-        // Filter out mock/test/sample thank yous
-        if (thankYou.technicianId?.includes('mock') || 
-            thankYou.technicianId?.includes('test') ||
-            thankYou.fromUserId?.includes('mock') ||
-            thankYou.fromUserId?.includes('test') ||
-            thankYou.fromUserId?.includes('client-') ||  // Sample client data
-            thankYou.toTechnicianId?.includes('mock') ||
-            doc.id.includes('mock') ||
-            doc.id.includes('test') ||
-            doc.id.includes('tx-') ||  // Sample transaction IDs
-            doc.id.includes('client-')) {
-          return;
-        }
-        
         totalThankYous++;
         totalThankYouPoints += thankYou.points || 1;
         
@@ -635,20 +567,6 @@ export default function AdminPage() {
       
       transactionSnapshot.forEach((doc) => {
         const transaction = doc.data();
-        
-        // Filter out mock/test/sample transactions
-        if (transaction.technicianId?.includes('mock') || 
-            transaction.technicianId?.includes('test') ||
-            transaction.fromUserId?.includes('mock') ||
-            transaction.fromUserId?.includes('test') ||
-            transaction.fromUserId?.includes('client-') ||  // Sample client data
-            doc.id.includes('mock') ||
-            doc.id.includes('test') ||
-            doc.id.includes('tx-') ||  // Sample transaction IDs
-            doc.id.includes('client-')) {
-          return;
-        }
-        
         legacyRevenue += transaction.amount || 0;
         
         if (transaction.type === 'tip') {
@@ -984,48 +902,6 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
     }
   };
 
-  // Email testing
-  const testEmailDelivery = async () => {
-    if (isTestingEmail) return;
-    
-    setIsTestingEmail(true);
-    setEmailTestResults('Testing email delivery...\n');
-    
-    try {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(testEmailData.to)) {
-        setEmailTestResults(prev => prev + '❌ Invalid email address format\n');
-        return;
-      }
-      
-      setEmailTestResults(prev => prev + `📧 Sending test email to: ${testEmailData.to}\n`);
-      
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: testEmailData.to,
-          subject: `[ADMIN TEST] ${testEmailData.subject}`,
-          message: testEmailData.message + '\n\n--- ADMIN TEST EMAIL ---\nThis is a test email sent from the ThankATech admin panel.'
-        }),
-      });
-      
-      if (response.ok) {
-        setEmailTestResults(prev => prev + '✅ Email sent successfully!\n');
-      } else {
-        const errorData = await response.json();
-        setEmailTestResults(prev => prev + `❌ Email sending failed: ${errorData.message || response.statusText}\n`);
-      }
-      
-    } catch (error: any) {
-      setEmailTestResults(prev => prev + `💥 Error: ${error.message}\n`);
-    } finally {
-      setIsTestingEmail(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -1064,13 +940,8 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
           <div>
             <h2 className="text-2xl font-bold text-white">Platform Overview</h2>
             <p className="text-blue-200">ThankATech Administration Dashboard</p>
-            <p className="text-green-300 text-sm mt-1">✅ Production Data Only (Mock/Test data filtered out)</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-              <span className="text-blue-300 text-sm">Clean Analytics</span>
-            </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-green-400 font-medium">System Online</span>
@@ -1661,38 +1532,14 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
           </div>
         </div>
 
-        {/* Email Testing */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
-          <h3 className="text-lg font-bold text-white mb-4">📧 Email Testing</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Test Email</label>
-              <input
-                type="email"
-                value={testEmailData.to}
-                onChange={(e) => setTestEmailData(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:border-blue-400 focus:outline-none"
-                placeholder="test@example.com"
-              />
-            </div>
-            <button
-              onClick={testEmailDelivery}
-              disabled={isTestingEmail}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-900 text-white py-2 px-4 rounded-lg transition-colors"
-            >
-              {isTestingEmail ? 'Sending...' : 'Send Test Email'}
-            </button>
-          </div>
-        </div>
-
       </div>
 
       {/* Results Display */}
-      {(tokenManagementResults || resetResults || emailTestResults) && (
+      {(tokenManagementResults || resetResults) && (
         <div className="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
           <h3 className="text-lg font-bold text-white mb-4">📋 Operation Results</h3>
           <div className="bg-black/30 rounded-lg p-4 font-mono text-sm text-green-400 whitespace-pre-wrap max-h-96 overflow-y-auto">
-            {tokenManagementResults || resetResults || emailTestResults}
+            {tokenManagementResults || resetResults}
           </div>
         </div>
       )}
