@@ -1146,11 +1146,11 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
 
           {/* Popular Tip Amounts */}
           <div className="bg-black/20 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-white mb-3">💵 Popular Tip Amounts</h4>
+            <h4 className="text-lg font-semibold text-white mb-3">🪙 Popular TOA Amounts</h4>
             <div className="space-y-2">
               {stats.popularTipAmounts.slice(0, 5).map((tip, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-slate-300">${tip.amount}</span>
+                  <span className="text-slate-300">{tip.amount} TOA</span>
                   <span className="text-blue-400 font-bold">{tip.count} times</span>
                 </div>
               ))}
