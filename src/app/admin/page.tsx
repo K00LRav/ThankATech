@@ -795,9 +795,9 @@ export default function AdminPage() {
         pointsInCirculation += customer.points || 0;
       });
       
-      // Calculate conversion rate (points converted vs points earned)
-      const totalPointsEarned = totalThankYouPoints + pointsInCirculation + totalPointsConverted;
-      const conversionRate = totalPointsEarned > 0 ? (totalPointsConverted / totalPointsEarned) * 100 : 0;
+      // Calculate conversion rate (what % of earned points have been converted)
+      // Note: If this is >100%, it means there's a data discrepancy
+      const conversionRate = totalThankYouPoints > 0 ? (totalPointsConverted / totalThankYouPoints) * 100 : 0;
       
       const averageConversionSize = totalConversions > 0 ? totalPointsConverted / totalConversions : 0;
       
