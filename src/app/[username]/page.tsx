@@ -122,11 +122,18 @@ export default function TechnicianProfile() {
     if (!technician) return;
 
     try {
-      const response = await fetch('/api/send-tokens', {
+      // Send thank you using existing client-side function
+      const result = await sendFreeThankYou(user.uid, technician.id);
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to send thank you. Please try again.');
+        return;
+      }
+
+      // Trigger email notifications via API
+      fetch('/api/send-tokens', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromUserId: user.uid,
           toTechnicianId: technician.id,
@@ -134,14 +141,7 @@ export default function TechnicianProfile() {
           message: '',
           isFreeThankYou: true
         })
-      });
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to send thank you. Please try again.');
-        return;
-      }
+      }).catch(err => console.error('Email notification failed:', err));
       
       // Update technician's stats locally
       setTechnician(prev => prev ? {

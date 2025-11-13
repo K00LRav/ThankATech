@@ -674,12 +674,18 @@ export default function Home() {
     try {
       const currentTechnician = displayedProfiles[currentProfileIndex];
       
-      // Use API to send free thank you
-      const response = await fetch('/api/send-tokens', {
+      // Send thank you using existing client-side function
+      const result = await sendFreeThankYou(currentUser.uid, currentTechnician.id);
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to send thank you. Please try again.');
+        return;
+      }
+
+      // Trigger email notifications via API
+      fetch('/api/send-tokens', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromUserId: currentUser.uid,
           toTechnicianId: currentTechnician.id,
@@ -687,14 +693,7 @@ export default function Home() {
           message: '',
           isFreeThankYou: true
         })
-      });
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to send thank you. Please try again.');
-        return;
-      }
+      }).catch(err => console.error('Email notification failed:', err));
       
       // Update the technician's stats locally (new system: 1 ThankATech Point per thank you)
       setProfiles(prev => prev.map((tech, index) => 
