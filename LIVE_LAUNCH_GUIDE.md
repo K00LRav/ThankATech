@@ -1,5 +1,39 @@
 # 🚀 Live Stripe Launch Guide
 
+## Prerequisites
+
+### Set Up Environment Variables
+
+1. **Copy the template file:**
+   ```bash
+   copy .env.local.template .env.local
+   ```
+
+2. **Fill in your Firebase credentials:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Select your project
+   - Go to Project Settings → General
+   - Scroll to "Your apps" section
+   - Copy all the config values into `.env.local`
+
+3. **Add your Stripe keys:**
+   - Get from [Stripe Dashboard](https://dashboard.stripe.com/test/apikeys)
+   - Start with test keys, will switch to live later
+
+**Your `.env.local` should look like:**
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123:web:abc
+
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
 ## Pre-Launch Checklist
 
 ### 1. Backup Test Data (Optional)
