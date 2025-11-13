@@ -556,26 +556,22 @@ export default function AdminPage() {
         } else if (transaction.type === 'toa_token' || transaction.type === 'thank_you') {
           totalTokensSpent += tokens;
           
-          // Track spenders - look up name from customerData
+          // Track spenders - always look up current name from customerData for accuracy
           if (transaction.fromUserId) {
-            let spenderName = transaction.fromName;
-            if (!spenderName) {
-              const customer = customerData.find(c => c.id === transaction.fromUserId);
-              spenderName = customer?.name || 'Unknown User';
-            }
+            const customer = customerData.find(c => c.id === transaction.fromUserId);
+            const spenderName = customer?.name || transaction.fromName || 'Unknown User';
+            
             if (!tokenSpenders[transaction.fromUserId]) {
               tokenSpenders[transaction.fromUserId] = {name: spenderName, spent: 0};
             }
             tokenSpenders[transaction.fromUserId].spent += tokens;
           }
           
-          // Track earners - look up name from techData
+          // Track earners - always look up current name from techData for accuracy
           if (transaction.toTechnicianId) {
-            let earnerName = transaction.toName || transaction.technicianName;
-            if (!earnerName) {
-              const tech = techData.find(t => t.id === transaction.toTechnicianId);
-              earnerName = tech?.name || 'Unknown Technician';
-            }
+            const tech = techData.find(t => t.id === transaction.toTechnicianId);
+            const earnerName = tech?.name || transaction.toName || transaction.technicianName || 'Unknown Technician';
+            
             if (!tokenEarners[transaction.toTechnicianId]) {
               tokenEarners[transaction.toTechnicianId] = {name: earnerName, earned: 0};
             }
