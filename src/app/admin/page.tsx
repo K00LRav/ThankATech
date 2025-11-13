@@ -342,7 +342,11 @@ export default function AdminPage() {
     return circulation > 0 ? (spent / circulation) * 100 : 0;
   };
 
-  const identifyHoardingUsers = (balancesSnapshot: any): Array<{name: string, hoardedTokens: number}> => {
+  const identifyHoardingUsers = (
+    balancesSnapshot: any, 
+    customers: Customer[], 
+    technicians: Technician[]
+  ): Array<{name: string, hoardedTokens: number}> => {
     const hoardingThreshold = 100; // Users with more than 100 unused tokens
     const hoardingUsers: Array<{name: string, hoardedTokens: number}> = [];
     
@@ -354,8 +358,13 @@ export default function AdminPage() {
       }
       
       if (balance.tokens > hoardingThreshold) {
+        // Look up name from customers or technicians array
+        const customer = customers.find(c => c.id === doc.id);
+        const technician = technicians.find(t => t.id === doc.id);
+        const userName = customer?.name || technician?.name || `User ${doc.id.slice(0, 8)}`;
+        
         hoardingUsers.push({
-          name: balance.userName || balance.displayName || balance.name || `User ${doc.id.slice(0, 8)}`,
+          name: userName,
           hoardedTokens: balance.tokens
         });
       }
@@ -813,7 +822,7 @@ export default function AdminPage() {
         // Advanced Token Analytics
         tokenVelocity: calculateTokenVelocity(totalTokensPurchased, totalTokensSpent, totalTokensInCirculation),
         tokenBurnRate: totalTokensPurchased > 0 ? (totalTokensSpent / totalTokensPurchased) * 100 : 0,
-        tokenHoardingUsers: identifyHoardingUsers(tokenBalancesSnapshot),
+        tokenHoardingUsers: identifyHoardingUsers(tokenBalancesSnapshot, customerData, techData),
         suspiciousActivity: detectSuspiciousActivity(tokenTransactionsSnapshot),
         tokenEconomyHealth: calculateTokenEconomyHealth(totalTokensInCirculation, totalTokensPurchased, totalTokensSpent, topTokenSpenders.length)
       });
