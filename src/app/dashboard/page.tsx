@@ -30,6 +30,7 @@ import UniversalHeader from '@/components/UniversalHeader';
 import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
 import TokenPurchaseModal from '@/components/TokenPurchaseModal';
 import TokenTransactionHistory from '@/components/TokenTransactionHistory';
+import PointsConversionWidget from '@/components/PointsConversionWidget';
 import { getUserTokenBalance } from '@/lib/token-firebase';
 import { formatTokens } from '@/lib/tokens';
 
@@ -799,6 +800,15 @@ export default function ModernDashboard() {
             </>
           )}
         </div>
+
+        {/* Points Conversion Widget - For all users */}
+        {userProfile && tokenBalance && user && (
+          <PointsConversionWidget
+            userId={user.uid}
+            currentPoints={userProfile.points || 0}
+            onConversionComplete={() => loadUserProfile(user.uid, user)}
+          />
+        )}
 
         {/* Token Management - Technician (Dual Display: Wallet + Earnings) */}
         {userProfile.userType === 'technician' && tokenBalance && (

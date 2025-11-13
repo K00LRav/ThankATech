@@ -843,26 +843,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
       };
     }
 
-    // Check daily conversion limit
-    const today = new Date().toISOString().split('T')[0];
-    const conversionsQuery = query(
-      collection(db, 'pointsConversions'),
-      where('userId', '==', userId),
-      where('conversionDate', '==', today)
-    );
-    const dailyConversions = await getDocs(conversionsQuery);
-
-    const tokensAlreadyConverted = dailyConversions.docs.reduce((total, doc) => 
-      total + doc.data().tokensGenerated, 0);
-
     const tokensToGenerate = Math.floor(pointsToConvert / CONVERSION_SYSTEM.pointsToTOARate);
-    
-    if (tokensAlreadyConverted + tokensToGenerate > CONVERSION_SYSTEM.maxDailyConversions) {
-      return { 
-        success: false, 
-        error: `Daily conversion limit: ${CONVERSION_SYSTEM.maxDailyConversions} TOA tokens` 
-      };
-    }
 
     // Get user's current points balance (check all collections)
     let userRef = doc(db, 'technicians', userId);
@@ -921,6 +902,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
 
       // Record the conversion
       const conversionRef = doc(collection(db, 'pointsConversions'));
+      const today = new Date().toISOString().split('T')[0];
       transaction.set(conversionRef, {
         id: conversionRef.id,
         userId,
@@ -950,7 +932,7 @@ export const convertPointsToTOA = async (userId: string, pointsToConvert: number
   }
 };
 
-// Check how many points user can convert today
+// Check user's conversion status
 export const getConversionStatus = async (userId: string) => {
   try {
     // Get user's current points (check all collections)
@@ -964,40 +946,24 @@ export const getConversionStatus = async (userId: string) => {
         userRef = doc(db, COLLECTIONS.ADMINS, userId);
         userDoc = await getDoc(userRef);
         if (!userDoc.exists()) {
-          return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
+          return { availablePoints: 0, canConvert: 0 };
+        }
       }
     }
 
     const userData = userDoc.data() as any;
     const availablePoints = userData.points || 0;
 
-    // Check today's conversions
-    const today = new Date().toISOString().split('T')[0];
-    const conversionsQuery = query(
-      collection(db, 'pointsConversions'),
-      where('userId', '==', userId),
-      where('conversionDate', '==', today)
-    );
-    const dailyConversions = await getDocs(conversionsQuery);
-
-    const tokensAlreadyConverted = dailyConversions.docs.reduce((total, doc) => 
-      total + doc.data().tokensGenerated, 0);
-
-    const remainingDailyLimit = CONVERSION_SYSTEM.maxDailyConversions - tokensAlreadyConverted;
     const maxConvertableFromPoints = Math.floor(availablePoints / CONVERSION_SYSTEM.pointsToTOARate);
-    const canConvert = Math.min(maxConvertableFromPoints, remainingDailyLimit);
 
     return {
       availablePoints,
-      canConvert: Math.max(0, canConvert),
-      dailyLimit: CONVERSION_SYSTEM.maxDailyConversions,
-      usedToday: tokensAlreadyConverted,
+      canConvert: Math.max(0, maxConvertableFromPoints),
       conversionRate: CONVERSION_SYSTEM.pointsToTOARate
     };
-      }
 
   } catch (error) {
     logger.error('Error getting conversion status:', error);
-    return { availablePoints: 0, canConvert: 0, dailyLimit: CONVERSION_SYSTEM.maxDailyConversions };
+    return { availablePoints: 0, canConvert: 0 };
   }
 };

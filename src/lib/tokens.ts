@@ -136,7 +136,6 @@ export const POINTS_LIMITS = {
 export const CONVERSION_SYSTEM = {
   pointsToTOARate: 5, // 5 ThankATech Points = 1 TOA token
   minimumConversion: 5, // Must have at least 5 points to convert
-  maxDailyConversions: 20, // Prevent abuse while encouraging engagement
   conversionReward: 0.10, // $0.10 value per converted TOA (from platform fee pool)
 } as const;
 
