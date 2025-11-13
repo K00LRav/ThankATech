@@ -553,21 +553,48 @@ export default function AdminPage() {
         .sort((a, b) => b.earned - a.earned)
         .slice(0, 5);
       
-      // Calculate Thank You Metrics
+      // Calculate Thank You Metrics from tokenTransactions
       let totalThankYous = 0;
       let totalThankYouPoints = 0;
+      let totalTips = 0; // TOA token transactions count as tips
       const thankedTechnicians: {[key: string]: {name: string, thanks: number}} = {};
+      const tipAmounts: {[key: number]: number} = {};
       
-      thankYousSnapshot.forEach((doc) => {
-        const thankYou = doc.data();
-        totalThankYous++;
-        totalThankYouPoints += thankYou.points || 1;
+      // Process tokenTransactions for thank you analytics
+      tokenTransactionsSnapshot.forEach((doc) => {
+        const transaction = doc.data();
         
-        if (thankYou.technicianId && thankYou.technicianName) {
-          if (!thankedTechnicians[thankYou.technicianId]) {
-            thankedTechnicians[thankYou.technicianId] = {name: thankYou.technicianName, thanks: 0};
+        if (transaction.type === 'thank_you') {
+          totalThankYous++;
+          totalThankYouPoints += transaction.pointsAwarded || 1;
+          
+          // Track most thanked technicians
+          if (transaction.toTechnicianId) {
+            const techName = transaction.toName || transaction.technicianName || 'Unknown Technician';
+            if (!thankedTechnicians[transaction.toTechnicianId]) {
+              thankedTechnicians[transaction.toTechnicianId] = {name: techName, thanks: 0};
+            }
+            thankedTechnicians[transaction.toTechnicianId].thanks++;
           }
-          thankedTechnicians[thankYou.technicianId].thanks++;
+        } else if (transaction.type === 'toa_token' && transaction.tokens > 0) {
+          // Count TOA token sends as tips
+          totalTips++;
+          totalThankYouPoints += transaction.pointsAwarded || 2;
+          
+          // Track most thanked technicians for TOA too
+          if (transaction.toTechnicianId) {
+            const techName = transaction.toName || transaction.technicianName || 'Unknown Technician';
+            if (!thankedTechnicians[transaction.toTechnicianId]) {
+              thankedTechnicians[transaction.toTechnicianId] = {name: techName, thanks: 0};
+            }
+            thankedTechnicians[transaction.toTechnicianId].thanks++;
+          }
+          
+          // Track popular TOA amounts (in tokens)
+          const tokenAmount = transaction.tokens || 0;
+          if (tokenAmount > 0) {
+            tipAmounts[tokenAmount] = (tipAmounts[tokenAmount] || 0) + 1;
+          }
         }
       });
       
@@ -575,24 +602,17 @@ export default function AdminPage() {
         .sort((a, b) => b.thanks - a.thanks)
         .slice(0, 5);
       
-      // Calculate Transaction Analytics
-      let legacyRevenue = 0;
-      const tipAmounts: {[key: number]: number} = {};
-      
-      transactionSnapshot.forEach((doc) => {
-        const transaction = doc.data();
-        legacyRevenue += transaction.amount || 0;
-        
-        if (transaction.type === 'tip') {
-          const amount = Math.round((transaction.amount || 0) / 100);
-          tipAmounts[amount] = (tipAmounts[amount] || 0) + 1;
-        }
-      });
-      
       const popularTipAmounts = Object.entries(tipAmounts)
         .map(([amount, count]) => ({amount: parseInt(amount), count}))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
+      
+      // Calculate legacy transaction revenue (if any exists)
+      let legacyRevenue = 0;
+      transactionSnapshot.forEach((doc) => {
+        const transaction = doc.data();
+        legacyRevenue += transaction.amount || 0;
+      });
       
       // Calculate User Engagement Metrics
       const now = new Date();
@@ -681,9 +701,9 @@ export default function AdminPage() {
         
         // Transaction Analytics
         transactionsByType: {
-          thankYous: thankYousSnapshot.size,
-          tips: transactionSnapshot.size,
-          tokenPurchases: tokenTransactionsSnapshot.docs.filter(doc => doc.data().type === 'purchase').length
+          thankYous: totalThankYous,
+          tips: totalTips,
+          tokenPurchases: tokenTransactionsSnapshot.docs.filter(doc => doc.data().type === 'token_purchase').length
         },
         recentTransactionTrends: [], // Would need time-series data
         popularTipAmounts,
