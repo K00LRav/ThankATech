@@ -570,7 +570,7 @@ export default function AdminPage() {
           
           // Track spenders - always look up current name from customerData for accuracy
           if (transaction.fromUserId) {
-            const customer = customerData.find(c => c.id === transaction.fromUserId);
+            const customer = customerData.find(c => c.authUid === transaction.fromUserId);
             const spenderName = customer?.name || transaction.fromName || 'Unknown User';
             
             if (!tokenSpenders[transaction.fromUserId]) {
@@ -581,7 +581,7 @@ export default function AdminPage() {
           
           // Track earners - always look up current name from techData for accuracy
           if (transaction.toTechnicianId) {
-            const tech = techData.find(t => t.id === transaction.toTechnicianId);
+            const tech = techData.find(t => t.authUid === transaction.toTechnicianId);
             const earnerName = tech?.name || transaction.toName || transaction.technicianName || 'Unknown Technician';
             
             if (!tokenEarners[transaction.toTechnicianId]) {
