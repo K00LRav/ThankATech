@@ -471,7 +471,10 @@ export default function AdminPage() {
       const techData: Technician[] = [];
       techSnapshot.forEach((doc) => {
         const data = doc.data();
-        techData.push({ id: doc.id, ...data } as Technician);
+        // Filter out mock data (IDs starting with 'mock-')
+        if (!doc.id.startsWith('mock-')) {
+          techData.push({ id: doc.id, ...data } as Technician);
+        }
       });
       
       // Load customers from clients collection
@@ -484,6 +487,11 @@ export default function AdminPage() {
       clientsSnapshot.forEach((doc) => {
         const data = doc.data();
         const client = { id: doc.id, ...data };
+        
+        // Filter out mock data and clients without names
+        if (doc.id.startsWith('mock-')) {
+          return; // Skip mock data
+        }
         
         // Filter out clients without name, displayName, or businessName
         if (data.name || data.displayName || data.businessName) {
@@ -528,6 +536,13 @@ export default function AdminPage() {
         const tokens = transaction.tokens || 0;
         const dollarValue = transaction.dollarValue || 0;
         
+        // Filter out mock data transactions
+        if (transaction.fromUserId?.startsWith('mock-') || 
+            transaction.toUserId?.startsWith('mock-') ||
+            transaction.userId?.startsWith('mock-')) {
+          return; // Skip mock transactions
+        }
+        
         // Match actual transaction types from token-firebase.ts
         if (transaction.type === 'token_purchase') {
           totalTokensPurchased += tokens;
@@ -558,6 +573,10 @@ export default function AdminPage() {
       // Calculate total tokens in circulation from balances
       tokenBalancesSnapshot.forEach((doc) => {
         const balance = doc.data();
+        // Filter out mock user balances
+        if (doc.id.startsWith('mock-')) {
+          return; // Skip mock balances
+        }
         totalTokensInCirculation += balance.tokens || 0;
       });
       
@@ -579,6 +598,14 @@ export default function AdminPage() {
       // Process tokenTransactions for thank you analytics
       tokenTransactionsSnapshot.forEach((doc) => {
         const transaction = doc.data();
+        
+        // Filter out mock data transactions
+        if (transaction.fromUserId?.startsWith('mock-') || 
+            transaction.toUserId?.startsWith('mock-') ||
+            transaction.userId?.startsWith('mock-') ||
+            transaction.toTechnicianId?.startsWith('mock-')) {
+          return; // Skip mock transactions
+        }
         
         if (transaction.type === 'thank_you') {
           totalThankYous++;
@@ -627,6 +654,12 @@ export default function AdminPage() {
       let legacyRevenue = 0;
       transactionSnapshot.forEach((doc) => {
         const transaction = doc.data();
+        // Filter out mock data
+        if (transaction.fromUserId?.startsWith('mock-') || 
+            transaction.toUserId?.startsWith('mock-') ||
+            transaction.userId?.startsWith('mock-')) {
+          return; // Skip mock transactions
+        }
         legacyRevenue += transaction.amount || 0;
       });
       
@@ -1000,6 +1033,10 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.1)) 
             <p className="text-blue-200">ThankATech Administration Dashboard</p>
           </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-yellow-500/10 px-3 py-1.5 rounded-lg border border-yellow-500/30">
+              <span className="text-yellow-400">🎭</span>
+              <span className="text-yellow-300 text-sm font-medium">Mock data filtered</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-green-400 font-medium">System Online</span>
