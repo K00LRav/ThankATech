@@ -9,6 +9,7 @@ interface AvatarProps {
   size?: number;
   className?: string;
   textSize?: string;
+  rounded?: 'full' | '2xl' | 'xl' | 'lg' | 'md';
 }
 
 const Avatar: React.FC<AvatarProps> = ({ 
@@ -16,7 +17,8 @@ const Avatar: React.FC<AvatarProps> = ({
   photoURL, 
   size = 40, 
   className = '',
-  textSize = 'text-sm'
+  textSize = 'text-sm',
+  rounded = 'full'
 }) => {
   // Get initials from name
   const getInitials = (fullName: string) => {
@@ -59,6 +61,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
   const initials = getInitials(name);
   const bgColor = getBackgroundColor(name);
+  const roundedClass = `rounded-${rounded}`;
 
   if (photoURL) {
     return (
@@ -67,7 +70,7 @@ const Avatar: React.FC<AvatarProps> = ({
         alt={name || 'Profile'} 
         width={size}
         height={size}
-        className={`rounded-full object-cover ${className}`}
+        className={`${roundedClass} object-cover ${className}`}
         style={{ width: size, height: size }}
       />
     );
@@ -75,7 +78,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div 
-      className={`${bgColor} rounded-full flex items-center justify-center text-white font-semibold ${className}`}
+      className={`${bgColor} ${roundedClass} flex items-center justify-center text-white font-semibold ${className}`}
       style={{ width: size, height: size }}
     >
       <span className={`${textSize} font-bold`}>

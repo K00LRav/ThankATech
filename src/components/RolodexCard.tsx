@@ -98,17 +98,20 @@ export function RolodexCard({
 
   return (
     <div className="card-container relative group flex justify-center max-w-sm mx-auto sm:max-w-lg lg:max-w-3xl iphone-card">
-      {/* Rolodex background layers - hidden on mobile for performance */}
-      <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-400/10 to-teal-500/10 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-white/10 shadow-xl hidden sm:block"></div>
-      <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-400/15 to-teal-500/15 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-white/15 shadow-2xl hidden sm:block"></div>
+      {/* Enhanced Rolodex background layers with better colors */}
+      <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-blue-300/30 shadow-xl hidden sm:block"></div>
+      <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-500/25 to-cyan-500/25 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-blue-300/40 shadow-2xl hidden sm:block"></div>
       
-      {/* Main Glass Card - iPhone 12 Pro Max Optimized */}
-      <div className="relative w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:bg-white/15 overflow-hidden z-10 mobile-touch-feedback">
-        {/* Category Badge - Adjusted for better spacing from info icon */}
+      {/* Main Glass Card - Enhanced with better colors and glow */}
+      <div className="relative w-full bg-gradient-to-br from-slate-800/90 via-blue-900/80 to-slate-800/90 backdrop-blur-xl border border-blue-400/30 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-[0_20px_60px_-15px_rgba(59,130,246,0.5)] hover:-translate-y-1 hover:border-blue-400/50 overflow-hidden z-10 mobile-touch-feedback">
+        {/* Subtle inner glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-cyan-400/5 pointer-events-none"></div>
+        
+        {/* Category Badge - Enhanced visibility */}
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500/80 to-teal-600/80 backdrop-blur-sm border border-white/30 rounded-full px-2 py-1 sm:px-3 sm:py-1.5 shadow-lg max-w-[120px] sm:max-w-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 backdrop-blur-sm border border-blue-300/50 rounded-full px-2 py-1 sm:px-3 sm:py-1.5 shadow-lg hover:shadow-blue-400/50 transition-all duration-300 max-w-[120px] sm:max-w-none">
             <span className="text-sm sm:text-base lg:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
-            <span className="text-white text-xs sm:text-sm font-medium truncate">
+            <span className="text-white text-xs sm:text-sm font-semibold truncate drop-shadow-md">
               {formatCategory(technician.category)}
             </span>
           </div>
@@ -117,23 +120,25 @@ export function RolodexCard({
         {/* Card Content */}
         <div className="relative p-6 sm:p-8 h-full min-h-[20rem] sm:min-h-[24rem]">
           <div className="flex flex-col h-full">
-            {/* Header Section - Extra top margin for category badge clearance */}
+            {/* Header Section - Enhanced profile image */}
             <div className="flex items-start space-x-4 mb-4 mt-4 sm:mt-4">
-              {/* Profile Image */}
+              {/* Profile Image - Made larger */}
               <div className="relative">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-lg ring-4 ring-white/50">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shadow-2xl ring-4 ring-blue-400/40 hover:ring-blue-400/60 transition-all duration-300">
                   <Avatar
                     name={technician.name}
                     photoURL={technician.photoURL || technician.image}
-                    size={96}
+                    size={128}
                     className="w-full h-full"
-                    textSize="text-xl sm:text-2xl"
+                    textSize="text-2xl sm:text-3xl"
+                    rounded="2xl"
                   />
                 </div>
-                {/* ThankATech Points overlay */}
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg border-2 border-white">
-                  <span className="flex items-center justify-center">
-                    {(technician as any).points || 0}✨
+                {/* ThankATech Points overlay - Positioned to not overlap image */}
+                <div className="absolute -bottom-4 -right-4 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white rounded-full min-w-[3rem] h-12 sm:min-w-[3.5rem] sm:h-14 flex items-center justify-center text-xs sm:text-sm font-bold shadow-2xl border-4 border-white hover:scale-110 transition-transform duration-300">
+                  <span className="flex items-center justify-center px-2">
+                    <span className="font-extrabold">{(technician as any).points || 0}</span>
+                    <span className="ml-1">✨</span>
                   </span>
                 </div>
               </div>
@@ -273,46 +278,46 @@ export function RolodexCard({
 
             </div>
 
-            {/* Bottom Section */}
+            {/* Bottom Section - Enhanced stat cards */}
             <div className="mt-auto pt-2 sm:pt-3">
               <div className="flex items-center justify-center gap-3 flex-wrap">
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full px-4 py-2 shadow-lg border border-blue-400/20">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl px-4 py-2.5 shadow-lg hover:shadow-blue-400/50 border border-blue-400/30 transition-all duration-300 hover:scale-105">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">👍</span>
-                    <span className="text-sm font-bold">{technician.totalThankYous || 0}</span>
-                    <span className="text-sm opacity-90">thanks</span>
+                    <span className="text-base">👍</span>
+                    <span className="text-base font-bold">{technician.totalThankYous || 0}</span>
+                    <span className="text-sm opacity-90 font-medium">thanks</span>
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full px-4 py-2 shadow-lg border border-amber-400/20">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl px-4 py-2.5 shadow-lg hover:shadow-amber-400/50 border border-amber-400/30 transition-all duration-300 hover:scale-105">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">⭐</span>
-                    <span className="text-sm font-bold">{technician.totalTips || 0}</span>
-                    <span className="text-sm opacity-90">TOA</span>
+                    <span className="text-base">⭐</span>
+                    <span className="text-base font-bold">{technician.totalTips || 0}</span>
+                    <span className="text-sm opacity-90 font-medium">TOA</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons - Brand-aligned hierarchy */}
+            {/* Action Buttons - Enhanced colors and effects */}
             {showActions && (onThankYou || onSendTOA) && (
               <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4">
-                {/* PRIMARY ACTION: Say Thank You - Emerald Call-to-Action */}
+                {/* PRIMARY ACTION: Say Thank You - Enhanced with glow */}
                 {onThankYou && (
                   <button 
                     onClick={onThankYou}
-                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/30 transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-emerald-400/30"
+                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-emerald-400/50"
                   >
-                    <span className="font-bold text-white text-base">🙏 Say Thank You</span>
+                    <span className="font-bold text-white text-base drop-shadow-md">🙏 Say Thank You</span>
                   </button>
                 )}
                 
-                {/* SECONDARY ACTION: Send TOA - Signature Tinted Glass */}
+                {/* SECONDARY ACTION: Send TOA - Enhanced visibility */}
                 {onSendTOA && (
                   <button 
                     onClick={onSendTOA}
-                    className="group flex items-center justify-center space-x-2 px-3 py-2 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 backdrop-blur-md hover:from-amber-400/30 hover:to-yellow-500/30 rounded-lg transition-all duration-300 min-h-[36px] w-full border border-amber-300/40 hover:border-amber-200/60 shadow-lg hover:shadow-amber-400/25"
+                    className="group flex items-center justify-center space-x-2 px-3 py-3 bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-md hover:from-amber-500/40 hover:to-orange-500/40 rounded-xl transition-all duration-300 min-h-[48px] w-full border border-amber-400/60 hover:border-amber-300/80 shadow-lg hover:shadow-amber-400/40 hover:scale-[1.01]"
                   >
-                    <span className="font-normal text-amber-100 group-hover:text-amber-50 text-sm drop-shadow-sm">💝 Send TOA</span>
+                    <span className="font-semibold text-amber-50 group-hover:text-white text-base drop-shadow-md">💝 Send TOA</span>
                   </button>
                 )}
               </div>
