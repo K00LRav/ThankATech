@@ -131,6 +131,19 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
         <head>
           <title>QR Code - ${technicianName}</title>
           <style>
+            @media print {
+              @page {
+                margin: 0;
+                size: auto;
+              }
+              body {
+                margin: 1cm;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+              }
+            }
+            
             body {
               display: flex;
               flex-direction: column;
@@ -140,6 +153,8 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               margin: 0;
               padding: 20px;
               font-family: system-ui, -apple-system, sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .container {
               text-align: center;
@@ -147,6 +162,8 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               padding: 40px;
               border-radius: 20px;
               background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .header {
               margin-bottom: 20px;
@@ -164,14 +181,13 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               align-items: center;
               justify-content: center;
               font-size: 32px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .brand {
               font-size: 36px;
               font-weight: bold;
-              background: linear-gradient(to right, #2563eb 0%, #1e40af 100%);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              background-clip: text;
+              color: #2563eb;
               margin: 0;
             }
             h1 {
@@ -188,6 +204,11 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               margin: 20px 0;
               position: relative;
               display: inline-block;
+              background: white;
+              padding: 20px;
+              border-radius: 16px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .qr-logo-overlay {
               position: absolute;
@@ -197,20 +218,24 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               width: ${logoSize}px;
               height: ${logoSize}px;
               background: white;
-              border-radius: 8px;
+              border-radius: 12px;
               padding: 8px;
               box-shadow: 0 4px 6px rgba(0,0,0,0.1);
               border: 4px solid white;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .logo-inner {
               width: 100%;
               height: 100%;
               background: linear-gradient(to right, #2563eb, #1e40af);
-              border-radius: 4px;
+              border-radius: 8px;
               display: flex;
               align-items: center;
               justify-content: center;
               font-size: ${logoSize * 0.5}px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .url {
               margin-top: 30px;
@@ -235,11 +260,6 @@ export default function QRCodeDisplay({ username, technicianName }: QRCodeDispla
               color: #1e293b;
               display: block;
               margin-bottom: 10px;
-            }
-            @media print {
-              body {
-                padding: 0;
-              }
             }
           </style>
         </head>
