@@ -31,6 +31,7 @@ import ProfilePhotoUpload from '@/components/ProfilePhotoUpload';
 import TokenPurchaseModal from '@/components/TokenPurchaseModal';
 import TokenTransactionHistory from '@/components/TokenTransactionHistory';
 import PointsConversionWidget from '@/components/PointsConversionWidget';
+import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { getUserTokenBalance } from '@/lib/token-firebase';
 import { formatTokens } from '@/lib/tokens';
 
@@ -745,6 +746,18 @@ export default function ModernDashboard() {
                   </button>
                   
                   <button
+                    onClick={() => setActiveSection('qrcode')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'qrcode'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">📱</span>
+                    <span>QR Code</span>
+                  </button>
+                  
+                  <button
                     onClick={() => setActiveSection('account')}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
                       activeSection === 'account'
@@ -1419,6 +1432,33 @@ export default function ModernDashboard() {
           )}
         </div>
             </>
+          )}
+
+          {/* QR CODE SECTION - Technicians Only */}
+          {activeSection === 'qrcode' && userProfile.userType === 'technician' && userProfile.username && (
+            <QRCodeDisplay
+              username={userProfile.username}
+              technicianName={userProfile.name}
+            />
+          )}
+
+          {/* QR CODE - No Username Warning */}
+          {activeSection === 'qrcode' && userProfile.userType === 'technician' && !userProfile.username && (
+            <div className="bg-yellow-500/20 backdrop-blur-lg rounded-xl border border-yellow-400/30 p-8 text-center">
+              <div className="mb-4">
+                <span className="text-6xl">⚠️</span>
+              </div>
+              <h3 className="text-2xl font-bold text-yellow-300 mb-4">Username Required</h3>
+              <p className="text-yellow-200 mb-6">
+                You need to set up your username before you can generate a QR code for your profile.
+              </p>
+              <button
+                onClick={() => setActiveSection('account')}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                Go to Profile Settings to Add Username
+              </button>
+            </div>
           )}
 
           {/* ACCOUNT/PROFILE SETTINGS SECTION */}
