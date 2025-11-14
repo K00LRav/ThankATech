@@ -99,6 +99,7 @@ export default function ModernDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -692,11 +693,23 @@ export default function ModernDashboard() {
         onSignOut={handleSignOut} 
       />
       
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="lg:hidden fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl transition-all"
+      >
+        {mobileMenuOpen ? (
+          <span className="text-2xl">✕</span>
+        ) : (
+          <span className="text-2xl">☰</span>
+        )}
+      </button>
+      
       {/* New Layout: Sidebar + Content */}
       <div className="relative flex max-w-7xl mx-auto px-4 py-8 gap-6">
         
-        {/* Left Sidebar Navigation */}
-        <aside className="w-64 flex-shrink-0">
+        {/* Left Sidebar Navigation - Desktop */}
+        <aside className="hidden lg:block w-64 flex-shrink-0">
           <div className="sticky top-24 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4">
             <nav className="space-y-2">
               {/* Navigation Items - Different for Technicians vs Clients */}
@@ -851,6 +864,175 @@ export default function ModernDashboard() {
             </nav>
           </div>
         </aside>
+
+        {/* Mobile Navigation Menu - Slides up from bottom */}
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              onClick={() => setMobileMenuOpen(false)}
+            ></div>
+            
+            {/* Mobile Menu */}
+            <aside className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-lg border-t border-white/20 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Navigation</h3>
+                <nav className="space-y-2">
+                  {/* Same navigation items as desktop */}
+                  {userProfile.userType === 'technician' ? (
+                    <>
+                      <button
+                        onClick={() => { setActiveSection('overview'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'overview'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">🏠</span>
+                        <span>Overview</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('tokens'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'tokens'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">💰</span>
+                        <span>Token Management</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('points'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'points'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">🎁</span>
+                        <span>Points</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('activity'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'activity'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">📊</span>
+                        <span>Activity History</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('qrcode'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'qrcode'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">📱</span>
+                        <span>QR Code</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('account'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'account'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">👤</span>
+                        <span>Profile & Settings</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => { setActiveSection('overview'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'overview'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">🏠</span>
+                        <span>Overview</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('tokens'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'tokens'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">💰</span>
+                        <span>Token Wallet</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('points'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'points'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">🎁</span>
+                        <span>Points</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('activity'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'activity'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">📊</span>
+                        <span>Activity History</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => { setActiveSection('account'); setMobileMenuOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                          activeSection === 'account'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="text-xl">👤</span>
+                        <span>Account Settings</span>
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Sign Out Button */}
+                  <div className="pt-4 border-t border-white/20">
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-slate-300 hover:text-white hover:bg-red-500/20 transition-all"
+                    >
+                      <span className="text-xl">🚪</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </nav>
+              </div>
+            </aside>
+          </>
+        )}
 
         {/* Main Content Area */}
         <main className="flex-1 space-y-6">

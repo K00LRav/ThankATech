@@ -240,15 +240,6 @@ export default function Contact() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-xl">💬</span>
-                  </div>
-                  <div>
-                    <p className="text-gray-300 text-sm">Live Chat</p>
-                    <p className="text-white">Available 9 AM - 6 PM EST</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
                     <span className="text-xl">⚡</span>
                   </div>
@@ -294,15 +285,15 @@ export default function Contact() {
                 and use secure payment methods.
               </p>
               <div className="flex flex-col gap-2">
-                <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors text-sm">
+                <Link href="/#faq" className="text-blue-400 hover:text-blue-300 transition-colors text-sm">
                   → View Safety Guidelines
-                </a>
-                <a href="#" className="text-blue-400 hover:text-purple-300 transition-colors text-sm">
+                </Link>
+                <a href="mailto:support@thankatech.com?subject=Report Issue" className="text-blue-400 hover:text-purple-300 transition-colors text-sm">
                   → Report an Issue
                 </a>
-                <a href="#" className="text-pink-400 hover:text-pink-300 transition-colors text-sm">
+                <Link href="/terms" className="text-pink-400 hover:text-pink-300 transition-colors text-sm">
                   → Community Standards
-                </a>
+                </Link>
               </div>
             </div>
           </div>

@@ -102,71 +102,63 @@ export function RolodexCard({
       <div className="absolute top-2 left-2 right-2 bottom-2 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-2xl transform rotate-1 transition-all duration-500 group-hover:rotate-2 border border-blue-300/30 shadow-xl hidden sm:block"></div>
       <div className="absolute top-1 left-1 right-1 bottom-1 bg-gradient-to-br from-blue-500/25 to-cyan-500/25 backdrop-blur-sm rounded-2xl transform rotate-0.5 transition-all duration-500 group-hover:rotate-1 border border-blue-300/40 shadow-2xl hidden sm:block"></div>
       
-      {/* Main Glass Card - Enhanced with better colors and glow */}
-      <div className="relative w-full bg-gradient-to-br from-slate-800/90 via-blue-900/80 to-slate-800/90 backdrop-blur-xl border border-blue-400/30 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-[0_20px_60px_-15px_rgba(59,130,246,0.5)] hover:-translate-y-1 hover:border-blue-400/50 overflow-hidden z-10 mobile-touch-feedback">
+      {/* Main Glass Card - Clickable to view profile */}
+      <a 
+        href={technician.username ? `/${technician.username}` : '#'}
+        className="relative w-full bg-gradient-to-br from-slate-800/90 via-blue-900/80 to-slate-800/90 backdrop-blur-xl border border-blue-400/30 rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-[0_20px_60px_-15px_rgba(59,130,246,0.5)] hover:-translate-y-1 hover:border-blue-400/50 overflow-hidden z-10 mobile-touch-feedback cursor-pointer block"
+      >
         {/* Subtle inner glow effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-transparent to-cyan-400/5 pointer-events-none"></div>
         
-        {/* Category Badge - Enhanced visibility */}
-        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 backdrop-blur-sm border border-blue-300/50 rounded-full px-2 py-1 sm:px-3 sm:py-1.5 shadow-lg hover:shadow-blue-400/50 transition-all duration-300 max-w-[120px] sm:max-w-none">
-            <span className="text-sm sm:text-base lg:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
-            <span className="text-white text-xs sm:text-sm font-semibold truncate drop-shadow-md">
+        {/* Category Badge - Top Right Corner (Rolodex tab style) */}
+        <div className="absolute top-4 right-4 z-10 hidden sm:block pointer-events-none">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 backdrop-blur-sm border border-blue-300/50 rounded-full px-3 py-1.5 shadow-lg">
+            <span className="text-base lg:text-lg">{getCategoryIcon(technician.category, technician.title || '')}</span>
+            <span className="text-white text-sm font-semibold truncate drop-shadow-md">
               {formatCategory(technician.category)}
             </span>
           </div>
         </div>
         
         {/* Card Content */}
-        <div className="relative p-6 sm:p-8 h-full min-h-[20rem] sm:min-h-[24rem]">
+        <div className="relative p-4 sm:p-8 h-full min-h-[20rem] sm:min-h-[24rem]">
           <div className="flex flex-col h-full">
-            {/* Header Section - Enhanced profile image */}
-            <div className="flex items-start space-x-4 mb-4 mt-4 sm:mt-4">
-              {/* Profile Image - Made larger */}
-              <div className="relative">
+            {/* Header Section - Cleaner mobile layout */}
+            <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
+              {/* Profile Image - No points badge overlay */}
+              <div className="flex-shrink-0">
                 <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shadow-2xl ring-4 ring-blue-400/40 hover:ring-blue-400/60 transition-all duration-300">
                   <Avatar
                     name={technician.name}
                     photoURL={technician.photoURL || technician.image}
                     size={128}
-                    className="w-full h-full"
+                    className="w-full h-full object-contain"
                     textSize="text-2xl sm:text-3xl"
                     rounded="2xl"
                   />
                 </div>
-                {/* ThankATech Points overlay - Positioned to not overlap image */}
-                <div className="absolute -bottom-4 -right-4 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white rounded-full min-w-[3rem] h-12 sm:min-w-[3.5rem] sm:h-14 flex items-center justify-center text-xs sm:text-sm font-bold shadow-2xl border-4 border-white hover:scale-110 transition-transform duration-300">
-                  <span className="flex items-center justify-center px-2">
-                    <span className="font-extrabold">{(technician as any).points || 0}</span>
-                    <span className="ml-1">✨</span>
-                  </span>
-                </div>
               </div>
 
               {/* Name and Essential Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-bold text-white">{technician.name}</h2>
-                  {technician.username && (
-                    <a 
-                      href={`/${technician.username}`}
-                      className="group relative"
-                      title="View Full Profile"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 hover:border-white/50 flex items-center justify-center transition-all duration-200 hover:scale-110">
-                        <span className="text-white/70 hover:text-white text-xs">ℹ️</span>
-                      </div>
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                        View Full Profile
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                      </div>
-                    </a>
-                  )}
+              <div className="flex-1 min-w-0 pt-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{technician.name}</h2>
+                    <p className="text-sm sm:text-lg text-blue-200 font-semibold mt-0.5 sm:mt-1 truncate">{technician.businessName || technician.title}</p>
+                  </div>
                 </div>
-                <p className="text-base sm:text-lg text-blue-200 font-semibold mt-1">{technician.businessName || technician.title}</p>
                 
-                {/* Certified badge directly under name */}
+                {/* Category badge for mobile - shown below name */}
+                <div className="mt-2 sm:hidden">
+                  <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 backdrop-blur-sm border border-blue-300/50 rounded-full px-2.5 py-1 shadow-lg">
+                    <span className="text-sm">{getCategoryIcon(technician.category, technician.title || '')}</span>
+                    <span className="text-white text-xs font-semibold truncate">
+                      {formatCategory(technician.category)}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Certified badge */}
                 {technician.certifications && (
                   <div className="mt-2">
                     <span className="inline-flex items-center gap-1 bg-white/90 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200 shadow-sm">
@@ -252,7 +244,11 @@ export function RolodexCard({
                       </p>
                       {isLong && (
                         <button
-                          onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsDescriptionExpanded(!isDescriptionExpanded);
+                          }}
                           className="mt-2 text-xs sm:text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 flex items-center gap-1"
                         >
                           {isDescriptionExpanded ? (
@@ -304,7 +300,11 @@ export function RolodexCard({
                 {/* PRIMARY ACTION: Say Thank You - Enhanced with glow */}
                 {onThankYou && (
                   <button 
-                    onClick={onThankYou}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onThankYou();
+                    }}
                     className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-emerald-400/50"
                   >
                     <span className="font-bold text-white text-base drop-shadow-md">🙏 Say Thank You</span>
@@ -314,7 +314,11 @@ export function RolodexCard({
                 {/* SECONDARY ACTION: Send TOA - Enhanced visibility */}
                 {onSendTOA && (
                   <button 
-                    onClick={onSendTOA}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSendTOA();
+                    }}
                     className="group flex items-center justify-center space-x-2 px-3 py-3 bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-md hover:from-amber-500/40 hover:to-orange-500/40 rounded-xl transition-all duration-300 min-h-[48px] w-full border border-amber-400/60 hover:border-amber-300/80 shadow-lg hover:shadow-amber-400/40 hover:scale-[1.01]"
                   >
                     <span className="font-semibold text-amber-50 group-hover:text-white text-base drop-shadow-md">💝 Send TOA</span>
@@ -323,8 +327,7 @@ export function RolodexCard({
               </div>
             )}
           </div>
-        </div>
-      </div>
+      </a>
     </div>
   );
 }
