@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Force dynamic rendering for this page since it uses Firebase Auth
@@ -281,15 +281,18 @@ function HomeContent() {
   
   // Note: Technician earnings are handled in the dashboard, not on main page
   
-  const profile = (displayedProfiles[currentProfileIndex] || {
-    name: '',
-    title: '',
-    category: '',
-    image: '',
-    points: 0,
-    totalThankYous: 0,
-    totalTips: 0
-  }) as any;
+  // Memoize current profile to avoid recalculation on every render
+  const profile = useMemo(() => (
+    displayedProfiles[currentProfileIndex] || {
+      name: '',
+      title: '',
+      category: '',
+      image: '',
+      points: 0,
+      totalThankYous: 0,
+      totalTips: 0
+    }
+  ) as any, [displayedProfiles, currentProfileIndex]);
 
 
 
@@ -466,21 +469,20 @@ function HomeContent() {
     setDisplayedProfiles(filtered.slice(0, 3));
   }, [allProfiles, selectedCategory]);
 
-  // Handle search query changes
-  useEffect(() => {
-    filterTechnicians(searchQuery);
-  }, [searchQuery, filterTechnicians]);
-
-  // Handle category changes
+  // Consolidated: Handle both search query and category changes in one effect
   useEffect(() => {
     filterTechnicians(searchQuery, selectedCategory);
-  }, [selectedCategory, filterTechnicians, searchQuery]);
+  }, [searchQuery, selectedCategory, filterTechnicians]);
 
-  // Save current card position to localStorage
+  // Save current card position to localStorage (debounced to reduce writes)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('thankatech-last-card-index', currentProfileIndex.toString());
-    }
+    const timeoutId = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('thankatech-last-card-index', currentProfileIndex.toString());
+      }
+    }, 300); // Debounce 300ms to avoid excessive writes during rapid navigation
+
+    return () => clearTimeout(timeoutId);
   }, [currentProfileIndex]);
 
   // Listen for authentication state changes
@@ -560,8 +562,8 @@ function HomeContent() {
 
   const achievementBadges = getAchievementBadges(profile);
 
-  // Get available categories - show all main categories plus any that have active technicians
-  const getAvailableCategories = useCallback(() => {
+  // Get available categories - memoized to avoid recalculation on every render
+  const availableCategories = useMemo(() => {
     // Always show "All Categories" first
     const categories = [{ value: 'all', label: 'All Categories' }];
     

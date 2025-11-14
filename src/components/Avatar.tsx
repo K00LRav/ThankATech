@@ -72,6 +72,8 @@ const Avatar: React.FC<AvatarProps> = ({
         height={size}
         className={`${roundedClass} object-cover ${className}`}
         style={{ width: size, height: size }}
+        loading="lazy"
+        unoptimized={photoURL.startsWith('http') && !photoURL.includes('googleusercontent.com')}
       />
     );
   }
