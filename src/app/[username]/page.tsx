@@ -54,6 +54,7 @@ export default function TechnicianProfile() {
   const [showTokenSendModal, setShowTokenSendModal] = useState(false);
   const [showTokenPurchaseModal, setShowTokenPurchaseModal] = useState(false);
   const [user] = useAuthState(auth);
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
   const loadTechnician = useCallback(async () => {
     try {
@@ -72,6 +73,25 @@ export default function TechnicianProfile() {
       setLoading(false);
     }
   }, [username]);
+
+  // Load current user profile data
+  useEffect(() => {
+    if (user) {
+      const loadUserProfile = async () => {
+        try {
+          const { getUser } = await import('../../lib/firebase');
+          const profile = await getUser(user.uid);
+          setCurrentUserProfile(profile);
+        } catch (error) {
+          logger.error('Error loading user profile:', error);
+        }
+      };
+      loadUserProfile();
+    } else {
+      setCurrentUserProfile(null);
+    }
+  }, [user]);
+
 
   useEffect(() => {
     if (username) {
@@ -172,11 +192,13 @@ export default function TechnicianProfile() {
       <UniversalHeader 
         currentPath={`/${technician.username}`}
         customSubtitle={`thankatech.com/${technician.username}`}
-        currentUser={user ? {
+        currentUser={user && currentUserProfile ? {
           id: user.uid,
-          name: user.displayName || 'User',
+          name: currentUserProfile.name || currentUserProfile.businessName || user.displayName || 'User',
           email: user.email || '',
-          photoURL: user.photoURL || undefined
+          photoURL: user.photoURL || undefined,
+          userType: currentUserProfile.userType,
+          points: currentUserProfile.points
         } : undefined}
         onSignIn={handleSignIn}
         onRegister={handleRegister}
