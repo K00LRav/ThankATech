@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { signOut } from 'firebase/auth';
-import { auth, getTechnician, getUser } from '@/lib/firebase';
+import { auth, getTechnician, getClient } from '@/lib/firebase';
 import UniversalHeader from '@/components/UniversalHeader';
 import { logger } from '@/lib/logger';
 
@@ -22,7 +22,7 @@ export default function Terms() {
           // Try to get user data from either technicians or users collection
           let userData: any = await getTechnician(user.uid);
           if (!userData) {
-            userData = await getUser(user.uid);
+            userData = await getClient(user.uid);
           }
 
           if (userData) {
