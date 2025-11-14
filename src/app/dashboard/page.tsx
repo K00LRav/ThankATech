@@ -988,18 +988,6 @@ export default function ModernDashboard() {
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-300 text-sm font-medium">Account Status</p>
-                    <p className="text-white text-2xl font-bold">Active</p>
-                  </div>
-                  <div className="bg-green-500/20 p-3 rounded-lg">
-                    <span className="text-2xl">✅</span>
-                  </div>
-                </div>
-              </div>
             </>
           )}
         </div>
