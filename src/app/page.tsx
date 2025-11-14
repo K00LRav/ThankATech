@@ -1400,21 +1400,9 @@ function HomeContent() {
             isOpen={showTokenSendModal}
             onClose={() => setShowTokenSendModal(false)}
             technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
-            technicianName={displayedProfiles[currentProfileIndex]?.name || ''}
-            userId={currentUser?.uid || ''}
-          />
-        </Suspense>
-      )}
-
-      {/* Token Send Modal - Lazy loaded */}
-      {showTokenSendModal && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
-          <TokenSendModal
-            isOpen={showTokenSendModal}
-            onClose={() => setShowTokenSendModal(false)}
-            technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
             technicianName={displayedProfiles[currentProfileIndex]?.name || displayedProfiles[currentProfileIndex]?.businessName || ''}
             userId={currentUser?.uid || ''}
+            onOpenPurchaseModal={() => setShowTokenPurchaseModal(true)}
           />
         </Suspense>
       )}

@@ -11,6 +11,7 @@ interface TokenSendModalProps {
   technicianId: string;
   technicianName: string;
   userId: string;
+  onOpenPurchaseModal?: () => void; // Add callback to open purchase modal
 }
 
 export default function TokenSendModal({ 
@@ -18,7 +19,8 @@ export default function TokenSendModal({
   onClose, 
   technicianId, 
   technicianName, 
-  userId 
+  userId,
+  onOpenPurchaseModal
 }: TokenSendModalProps) {
   const [tokens, setTokens] = useState(TOKEN_LIMITS.MIN_TOKENS);
   const [sending, setSending] = useState(false);
@@ -154,9 +156,21 @@ export default function TokenSendModal({
             )}
             
             {userBalance < tokens && (
-              <p className="text-red-600 text-sm mt-1 bg-red-100/50 backdrop-blur-sm rounded-lg p-2 border border-red-200/50">
-                Not enough tokens. You have {formatTokens(userBalance)}.
-              </p>
+              <div className="mt-2 space-y-2">
+                <p className="text-red-600 text-sm bg-red-100/50 backdrop-blur-sm rounded-lg p-2 border border-red-200/50">
+                  ⚠️ Not enough tokens. You have {formatTokens(userBalance)}, but need {formatTokens(tokens)}.
+                </p>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenPurchaseModal?.();
+                  }}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>💰</span>
+                  <span>Buy More TOA Tokens</span>
+                </button>
+              </div>
             )}
           </div>
 
