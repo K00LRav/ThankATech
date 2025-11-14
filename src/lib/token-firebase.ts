@@ -286,13 +286,30 @@ export async function checkDailyPerTechnicianLimit(userId: string, technicianId:
       // Continue
     }
 
-    // Prevent self-thanking
+    // Prevent self-thanking - check FIRST before any other validation
     if (userId === technicianId) {
       return { 
         canThank: false, 
         reason: "You cannot thank yourself", 
         alreadyThankedToday: false 
       };
+    }
+
+    // Also check if the user's auth UID matches the technician's authUid field
+    try {
+      const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, technicianId));
+      if (techDoc.exists()) {
+        const techData = techDoc.data();
+        if (techData.authUid === userId || techData.uid === userId) {
+          return {
+            canThank: false,
+            reason: "You cannot thank yourself",
+            alreadyThankedToday: false
+          };
+        }
+      }
+    } catch (err) {
+      logger.warn('Error checking technician auth UID:', err);
     }
 
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
