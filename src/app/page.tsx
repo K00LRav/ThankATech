@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Force dynamic rendering for this page since it uses Firebase Auth
@@ -232,7 +232,8 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
   );
 };
 
-export default function Home() {
+// Separate component for search params to enable Suspense wrapping
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
@@ -1329,6 +1330,19 @@ export default function Home() {
         }}
       />
     </div>
+  );
+}
+
+// Wrap with Suspense to handle useSearchParams
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
 
