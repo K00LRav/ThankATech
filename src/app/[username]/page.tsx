@@ -161,60 +161,6 @@ export default function TechnicianProfile() {
     );
   }
 
-  const handleThankYou = async () => {
-    if (!user) {
-      // Redirect to main page for authentication
-      router.push('/');
-      return;
-    }
-
-    if (!technician) return;
-
-    try {
-      // Send thank you using existing client-side function
-      const result = await sendFreeThankYou(user.uid, technician.id);
-      
-      if (!result.success) {
-        setError(result.error || 'Failed to send thank you. Please try again.');
-        return;
-      }
-
-      // Trigger email notifications via API
-      fetch('/api/send-tokens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromUserId: user.uid,
-          toTechnicianId: technician.id,
-          tokens: 0,
-          message: '',
-          isFreeThankYou: true
-        })
-      }).catch(err => console.error('Email notification failed:', err));
-      
-      // Update technician's stats locally
-      setTechnician(prev => prev ? {
-        ...prev,
-        totalThankYous: (prev.totalThankYous || 0) + 1,
-        points: (prev.points || 0) + 1
-      } : null);
-      
-      // Clear any existing error
-      setError(null);
-      
-    } catch (error) {
-      setError('Failed to send thank you. Please try again.');
-    }
-  };
-
-  const handleSignIn = () => {
-    router.push('/');
-  };
-
-  const handleRegister = () => {
-    router.push('/');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden hidden sm:block">
