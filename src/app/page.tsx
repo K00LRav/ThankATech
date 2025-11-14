@@ -1216,6 +1216,7 @@ function HomeContent() {
               onThankYou={handleThankYou}
               onSendTOA={handleSendTOA}
               showActions={true}
+              currentUserId={currentUser?.uid}
             />
           </>
         )}

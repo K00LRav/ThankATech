@@ -37,13 +37,15 @@ interface RolodexCardProps {
   onThankYou?: () => void;
   onSendTOA?: () => void;
   showActions?: boolean;
+  currentUserId?: string; // Add current user ID to detect self-profile
 }
 
 export function RolodexCard({ 
   technician, 
   onThankYou, 
   onSendTOA, 
-  showActions = true
+  showActions = true,
+  currentUserId
 }: RolodexCardProps) {
   // State for expandable description on mobile
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -295,37 +297,80 @@ export function RolodexCard({
             </div>
 
             {/* Action Buttons - Enhanced colors and effects */}
-            {showActions && (onThankYou || onSendTOA) && (
-              <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4">
-                {/* PRIMARY ACTION: Say Thank You - Enhanced with glow */}
-                {onThankYou && (
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onThankYou();
-                    }}
-                    className="group flex items-center justify-center space-x-2 px-4 py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 backdrop-blur-sm rounded-xl transition-all duration-300 shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-[1.02] min-h-[56px] w-full border border-emerald-400/50"
-                  >
-                    <span className="font-bold text-white text-base drop-shadow-md">🙏 Say Thank You</span>
-                  </button>
-                )}
-                
-                {/* SECONDARY ACTION: Send TOA - Enhanced visibility */}
-                {onSendTOA && (
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onSendTOA();
-                    }}
-                    className="group flex items-center justify-center space-x-2 px-3 py-3 bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-md hover:from-amber-500/40 hover:to-orange-500/40 rounded-xl transition-all duration-300 min-h-[48px] w-full border border-amber-400/60 hover:border-amber-300/80 shadow-lg hover:shadow-amber-400/40 hover:scale-[1.01]"
-                  >
-                    <span className="font-semibold text-amber-50 group-hover:text-white text-base drop-shadow-md">💝 Send TOA</span>
-                  </button>
-                )}
-              </div>
-            )}
+            {showActions && (onThankYou || onSendTOA) && (() => {
+              // Check if viewing own profile
+              const isOwnProfile = currentUserId && (
+                currentUserId === technician.id || 
+                currentUserId === (technician as any).authUid ||
+                currentUserId === (technician as any).uid
+              );
+
+              return (
+                <div className="flex flex-col gap-3 w-full max-w-sm mx-auto mt-4">
+                  {/* PRIMARY ACTION: Say Thank You - Enhanced with glow */}
+                  {onThankYou && (
+                    <div className="relative group/tooltip">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!isOwnProfile) {
+                            onThankYou();
+                          }
+                        }}
+                        disabled={isOwnProfile}
+                        className={`flex items-center justify-center space-x-2 px-4 py-4 rounded-xl transition-all duration-300 min-h-[56px] w-full ${
+                          isOwnProfile
+                            ? 'bg-gray-400/30 text-gray-500 cursor-not-allowed border border-gray-400/50'
+                            : 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 backdrop-blur-sm shadow-xl hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.6)] transform hover:-translate-y-1 hover:scale-[1.02] border border-emerald-400/50'
+                        }`}
+                      >
+                        <span className={`font-bold text-base drop-shadow-md ${isOwnProfile ? 'text-gray-600' : 'text-white'}`}>
+                          🙏 Say Thank You
+                        </span>
+                      </button>
+                      {isOwnProfile && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                          You cannot thank yourself
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* SECONDARY ACTION: Send TOA - Enhanced visibility */}
+                  {onSendTOA && (
+                    <div className="relative group/tooltip">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!isOwnProfile) {
+                            onSendTOA();
+                          }
+                        }}
+                        disabled={isOwnProfile}
+                        className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-xl transition-all duration-300 min-h-[48px] w-full ${
+                          isOwnProfile
+                            ? 'bg-gray-400/20 text-gray-500 cursor-not-allowed border border-gray-400/50'
+                            : 'bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-md hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-400/60 hover:border-amber-300/80 shadow-lg hover:shadow-amber-400/40 hover:scale-[1.01]'
+                        }`}
+                      >
+                        <span className={`font-semibold text-base drop-shadow-md ${isOwnProfile ? 'text-gray-600' : 'text-amber-50 group-hover:text-white'}`}>
+                          💝 Send TOA
+                        </span>
+                      </button>
+                      {isOwnProfile && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                          You cannot send TOA to yourself
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </a>
