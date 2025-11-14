@@ -51,18 +51,33 @@ export default function TokenSendModal({
       const result = await sendTokens(userId, technicianId, tokens);
       
       if (result.success) {
-        // Trigger email notifications via API
-        fetch('/api/send-tokens', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fromUserId: userId,
-            toTechnicianId: technicianId,
-            tokens,
-            message: '',
-            isFreeThankYou: false
-          })
-        }).catch(err => console.error('Email notification failed:', err));
+        // Trigger email notifications via API with authentication
+        const { auth } = await import('@/lib/firebase');
+        const user = auth.currentUser;
+        
+        if (user) {
+          try {
+            const idToken = await user.getIdToken();
+            logger.info('🔐 Got Firebase ID token for token send notification');
+            
+            await fetch('/api/send-tokens', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+              },
+              body: JSON.stringify({
+                fromUserId: userId,
+                toTechnicianId: technicianId,
+                tokens,
+                message: '',
+                isFreeThankYou: false
+              })
+            });
+          } catch (err) {
+            console.error('Email notification failed:', err);
+          }
+        }
 
         // Show success message
         alert(`Success! ${formatTokens(tokens)} ($${(tokens * 0.01).toFixed(2)}) sent to ${technicianName}! You earned 1 ThankATech Point, they earned 2 ThankATech Points!`);

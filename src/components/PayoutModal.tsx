@@ -81,10 +81,24 @@ export default function PayoutModal({
     setError(null);
 
     try {
+      // Get Firebase ID token for authentication
+      const { auth } = await import('@/lib/firebase');
+      const user = auth.currentUser;
+      
+      if (!user) {
+        setError('You must be signed in to request a payout');
+        setIsProcessing(false);
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+      logger.info('🔐 Got Firebase ID token for payout request');
+
       const response = await fetch('/api/create-payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           amount: amountInCents,

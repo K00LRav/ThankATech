@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerStripe } from '@/lib/stripe';
 import { logger } from '@/lib/logger';
+import { verifyAuth, verifyOwnership } from '@/lib/api-auth';
 
 // Initialize Firebase Admin for server-side operations
 let adminDb: any = null;
@@ -26,6 +27,20 @@ async function getAdminDb() {
 
 export async function POST(request: NextRequest) {
   try {
+    // ===== AUTHENTICATION CHECK =====
+    let auth;
+    try {
+      auth = await verifyAuth(request);
+    } catch (authError: any) {
+      logger.error('❌ Authentication failed:', authError.message);
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in to request a payout' },
+        { status: 401 }
+      );
+    }
+
+    logger.info(`🔐 Authenticated user: ${auth.userId} (${auth.email})`);
+
     const stripe = getServerStripe();
     if (!stripe) {
       return NextResponse.json(
@@ -51,6 +66,20 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // ===== AUTHORIZATION CHECK =====
+    // Verify user owns the technician account they're withdrawing for
+    const isOwner = await verifyOwnership(auth.userId, technicianId);
+    
+    if (!isOwner) {
+      logger.error(`❌ User ${auth.userId} attempted to withdraw for technician ${technicianId}`);
+      return NextResponse.json(
+        { error: 'Forbidden - You can only withdraw your own earnings' },
+        { status: 403 }
+      );
+    }
+
+    logger.info(`✅ Authorized payout: User ${auth.userId} withdrawing for technician ${technicianId}`);
 
     // Get technician's Stripe account
     const db = await getAdminDb();

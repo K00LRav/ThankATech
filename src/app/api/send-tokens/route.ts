@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import EmailService from '@/lib/email';
 import { logger } from '@/lib/logger';
+import { verifyAuth } from '@/lib/api-auth';
 
 const COLLECTIONS = {
   CLIENTS: 'clients',
@@ -9,8 +10,22 @@ const COLLECTIONS = {
 };
 
 // Simple API to send email notifications after token transfer
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // ===== AUTHENTICATION CHECK =====
+    let auth;
+    try {
+      auth = await verifyAuth(request);
+    } catch (authError: any) {
+      logger.error('❌ Authentication failed:', authError.message);
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Please sign in to send tokens' },
+        { status: 401 }
+      );
+    }
+
+    logger.info(`🔐 Authenticated user: ${auth.userId} (${auth.email})`);
+
     const body = await request.json();
     const { fromUserId, toTechnicianId, tokens, message, isFreeThankYou } = body;
 
@@ -20,6 +35,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // ===== AUTHORIZATION CHECK =====
+    // Verify the authenticated user matches the fromUserId
+    if (auth.userId !== fromUserId) {
+      logger.error(`❌ User ${auth.userId} attempted to send tokens as ${fromUserId}`);
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - You can only send your own tokens' },
+        { status: 403 }
+      );
+    }
+
+    logger.info(`✅ Authorized token send: User ${auth.userId} sending ${tokens} tokens to ${toTechnicianId}`);
 
     // Fetch sender and recipient data for emails
     let senderData: any = {};

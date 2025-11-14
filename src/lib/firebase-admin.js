@@ -1,9 +1,11 @@
 // Firebase Admin SDK configuration for server-side operations
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 let adminApp;
 let adminDb;
+let adminAuth;
 
 // Only initialize during runtime, not build time
 if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
@@ -43,16 +45,19 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
 
     if (adminApp) {
       adminDb = getFirestore(adminApp);
+      adminAuth = getAuth(adminApp);
       console.log('✅ Firebase Admin SDK initialized successfully');
     }
   } catch (error) {
     console.error('❌ Firebase Admin SDK initialization failed:', error);
     adminDb = null;
+    adminAuth = null;
   }
 } else {
   console.log('Firebase Admin SDK initialization skipped during build or in browser');
   adminDb = null;
+  adminAuth = null;
 }
 
-export { adminDb };
+export { adminDb, adminAuth };
 export default adminApp;

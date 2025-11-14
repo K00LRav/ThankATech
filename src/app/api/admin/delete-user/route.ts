@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import EmailService from '@/lib/email';
+import { verifyAuth, verifyAdmin } from '@/lib/api-auth';
 
 // Note: This API provides orchestration and email sending.
 // The actual Firestore operations should be done client-side since
@@ -8,6 +9,33 @@ import EmailService from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
+    // ===== AUTHENTICATION & ADMIN CHECK =====
+    let auth;
+    try {
+      auth = await verifyAuth(request);
+    } catch (authError: any) {
+      logger.error('❌ Authentication failed:', authError.message);
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in' },
+        { status: 401 }
+      );
+    }
+
+    logger.info(`🔐 Authenticated user: ${auth.userId} (${auth.email})`);
+
+    // Verify user is admin
+    const isAdmin = await verifyAdmin(auth.userId, auth.email);
+    
+    if (!isAdmin) {
+      logger.error(`❌ Non-admin user ${auth.userId} attempted to delete user`);
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    logger.info(`✅ Admin ${auth.userId} authorized for user deletion`);
+
     const { userId, userType, userEmail, userName, clientSideResults } = await request.json();
 
     if (!userId || !userType) {
