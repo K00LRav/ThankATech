@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
             country: 'US',
           },
           phone: '+14155551234',
-          ssn_last_4: '0000', // Test mode: use 0000 to bypass verification
+          ssn_last_4: '0001', // Live mode: use 0001 for test accounts (0000 not allowed)
         },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
                 country: 'US',
               },
               phone: '+14155551234',
-              ssn_last_4: '0000', // Test mode: bypass verification
+              ssn_last_4: '0001', // Live mode: use 0001 for test accounts
             },
           };
           
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
                   country: 'US',
                 },
                 phone: '+14155551234',
-                ssn_last_4: '0000',
+                ssn_last_4: '0001', // Live mode: use 0001
               },
             });
             logger.info(`Updated account without TOS (may need manual acceptance)`);
