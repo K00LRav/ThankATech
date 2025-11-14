@@ -2,10 +2,72 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { signOut } from 'firebase/auth';
+import { auth, getTechnician, getUser } from '@/lib/firebase';
 import UniversalHeader from '@/components/UniversalHeader';
+import { logger } from '@/lib/logger';
 
 export default function About() {
   const router = useRouter();
+  const [user] = useAuthState(auth);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Fetch full user profile from Firestore
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        try {
+          // Try to get user data from either technicians or users collection
+          let userData: any = await getTechnician(user.uid);
+          if (!userData) {
+            userData = await getUser(user.uid);
+          }
+
+          if (userData) {
+            setCurrentUser({
+              id: userData.id,
+              name: userData.name || userData.displayName || user.displayName,
+              email: userData.email || user.email,
+              photoURL: userData.photoURL || user.photoURL,
+              userType: userData.userType || 'client'
+            });
+          } else {
+            // Fallback to Firebase auth data
+            setCurrentUser({
+              id: user.uid,
+              name: user.displayName || user.email?.split('@')[0] || 'User',
+              email: user.email || '',
+              photoURL: user.photoURL || undefined
+            });
+          }
+        } catch (error) {
+          logger.error('Error loading user profile:', error);
+          // Fallback to Firebase auth data
+          setCurrentUser({
+            id: user.uid,
+            name: user.displayName || user.email?.split('@')[0] || 'User',
+            email: user.email || '',
+            photoURL: user.photoURL || undefined
+          });
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      logger.error('Error signing out:', error);
+    }
+  };
 
   const handleSignIn = () => {
     router.push('/');
@@ -28,6 +90,8 @@ export default function About() {
 
       <UniversalHeader 
         currentPath="/about"
+        currentUser={currentUser}
+        onSignOut={handleSignOut}
         onSignIn={handleSignIn}
         onRegister={handleRegister}
       />
