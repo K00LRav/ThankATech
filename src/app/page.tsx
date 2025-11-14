@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Force dynamic rendering for this page since it uses Firebase Auth
@@ -14,8 +14,9 @@ import Registration from '../components/Registration';
 import SignIn from '../components/SignIn';
 import Avatar from '../components/Avatar';
 import ForgotPassword from '../components/ForgotPassword';
-import TokenSendModal from '../components/TokenSendModal';
-import TokenPurchaseModal from '../components/TokenPurchaseModal';
+// Lazy load heavy modals - only loaded when user clicks Purchase/Send
+const TokenSendModal = lazy(() => import('../components/TokenSendModal'));
+const TokenPurchaseModal = lazy(() => import('../components/TokenPurchaseModal'));
 import UniversalHeader from '../components/UniversalHeader';
 import Footer from '../components/Footer';
 import { RolodexCard } from '../components/RolodexCard';
@@ -634,8 +635,8 @@ function HomeContent() {
         // Try to get user location first
         const location = await requestUserLocation();
         
-        // Fetch technicians with location data
-        const data = await fetchTechnicians('all', location || undefined, 20);
+        // Fetch only 12 technicians initially for faster load (reduced from 20)
+        const data = await fetchTechnicians('all', location || undefined, 12);
         
         if (Array.isArray(data) && data.length > 0) {
           setProfiles(data);
@@ -1390,34 +1391,46 @@ function HomeContent() {
       )}
 
 
-      {/* Token Send Modal */}
-      <TokenSendModal
-        isOpen={showTokenSendModal}
-        onClose={() => setShowTokenSendModal(false)}
-        technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
-        technicianName={displayedProfiles[currentProfileIndex]?.name || ''}
-        userId={currentUser?.uid || ''}
-      />
+      {/* Token Send Modal - Lazy loaded */}
+      {showTokenSendModal && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+          <TokenSendModal
+            isOpen={showTokenSendModal}
+            onClose={() => setShowTokenSendModal(false)}
+            technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
+            technicianName={displayedProfiles[currentProfileIndex]?.name || ''}
+            userId={currentUser?.uid || ''}
+          />
+        </Suspense>
+      )}
 
-      {/* Token Send Modal */}
-      <TokenSendModal
-        isOpen={showTokenSendModal}
-        onClose={() => setShowTokenSendModal(false)}
-        technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
-        technicianName={displayedProfiles[currentProfileIndex]?.name || displayedProfiles[currentProfileIndex]?.businessName || ''}
-        userId={currentUser?.uid || ''}
-      />
+      {/* Token Send Modal - Lazy loaded */}
+      {showTokenSendModal && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+          <TokenSendModal
+            isOpen={showTokenSendModal}
+            onClose={() => setShowTokenSendModal(false)}
+            technicianId={displayedProfiles[currentProfileIndex]?.id || ''}
+            technicianName={displayedProfiles[currentProfileIndex]?.name || displayedProfiles[currentProfileIndex]?.businessName || ''}
+            userId={currentUser?.uid || ''}
+          />
+        </Suspense>
+      )}
 
-      {/* Token Purchase Modal */}
-      <TokenPurchaseModal
-        isOpen={showTokenPurchaseModal}
-        onClose={() => setShowTokenPurchaseModal(false)}
-        userId={currentUser?.uid || ''}
-        onPurchaseSuccess={(tokens) => {
-          logger.info(`User purchased ${tokens} tokens`);
-          // Could show a success message or update UI here
-        }}
-      />
+      {/* Token Purchase Modal - Lazy loaded */}
+      {showTokenPurchaseModal && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>}>
+          <TokenPurchaseModal
+            isOpen={showTokenPurchaseModal}
+            onClose={() => setShowTokenPurchaseModal(false)}
+            userId={currentUser?.uid || ''}
+            onPurchaseSuccess={(tokens) => {
+              logger.info(`User purchased ${tokens} tokens`);
+              // Could show a success message or update UI here
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
