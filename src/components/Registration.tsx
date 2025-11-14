@@ -318,7 +318,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           {/* Basic Info for Everyone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-blue-200 mb-1">
+              <label htmlFor="name" className="block text-sm font-semibold text-white mb-1">
                 Full Name *
               </label>
               <input
@@ -333,7 +333,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-blue-200 mb-1">
+              <label htmlFor="email" className="block text-sm font-semibold text-white mb-1">
                 Email * {googleUser && <span className="text-green-300 text-xs">(from Google)</span>}
               </label>
               <input
@@ -354,7 +354,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           {/* Username Field - Only for technicians */}
           {userType === 'technician' && (
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-blue-200 mb-1">
+              <label htmlFor="username" className="block text-sm font-semibold text-white mb-1">
                 Username * <span className="text-xs text-blue-300">(will be your profile URL: thankatech.com/username)</span>
               </label>
               <div className="relative">
@@ -425,7 +425,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
           {!googleUser && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-1">
+                <label htmlFor="password" className="block text-sm font-semibold text-white mb-1">
                   Password *
                 </label>
                 <input
@@ -442,7 +442,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-blue-200 mb-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-white mb-1">
                   Confirm Password *
                 </label>
                 <input
@@ -462,7 +462,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="block text-sm font-semibold text-white mb-1">
                 Phone Number
               </label>
               <input
@@ -476,7 +476,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="location" className="block text-sm font-semibold text-white mb-1">
                 Location (City, State)
               </label>
               <input
@@ -493,12 +493,12 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
           {/* Technician-Specific Fields */}
           {userType === 'technician' && (
-            <div className="border-t pt-4 mt-4">
-              <h4 className="text-lg font-semibold mb-3 text-green-700">Technician Information</h4>
+            <div className="border-t border-blue-500/30 pt-4 mt-4">
+              <h4 className="text-lg font-semibold mb-3 text-green-300">Technician Information</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="businessName" className="block text-sm font-semibold text-white mb-1">
                     Business Name *
                   </label>
                   <input
@@ -514,7 +514,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 </div>
 
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="category" className="block text-sm font-semibold text-white mb-1">
                     Service Category *
                   </label>
                   <select
@@ -537,8 +537,8 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 {/* Subcategory Selection */}
                 {formData.category && (
                   <div>
-                    <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1">
-                      Specialization <span className="text-gray-500">(Optional)</span>
+                    <label htmlFor="subcategory" className="block text-sm font-semibold text-white mb-1">
+                      Specialization <span className="text-blue-300">(Optional)</span>
                     </label>
                     <select
                       id="subcategory"
@@ -559,7 +559,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="experience" className="block text-sm font-semibold text-white mb-1">
                   Years of Experience
                 </label>
                 <input
@@ -574,7 +574,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="certifications" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="certifications" className="block text-sm font-semibold text-white mb-1">
                   Certifications/Licenses
                 </label>
                 <input
@@ -589,7 +589,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="businessAddress" className="block text-sm font-semibold text-white mb-1">
                   Business Address *
                 </label>
                 <input
@@ -606,7 +606,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="businessPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="businessPhone" className="block text-sm font-semibold text-white mb-1">
                     Business Phone *
                   </label>
                   <input
@@ -622,7 +622,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 </div>
 
                 <div>
-                  <label htmlFor="businessEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="businessEmail" className="block text-sm font-semibold text-white mb-1">
                     Business Email *
                   </label>
                   <input
@@ -640,7 +640,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="website" className="block text-sm font-semibold text-white mb-1">
                     Website
                   </label>
                   <input
@@ -655,7 +655,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                 </div>
 
                 <div>
-                  <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="hourlyRate" className="block text-sm font-semibold text-white mb-1">
                     Hourly Rate
                   </label>
                   <input
@@ -671,7 +671,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="serviceArea" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="serviceArea" className="block text-sm font-semibold text-white mb-1">
                   Service Area
                 </label>
                 <input
@@ -686,7 +686,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="availability" className="block text-sm font-semibold text-white mb-1">
                   Availability
                 </label>
                 <input
@@ -701,7 +701,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="description" className="block text-sm font-semibold text-white mb-1">
                   About Your Services *
                 </label>
                 <textarea
