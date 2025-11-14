@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Force dynamic rendering for this page since it uses Firebase Auth
 export const dynamic = 'force-dynamic';
@@ -231,6 +232,18 @@ const MainPageHeader = ({ currentUser, onSignIn, onRegister, onTokenPurchase, on
 };
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
+  const [user, setUser] = useState<any>(null);
+  
+  // Redirect to returnTo URL after user logs in
+  useEffect(() => {
+    if (user && returnTo) {
+      router.push(returnTo);
+    }
+  }, [user, returnTo, router]);
+  
   const [profiles, setProfiles] = useState<Technician[]>([]);
   const [displayedProfiles, setDisplayedProfiles] = useState<Technician[]>([]);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(() => {
@@ -470,6 +483,7 @@ export default function Home() {
   // Listen for authentication state changes
   useEffect(() => {
     const unsubscribe = authHelpers.onAuthStateChanged(async (firebaseUser) => {
+      setUser(firebaseUser); // Set user for returnTo redirect
       if (firebaseUser) {
         // User is signed in, restore their profile data
         try {

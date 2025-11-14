@@ -80,8 +80,9 @@ export default function TechnicianProfile() {
 
   const handleThankYou = async () => {
     if (!user) {
-      // Redirect to main page for authentication
-      router.push('/');
+      // Save return URL and redirect to main page for authentication
+      const returnUrl = `/${username}`;
+      router.push(`/?returnTo=${encodeURIComponent(returnUrl)}`);
       return;
     }
 
@@ -280,8 +281,9 @@ export default function TechnicianProfile() {
                 onThankYou={handleThankYou}
                 onSendTOA={async () => {
                   if (!user) {
-                    // Redirect to main page for authentication
-                    router.push('/');
+                    // Save return URL and redirect to main page for authentication
+                    const returnUrl = `/${username}`;
+                    router.push(`/?returnTo=${encodeURIComponent(returnUrl)}`);
                     return;
                   }
 

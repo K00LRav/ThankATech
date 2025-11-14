@@ -111,6 +111,7 @@ export default function ModernDashboard() {
   const [tokenBalance, setTokenBalance] = useState<any>(null);
   const [activityFilter, setActivityFilter] = useState<'all' | 'tokens' | 'thank_you' | 'purchases' | 'conversions'>('all');
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('overview');
 
   // Use earnings hook for technicians
   const { earnings, loading: earningsLoading, refetch: refetchEarnings } = useTechnicianEarnings(userProfile?.userType === 'technician' ? userProfile?.id || null : null);
@@ -685,39 +686,190 @@ export default function ModernDashboard() {
         onSignOut={handleSignOut} 
       />
       
-      {/* Single Page Layout - Beautiful & Unified */}
-      <main className="relative max-w-6xl mx-auto px-4 py-8 space-y-8">
+      {/* New Layout: Sidebar + Content */}
+      <div className="relative flex max-w-7xl mx-auto px-4 py-8 gap-6">
         
-        {/* Hero Section - Welcome & Quick Stats */}
-        <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white">
-                Welcome back, {userProfile.name?.split(' ')[0] || 'User'}! 👋
-              </h1>
-              <p className="text-blue-200 mt-1">
-                {userProfile.userType === 'technician' 
-                  ? 'Manage your business and track your earnings' 
-                  : 'Your activity dashboard and account overview'
-                }
-              </p>
-            </div>
-            {userProfile.userType === 'technician' && earnings && (
-              <div className="flex gap-4">
-                <div className="bg-green-500/20 border border-green-500/30 rounded-lg px-4 py-3 text-center">
-                  <p className="text-green-300 text-sm font-medium">Available</p>
-                  <p className="text-green-400 text-xl font-bold">{formatCurrency(earnings.availableBalance)}</p>
-                </div>
+        {/* Left Sidebar Navigation */}
+        <aside className="w-64 flex-shrink-0">
+          <div className="sticky top-24 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4">
+            <nav className="space-y-2">
+              {/* Navigation Items - Different for Technicians vs Clients */}
+              {userProfile.userType === 'technician' ? (
+                <>
+                  <button
+                    onClick={() => setActiveSection('overview')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'overview'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">🏠</span>
+                    <span>Overview</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('tokens')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'tokens'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">💰</span>
+                    <span>Token Management</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('points')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'points'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">🎁</span>
+                    <span>Points & Conversions</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('activity')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'activity'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">📊</span>
+                    <span>Activity History</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('account')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'account'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">👤</span>
+                    <span>Profile & Settings</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setActiveSection('overview')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'overview'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">🏠</span>
+                    <span>Overview</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('tokens')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'tokens'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">💰</span>
+                    <span>Token Wallet</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('points')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'points'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">🎁</span>
+                    <span>Points & Conversions</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('activity')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'activity'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">📊</span>
+                    <span>Activity History</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveSection('account')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                      activeSection === 'account'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="text-xl">👤</span>
+                    <span>Account Settings</span>
+                  </button>
+                </>
+              )}
+              
+              {/* Sign Out Button */}
+              <div className="pt-4 border-t border-white/20">
                 <button
-                  onClick={() => setShowPayoutModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-slate-300 hover:text-white hover:bg-red-500/20 transition-all"
                 >
-                  Request Payout
+                  <span className="text-xl">🚪</span>
+                  <span>Sign Out</span>
                 </button>
               </div>
-            )}
+            </nav>
           </div>
-        </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 space-y-6">
+          
+          {/* OVERVIEW SECTION */}
+          {activeSection === 'overview' && (
+            <>
+              {/* Hero Section - Welcome & Quick Stats */}
+              <div className="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-white">
+                      Welcome back, {userProfile.name?.split(' ')[0] || 'User'}! 👋
+                    </h1>
+                    <p className="text-blue-200 mt-1">
+                      {userProfile.userType === 'technician' 
+                        ? 'Manage your business and track your earnings' 
+                        : 'Your activity dashboard and account overview'
+                      }
+                    </p>
+                  </div>
+                  {userProfile.userType === 'technician' && earnings && (
+                    <div className="flex gap-4">
+                      <div className="bg-green-500/20 border border-green-500/30 rounded-lg px-4 py-3 text-center">
+                        <p className="text-green-300 text-sm font-medium">Available</p>
+                        <p className="text-green-400 text-xl font-bold">{formatCurrency(earnings.availableBalance)}</p>
+                      </div>
+                      <button
+                        onClick={() => setShowPayoutModal(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                      >
+                        Request Payout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
         {/* Stats Grid - Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -851,22 +1003,27 @@ export default function ModernDashboard() {
             </>
           )}
         </div>
+            </>
+          )}
+          
+          {/* POINTS & CONVERSIONS SECTION */}
+          {activeSection === 'points' && userProfile && tokenBalance && user && (
+            <PointsConversionWidget
+              userId={user.uid}
+              currentPoints={userProfile.points || 0}
+              onConversionComplete={async () => {
+                // Force reload both profile and token balance
+                await loadUserProfile(user.uid, user);
+                await loadTokenBalance(user.uid);
+              }}
+            />
+          )}
 
-        {/* Points Conversion Widget - For all users */}
-        {userProfile && tokenBalance && user && (
-          <PointsConversionWidget
-            userId={user.uid}
-            currentPoints={userProfile.points || 0}
-            onConversionComplete={async () => {
-              // Force reload both profile and token balance
-              await loadUserProfile(user.uid, user);
-              await loadTokenBalance(user.uid);
-            }}
-          />
-        )}
-
-        {/* Token Management - Technician (Dual Display: Wallet + Earnings) */}
-        {userProfile.userType === 'technician' && tokenBalance && (
+          {/* TOKEN MANAGEMENT SECTION */}
+          {activeSection === 'tokens' && (
+            <>
+              {/* Token Management - Technician (Dual Display: Wallet + Earnings) */}
+              {userProfile.userType === 'technician' && tokenBalance && (
           <div className="space-y-6">
             {/* Spending Wallet Section */}
             <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
@@ -1031,8 +1188,8 @@ export default function ModernDashboard() {
           </div>
         )}
 
-        {/* Token Management - Client Only */}
-        {userProfile.userType === 'client' && tokenBalance && (
+              {/* Token Management - Client Only */}
+              {userProfile.userType === 'client' && tokenBalance && (
           <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-xl border border-white/20 p-6">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               🪙 Token Management
@@ -1110,9 +1267,14 @@ export default function ModernDashboard() {
             </div>
           </div>
         )}
+            </>
+          )}
 
-        {/* Recent Activity */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          {/* ACTIVITY HISTORY SECTION */}
+          {activeSection === 'activity' && (
+            <>
+              {/* Recent Activity */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white">Recent Activity</h2>
             <div className="flex items-center gap-2">
@@ -1268,11 +1430,18 @@ export default function ModernDashboard() {
             </div>
           )}
         </div>
+            </>
+          )}
 
-        {/* Account Settings - Single Unified Section */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+          {/* ACCOUNT/PROFILE SETTINGS SECTION */}
+          {activeSection === 'account' && (
+            <>
+              {/* Account Settings - Single Unified Section */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Account Settings</h2>
+            <h2 className="text-xl font-bold text-white">
+              {userProfile.userType === 'technician' ? 'Profile & Business Settings' : 'Account Settings'}
+            </h2>
             <button
               onClick={isEditingProfile ? handleSaveProfile : () => setIsEditingProfile(true)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -1556,7 +1725,11 @@ export default function ModernDashboard() {
             </div>
           </div>
         </div>
-      </main>
+            </>
+          )}
+          
+        </main>
+      </div>
 
       {/* Payout Modal */}
       {showPayoutModal && (
