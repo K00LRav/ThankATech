@@ -574,6 +574,11 @@ export default function ModernDashboard() {
     if (!userProfile?.id || !userProfile?.userType) return;
 
     try {
+      // Normalize username to lowercase before saving
+      if (editedProfile.username) {
+        editedProfile.username = editedProfile.username.toLowerCase().trim();
+      }
+      
       // Use the correct collection based on user type
       const collectionName = userProfile.userType === 'technician' ? COLLECTIONS.TECHNICIANS : COLLECTIONS.CLIENTS;
       await updateDoc(doc(db, collectionName, userProfile.id), editedProfile);
