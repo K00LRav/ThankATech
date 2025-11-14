@@ -21,6 +21,7 @@ import Footer from '../components/Footer';
 import { RolodexCard } from '../components/RolodexCard';
 import Link from 'next/link';
 import Image from 'next/image';
+import { signOut } from 'firebase/auth';
 
 // Utility function to format currency
 const formatCurrency = (amount: number) => {
@@ -1005,11 +1006,16 @@ export default function Home() {
             userType: currentUser.userType,
             points: currentUser.points
           } : undefined}
-          onSignOut={() => {
-            setCurrentUser(null);
-            setThankYouMessage('Logged out successfully.');
-            setShowThankYou(true);
-            setTimeout(() => setShowThankYou(false), 3000);
+          onSignOut={async () => {
+            try {
+              await signOut(auth);
+              setCurrentUser(null);
+              setThankYouMessage('Logged out successfully.');
+              setShowThankYou(true);
+              setTimeout(() => setShowThankYou(false), 3000);
+            } catch (error) {
+              logger.error('Error signing out:', error);
+            }
           }}
           onSignIn={() => setShowSignIn(true)}
           onRegister={() => setShowRegistration(true)}

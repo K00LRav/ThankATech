@@ -2,10 +2,17 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import UniversalHeader from '@/components/UniversalHeader';
 import { logger } from '@/lib/logger';
 
 export default function Contact() {
+  const router = useRouter();
+  const [user] = useAuthState(auth);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -54,6 +61,15 @@ export default function Contact() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      logger.error('Error signing out:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       {/* Background Animation */}
@@ -65,7 +81,18 @@ export default function Contact() {
         </div>
       </div>
 
-      <UniversalHeader currentPath="/contact" />
+      <UniversalHeader 
+        currentPath="/contact"
+        currentUser={user ? {
+          id: user.uid,
+          name: user.displayName || 'User',
+          email: user.email || '',
+          photoURL: user.photoURL || undefined
+        } : undefined}
+        onSignOut={handleSignOut}
+        onSignIn={() => router.push('/')}
+        onRegister={() => router.push('/')}
+      />
 
       {/* Main Content */}
       <main className="relative z-10 max-w-6xl mx-auto px-6 py-12">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../lib/firebase';
+import { signOut } from 'firebase/auth';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
 import { sendFreeThankYou, getUserTokenBalance } from '../../lib/token-firebase';
 import TokenSendModal from '../../components/TokenSendModal';
@@ -103,6 +104,25 @@ export default function TechnicianProfile() {
     } catch (error) {
       logger.error('Error sending thank you:', error);
       alert('Failed to send thank you. Please try again.');
+    }
+  };
+
+  const handleSignIn = () => {
+    const returnUrl = `/${username}`;
+    router.push(`/?returnTo=${encodeURIComponent(returnUrl)}`);
+  };
+
+  const handleRegister = () => {
+    const returnUrl = `/${username}`;
+    router.push(`/?returnTo=${encodeURIComponent(returnUrl)}`);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      logger.error('Error signing out:', error);
     }
   };
 
@@ -206,8 +226,15 @@ export default function TechnicianProfile() {
       <UniversalHeader 
         currentPath={`/${technician.username}`}
         customSubtitle={`thankatech.com/${technician.username}`}
+        currentUser={user ? {
+          id: user.uid,
+          name: user.displayName || 'User',
+          email: user.email || '',
+          photoURL: user.photoURL || undefined
+        } : undefined}
         onSignIn={handleSignIn}
         onRegister={handleRegister}
+        onSignOut={handleSignOut}
       />
 
       <main className="relative max-w-md mx-auto px-3 py-6 sm:max-w-6xl sm:px-4 lg:px-8 sm:py-12">
