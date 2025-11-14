@@ -730,7 +730,7 @@ export default function ModernDashboard() {
                     }`}
                   >
                     <span className="text-xl">🎁</span>
-                    <span>Points & Conversions</span>
+                    <span>Points</span>
                   </button>
                   
                   <button
@@ -804,7 +804,7 @@ export default function ModernDashboard() {
                     }`}
                   >
                     <span className="text-xl">🎁</span>
-                    <span>Points & Conversions</span>
+                    <span>Points</span>
                   </button>
                   
                   <button
