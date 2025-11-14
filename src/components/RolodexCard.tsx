@@ -327,6 +327,7 @@ export function RolodexCard({
               </div>
             )}
           </div>
+        </div>
       </a>
     </div>
   );
