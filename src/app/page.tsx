@@ -815,13 +815,102 @@ function HomeContent() {
     };
   }, [flipToNext, flipToPrevious]);
   
-  // Show loading state
+  // Show loading state with skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-blue-300 font-semibold">Loading amazing technicians near you...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        {/* Background Animation */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -inset-10 opacity-50">
+            <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+            <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+          </div>
+        </div>
+
+        <div className="relative z-10 p-4">
+          {/* Header Skeleton */}
+          <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl mb-8 shadow-lg animate-pulse">
+            <div className="max-w-7xl mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600/50 rounded-xl"></div>
+                  <div className="w-32 h-8 bg-white/20 rounded"></div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-20 h-10 bg-white/20 rounded-lg"></div>
+                  <div className="w-24 h-10 bg-white/20 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Section Skeleton */}
+          <div className="max-w-7xl mx-auto mb-8 animate-pulse">
+            <div className="text-center mb-8">
+              <div className="h-12 bg-white/20 rounded-lg w-3/4 mx-auto mb-4"></div>
+              <div className="h-6 bg-white/10 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+
+          {/* Search and Filter Skeleton */}
+          <div className="max-w-7xl mx-auto mb-8 animate-pulse">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex-1 h-14 bg-white/20 rounded-xl"></div>
+              <div className="w-full md:w-64 h-14 bg-white/20 rounded-xl"></div>
+            </div>
+          </div>
+
+          {/* Card Skeleton */}
+          <div className="flex flex-col items-center space-y-6">
+            <div className="w-full max-w-md mx-auto">
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 animate-pulse">
+                {/* Profile Header Skeleton */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-20 h-20 bg-white/20 rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="h-6 bg-white/20 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                  </div>
+                </div>
+                
+                {/* About Section Skeleton */}
+                <div className="space-y-2 mb-6">
+                  <div className="h-4 bg-white/10 rounded w-full"></div>
+                  <div className="h-4 bg-white/10 rounded w-5/6"></div>
+                  <div className="h-4 bg-white/10 rounded w-4/6"></div>
+                </div>
+
+                {/* Stats Skeleton */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="h-8 bg-white/20 rounded mb-2"></div>
+                    <div className="h-3 bg-white/10 rounded w-3/4 mx-auto"></div>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-8 bg-white/20 rounded mb-2"></div>
+                    <div className="h-3 bg-white/10 rounded w-3/4 mx-auto"></div>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-8 bg-white/20 rounded mb-2"></div>
+                    <div className="h-3 bg-white/10 rounded w-3/4 mx-auto"></div>
+                  </div>
+                </div>
+
+                {/* Buttons Skeleton */}
+                <div className="flex gap-3">
+                  <div className="flex-1 h-12 bg-white/20 rounded-xl"></div>
+                  <div className="flex-1 h-12 bg-white/20 rounded-xl"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Loading Text */}
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-2"></div>
+              <p className="text-blue-300 text-sm font-medium">Loading amazing technicians near you...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
