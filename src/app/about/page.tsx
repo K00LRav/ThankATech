@@ -141,7 +141,7 @@ export default function About() {
                   <span className="text-2xl">⚡</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Convert Points</h3>
-                <p className="text-gray-300">Convert 5 ThankATech Points into 1 TOA token. <span className="text-purple-400 font-semibold">Up to 20 conversions daily!</span> Your generosity funds more generosity.</p>
+                <p className="text-gray-300">Convert 5 ThankATech Points into 1 TOA token. <span className="text-purple-400 font-semibold">No daily limits!</span> Your generosity funds more generosity.</p>
               </div>
             </div>
             <div className="mt-8 p-6 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl border border-white/10">
@@ -231,7 +231,7 @@ export default function About() {
                 <ul className="space-y-3 text-gray-300">
                   <li className="flex items-center gap-3">
                     <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                    <span>Maximum 20 conversions per day</span>
+                    <span>No daily conversion limits</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-2 h-2 bg-purple-400 rounded-full"></span>

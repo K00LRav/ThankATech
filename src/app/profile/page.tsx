@@ -563,7 +563,7 @@ Please complete your profile information below and click "Save Changes" to creat
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-purple-200">Convert Points to TOA</h3>
-                  <p className="text-purple-300 text-sm">5 Points = 1 TOA Token • Max 20 conversions/day</p>
+                  <p className="text-purple-300 text-sm">5 Points = 1 TOA Token • No daily limits</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <input
