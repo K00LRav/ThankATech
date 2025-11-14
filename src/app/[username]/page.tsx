@@ -18,6 +18,7 @@ import { logger } from '../../lib/logger';
 
 interface Technician {
   id: string;
+  authUid?: string;
   name: string;
   username: string;
   businessName: string;
@@ -76,6 +77,33 @@ export default function TechnicianProfile() {
       loadTechnician();
     }
   }, [username, loadTechnician]);
+
+  const handleThankYou = async () => {
+    if (!user) {
+      // Redirect to main page for authentication
+      router.push('/');
+      return;
+    }
+
+    if (!technician) return;
+
+    try {
+      logger.info('Sending free thank you to technician:', technician.id);
+      const result = await sendFreeThankYou(user.uid, technician.id);
+      
+      if (result.success) {
+        // Show success message
+        alert('Thank you sent! 🎉');
+        // Reload technician data to update stats
+        await loadTechnician();
+      } else {
+        alert(result.error || 'Failed to send thank you');
+      }
+    } catch (error) {
+      logger.error('Error sending thank you:', error);
+      alert('Failed to send thank you. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -247,7 +275,7 @@ export default function TechnicianProfile() {
 
           <div className="space-y-6">
             {/* Only show appreciation actions if not viewing own profile */}
-            {user?.uid !== technician.id ? (
+            {user?.uid !== technician.authUid ? (
               <AppreciationActions
                 onThankYou={handleThankYou}
                 onSendTOA={async () => {
