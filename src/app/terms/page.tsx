@@ -96,7 +96,7 @@ export default function Terms() {
             Terms of Service
           </h1>
           <p className="text-gray-300 text-lg">
-            Last updated: October 2, 2025
+            Last updated: November 14, 2025
           </p>
         </div>
 
@@ -421,20 +421,143 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Governing Law</h2>
-            <p className="text-gray-300 leading-relaxed">
-              These Terms shall be governed by and construed in accordance with the laws of the United States, 
-              without regard to its conflict of law provisions. Any disputes arising from these Terms or your 
-              use of the Service shall be resolved through binding arbitration.
-            </p>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Dispute Resolution and Arbitration</h2>
+            <div className="space-y-4">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                <p className="text-amber-200 font-semibold mb-2">PLEASE READ THIS SECTION CAREFULLY</p>
+                <p className="text-gray-300 leading-relaxed">
+                  This section affects your legal rights, including your right to file a lawsuit in court.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Agreement to Arbitrate</h3>
+                <p className="text-gray-300 leading-relaxed mb-2">
+                  You and ThankATech agree that any dispute, claim, or controversy arising out of or relating to 
+                  these Terms or your use of the Service (collectively, &quot;Disputes&quot;) will be settled by binding 
+                  arbitration, except that each party retains the right to seek injunctive or other equitable relief 
+                  in a court of competent jurisdiction to prevent the actual or threatened infringement, misappropriation, 
+                  or violation of a party&apos;s copyrights, trademarks, trade secrets, patents, or other intellectual property rights.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Waiver of Class Actions</h3>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <p className="text-gray-300 leading-relaxed">
+                    <strong>YOU AND THANKATECH AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN YOUR OR ITS 
+                    INDIVIDUAL CAPACITY, AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE 
+                    PROCEEDING.</strong> Unless both you and ThankATech agree otherwise, the arbitrator may not consolidate 
+                    more than one person&apos;s claims and may not otherwise preside over any form of a representative or class proceeding.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Arbitration Procedures</h3>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>Arbitration will be conducted by the American Arbitration Association (AAA) under its Consumer Arbitration Rules</li>
+                  <li>The arbitration will be held in New York County, New York, or at another mutually agreed location</li>
+                  <li>The arbitrator&apos;s decision will be final and binding, with limited grounds for appeal</li>
+                  <li>You may opt out of this arbitration agreement within 30 days of first accepting these Terms by emailing legal@thankatech.com</li>
+                  <li>Each party will be responsible for paying any AAA filing, administrative, and arbitrator fees in accordance with AAA rules</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Exceptions to Arbitration</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Either party may bring a lawsuit in court in the following limited circumstances:
+                </p>
+                <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
+                  <li>To enforce or protect intellectual property rights</li>
+                  <li>Claims in small claims court (if the claim qualifies)</li>
+                  <li>To seek injunctive or other equitable relief</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Governing Law and Jurisdiction</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                These Terms and your use of the Service shall be governed by and construed in accordance with the 
+                laws of the State of New York, without regard to its conflict of law provisions.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                To the extent that any lawsuit or court proceeding is permitted under these Terms, you and ThankATech 
+                agree to submit to the personal and exclusive jurisdiction of the state and federal courts located 
+                within New York County, New York.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                The United Nations Convention on Contracts for the International Sale of Goods does not apply to these Terms.
+              </p>
+            </div>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-pink-400 mb-4">Changes to Terms</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                We reserve the right to modify these Terms at any time. We will notify users of any material 
+                changes by posting the new Terms on this page and updating the &quot;Last updated&quot; date.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                For material changes, we will provide at least 30 days&apos; notice before the new terms take effect. 
+                Your continued use of the Service after such modifications constitutes acceptance of the updated Terms.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                If you do not agree to the modified terms, you must stop using the Service and may terminate your account.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Contact Information</h2>
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <p className="text-gray-300 leading-relaxed mb-2">
+                For questions, concerns, or notices regarding these Terms of Service, please contact us:
+              </p>
+              <ul className="text-gray-300 space-y-1">
+                <li><strong>Email:</strong> <a href="mailto:legal@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">legal@thankatech.com</a></li>
+                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
+                <li><strong>Platform:</strong> <a href="https://thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">thankatech.com</a></li>
+              </ul>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-pink-400 mb-4">Effective Date and Acceptance</h2>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                These Terms of Service are effective as of the date you first access or use the Service, or the 
+                date you create an account, whichever is earlier.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                By clicking &quot;I Agree,&quot; creating an account, or using the Service, you acknowledge that you have 
+                read, understood, and agree to be bound by these Terms of Service and our Privacy Policy.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-green-400 mb-4">Force Majeure</h2>
             <p className="text-gray-300 leading-relaxed">
-              We reserve the right to modify these Terms at any time. We will notify users of any material 
-              changes by posting the new Terms on this page and updating the &quot;Last updated&quot; date. Your 
-              continued use of the Service after such modifications constitutes acceptance of the updated Terms.
+              ThankATech shall not be liable for any failure or delay in performance due to circumstances beyond 
+              our reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, 
+              riots, embargoes, acts of civil or military authorities, fire, floods, accidents, pandemics, strikes, 
+              or shortages of transportation, facilities, fuel, energy, labor, or materials.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Entire Agreement</h2>
+            <p className="text-gray-300 leading-relaxed">
+              These Terms of Service, together with our Privacy Policy and any other legal notices published by 
+              ThankATech on the Service, constitute the entire agreement between you and ThankATech concerning 
+              the Service and supersede all prior or contemporaneous communications and proposals, whether electronic, 
+              oral, or written, between you and ThankATech with respect to the Service.
             </p>
           </section>
 
@@ -447,27 +570,11 @@ export default function Terms() {
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-blue-400 mb-4">Contact Information</h2>
-            <p className="text-gray-300 leading-relaxed mb-4">
-              If you have any questions about these Terms of Service, please contact us:
-            </p>
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-              <ul className="text-gray-300 space-y-2">
-                <li><strong>Email:</strong> <a href="mailto:legal@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">legal@thankatech.com</a></li>
-                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
-                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-blue-400 hover:text-blue-300 transition-colors">Visit our contact page</Link></li>
-              </ul>
-            </div>
-          </section>
-
         </div>
       </main>
     </div>
   );
 }
-
-
 
 
 

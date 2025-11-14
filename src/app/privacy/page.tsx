@@ -96,7 +96,7 @@ export default function Privacy() {
             Privacy Policy
           </h1>
           <p className="text-gray-300 text-lg">
-            Last updated: October 2, 2025
+            Last updated: November 14, 2025
           </p>
         </div>
 
@@ -416,11 +416,16 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-2xl font-bold text-blue-400 mb-4">Changes to This Policy</h2>
-            <p className="text-gray-300 leading-relaxed">
-              We may update this Privacy Policy from time to time. We will notify you of any changes by posting 
-              the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. You are advised to review 
-              this Privacy Policy periodically for any changes.
-            </p>
+            <div className="space-y-4">
+              <p className="text-gray-300 leading-relaxed">
+                We may update this Privacy Policy from time to time. We will notify you of any changes by posting 
+                the new Privacy Policy on this page and updating the &quot;Last updated&quot; date.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                For material changes, we will provide at least 30 days&apos; notice before the new policy takes effect. 
+                You are advised to review this Privacy Policy periodically for any changes.
+              </p>
+            </div>
           </section>
 
           <section>
@@ -430,11 +435,24 @@ export default function Privacy() {
             </p>
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
               <ul className="text-gray-300 space-y-2">
-                <li><strong>Email:</strong> <a href="mailto:privacy@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">privacy@thankatech.com</a></li>
-                <li><strong>Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
-                <li><strong>Contact Form:</strong> <Link href="/contact" className="text-blue-400 hover:text-blue-300 transition-colors">Visit our contact page</Link></li>
+                <li><strong>Privacy Inquiries:</strong> <a href="mailto:privacy@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">privacy@thankatech.com</a></li>
+                <li><strong>Legal Matters:</strong> <a href="mailto:legal@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">legal@thankatech.com</a></li>
+                <li><strong>General Support:</strong> <a href="mailto:support@thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">support@thankatech.com</a></li>
+                <li><strong>Platform:</strong> <a href="https://thankatech.com" className="text-blue-400 hover:text-blue-300 transition-colors">thankatech.com</a></li>
               </ul>
+              <p className="text-gray-300 text-sm mt-3">
+                <strong>Note:</strong> ThankATech is an online platform. All communications are handled electronically via email or through our website contact form.
+              </p>
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-purple-400 mb-4">Governing Law</h2>
+            <p className="text-gray-300 leading-relaxed">
+              This Privacy Policy shall be governed by and construed in accordance with the laws of the State of New York, 
+              without regard to its conflict of law provisions. Any disputes arising from this Privacy Policy will be subject 
+              to the exclusive jurisdiction of the courts located in New York County, New York.
+            </p>
           </section>
 
         </div>
