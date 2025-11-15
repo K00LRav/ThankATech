@@ -1223,6 +1223,26 @@ export async function getClient(userId) {
       return { id: doc.id, ...doc.data() } as any;
     }
     
+    // Also check technicians collection
+    const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
+    if (techDoc.exists()) {
+      const userData = { id: techDoc.id, ...techDoc.data() } as any;
+      return userData;
+    }
+    
+    // Search technicians collection by authUid
+    const techQuery = query(
+      collection(db, COLLECTIONS.TECHNICIANS),
+      where('authUid', '==', userId),
+      limit(1)
+    );
+    const techSnapshot = await getDocs(techQuery);
+    
+    if (!techSnapshot.empty) {
+      const doc = techSnapshot.docs[0];
+      return { id: doc.id, ...doc.data() } as any;
+    }
+    
     return null;
   } catch (error) {
     logger.error('❌ Error getting user:', error);
