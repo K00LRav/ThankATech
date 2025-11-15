@@ -79,7 +79,7 @@ export function ProfileHeader({ technician }: ProfileHeaderProps) {
               )}
               {technician.experience && (
                 <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors">
-                  ⭐ {technician.experience} experience
+                  ⭐ {technician.experience.replace(/[^\d+]/g, '')} Years of Experience
                 </span>
               )}
               {technician.hourlyRate && (
