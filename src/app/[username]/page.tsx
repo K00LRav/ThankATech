@@ -1,5 +1,9 @@
 "use client";
 
+// Disable caching for this dynamic page
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';

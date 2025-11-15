@@ -38,6 +38,8 @@ export function ProfileHeader({ technician }: ProfileHeaderProps) {
                   width={160}
                   height={160}
                   className="w-full h-full object-cover"
+                  unoptimized={technician.image.startsWith('http')}
+                  key={technician.image}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/30 to-purple-500/30">
