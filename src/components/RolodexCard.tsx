@@ -160,16 +160,6 @@ export function RolodexCard({
                   </div>
                 </div>
                 
-                {/* Certified badge */}
-                {technician.certifications && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 bg-white/90 text-green-700 px-2 py-1 rounded-full text-xs font-medium border border-green-200 shadow-sm">
-                      <span className="text-green-600">✓</span>
-                      <span>Certified</span>
-                    </span>
-                  </div>
-                )}
-                
                 {/* Distance if available */}
                 {technician.distance !== undefined && (
                   <div className="flex items-center gap-2 mt-2">
