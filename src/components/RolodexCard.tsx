@@ -233,14 +233,14 @@ export function RolodexCard({
             {/* Essential Info Only - Streamlined for customers */}
             <div className="space-y-3">
               {/* Brief About - Expandable on mobile */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm min-h-[100px] flex items-start">
                 {(() => {
                   const aboutText = technician.about || `Professional ${formatCategory(technician.category)} with expertise in quality service delivery.`;
                   const isLong = aboutText.length > 120;
                   const shouldTruncate = isLong && !isDescriptionExpanded;
                   
                   return (
-                    <div>
+                    <div className="w-full">
                       <p className={`text-sm text-gray-800 leading-relaxed ${shouldTruncate ? 'line-clamp-2' : ''}`}>
                         {shouldTruncate ? aboutText.substring(0, 120) + '...' : aboutText}
                       </p>
