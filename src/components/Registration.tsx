@@ -560,7 +560,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
 
               <div>
                 <label htmlFor="experience" className="block text-sm font-semibold text-white mb-1">
-                  Years of Experience
+                  Years of Experience <span className="text-blue-300">(e.g., 5, 10, 15+)</span>
                 </label>
                 <input
                   type="text"
@@ -568,7 +568,7 @@ export default function Registration({ onRegistrationComplete, onClose }: Regist
                   name="experience"
                   value={formData.experience}
                   onChange={handleInputChange}
-                  placeholder="5 years"
+                  placeholder="e.g., 5 or 10+ years"
                   className="w-full px-3 py-2 border border-blue-500/30 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                 />
               </div>
