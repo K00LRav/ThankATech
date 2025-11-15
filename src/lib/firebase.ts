@@ -1201,17 +1201,12 @@ export async function getClient(userId) {
   if (!db || !userId) return null;
   
   try {
-    logger.info('🔍 getClient searching for userId:', userId);
-    
     // Check clients collection by document ID
     const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (clientDoc.exists()) {
-      logger.info('✅ Found in clients collection by doc ID');
       const userData = { id: clientDoc.id, ...clientDoc.data() } as any;
       return userData;
     }
-    
-    // If not found as document ID, try as Firebase Auth UID
     
     // Search clients collection by authUid
     const clientQuery = query(
@@ -1222,21 +1217,18 @@ export async function getClient(userId) {
     const clientSnapshot = await getDocs(clientQuery);
     
     if (!clientSnapshot.empty) {
-      logger.info('✅ Found in clients collection by authUid');
       const doc = clientSnapshot.docs[0];
       return { id: doc.id, ...doc.data() } as any;
     }
     
-    // Also check technicians collection
+    // Check technicians collection by document ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
     if (techDoc.exists()) {
-      logger.info('✅ Found in technicians collection by doc ID');
       const userData = { id: techDoc.id, ...techDoc.data() } as any;
       return userData;
     }
     
     // Search technicians collection by authUid
-    logger.info('🔍 Searching technicians by authUid:', userId);
     const techQuery = query(
       collection(db, COLLECTIONS.TECHNICIANS),
       where('authUid', '==', userId),
@@ -1245,13 +1237,11 @@ export async function getClient(userId) {
     const techSnapshot = await getDocs(techQuery);
     
     if (!techSnapshot.empty) {
-      logger.info('✅ Found in technicians collection by authUid');
       const doc = techSnapshot.docs[0];
       return { id: doc.id, ...doc.data() } as any;
     }
     
-    // Try searching by uid field as fallback
-    logger.info('🔍 Searching technicians by uid field:', userId);
+    // Search technicians by uid field (for Google Sign-In users)
     const techUidQuery = query(
       collection(db, COLLECTIONS.TECHNICIANS),
       where('uid', '==', userId),
@@ -1260,15 +1250,13 @@ export async function getClient(userId) {
     const techUidSnapshot = await getDocs(techUidQuery);
     
     if (!techUidSnapshot.empty) {
-      logger.info('✅ Found in technicians collection by uid field');
       const doc = techUidSnapshot.docs[0];
       return { id: doc.id, ...doc.data() } as any;
     }
     
-    logger.warn('❌ User not found in any collection:', userId);
     return null;
   } catch (error) {
-    logger.error('❌ Error getting user:', error);
+    logger.error('Error getting user:', error);
     return null;
   }
 }
@@ -2452,11 +2440,7 @@ export async function checkMigrationStatus() {
 
 // Backward compatibility aliases (temporary during migration)
 export async function getUser(userId: string) {
-  console.log('🔍 getUser called with userId:', userId);
-  logger.info('🔍 getUser called with userId:', userId);
   const result = await getClient(userId);
-  console.log('🔍 getUser result:', { userId, found: !!result });
-  logger.info('🔍 getUser result:', { userId, found: !!result });
   return result;
 }
 export const registerUser = registerClient;

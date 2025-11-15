@@ -1142,12 +1142,9 @@ export async function getUser(userId) {
   if (!db || !userId) return null;
   
   try {
-    console.log('🔍 [firebase.js] getUser called for:', userId);
-    
     // Check clients collection by doc ID
     const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, userId));
     if (clientDoc.exists()) {
-      console.log('✅ Found in clients by doc ID');
       return { id: clientDoc.id, ...clientDoc.data() };
     }
     
@@ -1159,7 +1156,6 @@ export async function getUser(userId) {
     );
     const clientSnapshot = await getDocs(clientQuery);
     if (!clientSnapshot.empty) {
-      console.log('✅ Found in clients by authUid');
       const clientDoc2 = clientSnapshot.docs[0];
       return { id: clientDoc2.id, ...clientDoc2.data() };
     }
@@ -1167,7 +1163,6 @@ export async function getUser(userId) {
     // Check technicians collection by doc ID
     const techDoc = await getDoc(doc(db, COLLECTIONS.TECHNICIANS, userId));
     if (techDoc.exists()) {
-      console.log('✅ Found in technicians by doc ID');
       return { id: techDoc.id, ...techDoc.data() };
     }
     
@@ -1179,7 +1174,6 @@ export async function getUser(userId) {
     );
     const techSnapshot = await getDocs(techQuery);
     if (!techSnapshot.empty) {
-      console.log('✅ Found in technicians by authUid');
       const techDoc2 = techSnapshot.docs[0];
       return { id: techDoc2.id, ...techDoc2.data() };
     }
@@ -1192,15 +1186,13 @@ export async function getUser(userId) {
     );
     const techUidSnapshot = await getDocs(techUidQuery);
     if (!techUidSnapshot.empty) {
-      console.log('✅ Found in technicians by uid field');
       const techDoc3 = techUidSnapshot.docs[0];
       return { id: techDoc3.id, ...techDoc3.data() };
     }
     
-    console.log('❌ User not found:', userId);
     return null;
   } catch (error) {
-    console.error('❌ Error getting user:', error);
+    console.error('Error getting user:', error);
     return null;
   }
 }
