@@ -697,7 +697,8 @@ function HomeContent() {
       const result = await sendFreeThankYou(currentUser.uid, currentTechnician.id);
       
       if (!result.success) {
-        setError(result.error || 'Failed to send thank you. Please try again.');
+        // Show friendly alert popup instead of full-page error
+        alert(result.error || 'Failed to send thank you. Please try again.');
         return;
       }
 
@@ -730,7 +731,8 @@ function HomeContent() {
       setTimeout(() => setShowThankYou(false), 4000);
     } catch (error) {
       logger.error('Error sending thank you:', error);
-      setError('Failed to send thank you. Please try again.');
+      // Show friendly alert popup instead of full-page error
+      alert('Failed to send thank you. Please try again.');
     }
   };
 
