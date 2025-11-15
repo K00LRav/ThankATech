@@ -338,17 +338,63 @@ Please complete your profile information below and click "Save Changes" to creat
                         userType === 'admin' ? COLLECTIONS.ADMINS : 
                         COLLECTIONS.CLIENTS;
       
-      // Try to update first, if that fails, create the document
+      // Find the actual document ID (might not be user.uid for legacy users)
+      let docId = user.uid;
+      let docExists = false;
+      
       try {
-        await updateDoc(doc(db, collection, user.uid), profileData);
-        setSaveMessage('✅ Profile updated successfully!');
+        // First check if document exists with user.uid
+        const userDoc = await getDoc(doc(db, collection, user.uid));
+        docExists = userDoc.exists();
+        
+        if (!docExists && userType === 'technician') {
+          // For technicians, try to find by email or authUid
+          const { query, where, getDocs, collection: firestoreCollection } = await import('firebase/firestore');
+          
+          // Try finding by authUid first
+          const authUidQuery = query(
+            firestoreCollection(db, collection),
+            where('authUid', '==', user.uid)
+          );
+          const authUidSnapshot = await getDocs(authUidQuery);
+          
+          if (!authUidSnapshot.empty) {
+            docId = authUidSnapshot.docs[0].id;
+            docExists = true;
+          } else {
+            // Try finding by email
+            const emailQuery = query(
+              firestoreCollection(db, collection),
+              where('email', '==', user.email)
+            );
+            const emailSnapshot = await getDocs(emailQuery);
+            
+            if (!emailSnapshot.empty) {
+              docId = emailSnapshot.docs[0].id;
+              docExists = true;
+            }
+          }
+        }
+      } catch (err) {
+        logger.error('Error finding document:', err);
+      }
+      
+      // Update or create the document
+      try {
+        if (docExists) {
+          await updateDoc(doc(db, collection, docId), profileData);
+          setSaveMessage('✅ Profile updated successfully!');
+        } else {
+          // Create new document with user.uid as ID
+          await setDoc(doc(db, collection, user.uid), {
+            ...profileData,
+            createdAt: new Date().toISOString()
+          });
+          setSaveMessage('✅ Profile created successfully!');
+        }
       } catch (updateError) {
-        // If update fails (document doesn't exist), create it
-        await setDoc(doc(db, collection, user.uid), {
-          ...profileData,
-          createdAt: new Date().toISOString()
-        });
-        setSaveMessage('✅ Profile created successfully!');
+        logger.error('Error saving profile:', updateError);
+        throw updateError;
       }
       
       setProfile({ ...profile, ...profileData } as UserProfile);
