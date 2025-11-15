@@ -183,8 +183,8 @@ export async function registerTechnician(technicianData) {
       uniqueId: uniqueId,
       username: normalizedUsername, // Required for technicians
 
-      // Firebase Auth UID (if created)
-      authUid: authUser?.uid || null,
+      // Firebase Auth UID (if created or from Google Sign-In)
+      authUid: authUser?.uid || technicianData.uid || null,
 
       // Basic info
       name: technicianData.name,
@@ -2452,7 +2452,12 @@ export async function checkMigrationStatus() {
 
 // Backward compatibility aliases (temporary during migration)
 export async function getUser(userId: string) {
-  return getClient(userId);
+  console.log('🔍 getUser called with userId:', userId);
+  logger.info('🔍 getUser called with userId:', userId);
+  const result = await getClient(userId);
+  console.log('🔍 getUser result:', { userId, found: !!result });
+  logger.info('🔍 getUser result:', { userId, found: !!result });
+  return result;
 }
 export const registerUser = registerClient;
 export const getUserById = getClientById;

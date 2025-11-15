@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../../lib/firebase';
+import { auth, getUser } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { findTechnicianByUsername } from '../../lib/techniciansApi';
 import { sendFreeThankYou, getUserTokenBalance } from '../../lib/token-firebase';
@@ -56,6 +56,11 @@ export default function TechnicianProfile() {
   const [user] = useAuthState(auth);
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
+  // Debug: Log auth state
+  useEffect(() => {
+    logger.info('🔐 Auth state:', { hasUser: !!user, userId: user?.uid, email: user?.email });
+  }, [user]);
+
   const loadTechnician = useCallback(async () => {
     try {
       setLoading(true);
@@ -79,12 +84,14 @@ export default function TechnicianProfile() {
     if (user) {
       const loadUserProfile = async () => {
         try {
-          const { getUser } = await import('../../lib/firebase');
+          logger.info('🔍 Loading profile for user:', user.uid);
           const profile = await getUser(user.uid);
-          logger.info('Loaded user profile:', { userId: user.uid, profile, hasProfile: !!profile });
+          logger.info('✅ Profile loaded successfully:', { userId: user.uid, profile, hasProfile: !!profile });
           setCurrentUserProfile(profile);
         } catch (error) {
-          logger.error('Error loading user profile:', error);
+          logger.error('❌ FATAL ERROR loading user profile:', error);
+          console.error('Full error:', error);
+          setCurrentUserProfile(null);
         }
       };
       loadUserProfile();
