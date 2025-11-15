@@ -81,6 +81,7 @@ export default function TechnicianProfile() {
         try {
           const { getUser } = await import('../../lib/firebase');
           const profile = await getUser(user.uid);
+          logger.info('Loaded user profile:', { userId: user.uid, profile, hasProfile: !!profile });
           setCurrentUserProfile(profile);
         } catch (error) {
           logger.error('Error loading user profile:', error);
@@ -196,7 +197,7 @@ export default function TechnicianProfile() {
           id: user.uid,
           name: currentUserProfile.name || currentUserProfile.businessName || user.displayName || 'User',
           email: user.email || '',
-          photoURL: user.photoURL || undefined,
+          photoURL: currentUserProfile.image || currentUserProfile.photoURL || user.photoURL || undefined,
           userType: currentUserProfile.userType,
           points: currentUserProfile.points
         } : undefined}
