@@ -236,7 +236,13 @@ export default function TechnicianProfile() {
                   </div>
                   <h2 className="text-2xl font-semibold text-white">Professional Experience</h2>
                 </div>
-                <p className="text-slate-300 leading-relaxed text-lg">{technician.experience}</p>
+                <p className="text-slate-300 leading-relaxed text-lg">
+                  {/* If experience is just a number, format it nicely */}
+                  {/^\d+$/.test(technician.experience.trim()) 
+                    ? `${technician.experience} years of professional experience`
+                    : technician.experience
+                  }
+                </p>
               </div>
             )}
 
