@@ -41,7 +41,7 @@ export default function Footer({ onOpenRegistration }: FooterProps) {
     },
     {
       question: "How do I contact a technician?",
-      answer: "Visit their profile at thankatech.com/username or use the chat button to email them directly. Phone contact information is displayed on expanded profile details for registered technicians."
+      answer: "Visit their profile at thankatech.com/username to view their contact information. Phone numbers, business emails, and websites are displayed in the contact info section on their profile page for easy communication."
     },
     {
       question: "Can I edit my technician profile?",
