@@ -7,17 +7,97 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // WORKING MINIMAL RULES WITH BASIC SECURITY
-    
     // Technicians - public read (homepage needs this)
     match /technicians/{techId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+      allow delete: if false; // Prevent deletion
     }
     
-    // Everything else - authenticated users only
+    // Clients - authenticated can read (for transaction history), only owner can write
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+      allow delete: if false; // Prevent deletion
+    }
+    
+    // Admins - authenticated can read, only owner can write
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+      allow delete: if false; // Prevent deletion
+    }
+    
+    // Transactions - can read, can create, CANNOT modify or delete (audit trail)
+    match /tokenTransactions/{txId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // IMMUTABLE - protect audit trail
+    }
+    
+    match /thankYous/{tyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // IMMUTABLE
+    }
+    
+    match /tips/{tipId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated(); // Allow payout status updates
+      allow delete: if false; // Prevent deletion
+    }
+    
+    // Balances - READ ONLY (managed by cloud functions/backend)
+    match /tokenBalances/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Backend only
+    }
+    
+    // System collections - READ ONLY
+    match /dailyThankYouLimits/{limitId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /emailLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /stripePayments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /systemLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /profilePhotoMetadata/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    match /userSessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /businessClaims/{claimId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+    
+    // Default deny everything else
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if false;
     }
   }
 }
