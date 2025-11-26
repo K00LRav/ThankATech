@@ -11,7 +11,7 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Technicians - public read for homepage
+    // Technicians - public read for homepage, authenticated write
     match /technicians/{techId} {
       allow read: if true;
       allow create: if isAuthenticated();
@@ -21,11 +21,9 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
     }
     
-    // Clients - own data only
+    // Clients - authenticated users can read (for transaction sender profiles)
     match /clients/{clientId} {
-      allow read: if isAuthenticated() && 
-                     (request.auth.uid == resource.data.authUid || 
-                      request.auth.uid == clientId);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
                        (request.auth.uid == resource.data.authUid || 
@@ -45,21 +43,21 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
     }
     
-    // Token Transactions - participants only, immutable
+    // Token Transactions - authenticated read, create only, immutable
     match /tokenTransactions/{transactionId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if false;
     }
     
-    // Thank Yous - immutable
+    // Thank Yous - authenticated read, create only, immutable
     match /thankYous/{thankYouId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if false;
     }
     
-    // Tips - participants can read, creators can update for payout status
+    // Tips - authenticated read, creators can update for payout status
     match /tips/{tipId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
@@ -67,7 +65,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     
-    // Token Balances - read only for users
+    // Token Balances - read only for authenticated users
     match /tokenBalances/{userId} {
       allow read: if isAuthenticated();
       allow write: if false;
@@ -87,7 +85,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     
-    // System logs - read only
+    // System logs - read only for authenticated
     match /emailLogs/{logId} {
       allow read: if isAuthenticated();
       allow write: if false;
@@ -108,7 +106,7 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
     
-    // User sessions - read only
+    // User sessions - read only for authenticated
     match /userSessions/{sessionId} {
       allow read: if isAuthenticated();
       allow write: if false;
