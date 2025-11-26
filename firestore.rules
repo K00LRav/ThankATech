@@ -2,8 +2,121 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Technicians - public read for homepage
+    match /technicians/{techId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                       (request.auth.uid == resource.data.authUid || 
+                        request.auth.uid == techId);
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+    }
+    
+    // Clients - own data only
+    match /clients/{clientId} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.uid == resource.data.authUid || 
+                      request.auth.uid == clientId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                       (request.auth.uid == resource.data.authUid || 
+                        request.auth.uid == clientId);
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+    }
+    
+    // Admins - own data only
+    match /admins/{adminId} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.uid == resource.data.authUid || 
+                      request.auth.uid == adminId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                       (request.auth.uid == resource.data.authUid || 
+                        request.auth.uid == adminId);
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
+    }
+    
+    // Token Transactions - participants only, immutable
+    match /tokenTransactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    
+    // Thank Yous - immutable
+    match /thankYous/{thankYouId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    
+    // Tips - participants can read, creators can update for payout status
+    match /tips/{tipId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+    
+    // Token Balances - read only for users
+    match /tokenBalances/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Daily limits - read only
+    match /dailyThankYouLimits/{limitId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Business Claims
+    match /businessClaims/{claimId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+    
+    // System logs - read only
+    match /emailLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /stripePayments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /systemLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Profile photos - owner only
+    match /profilePhotoMetadata/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // User sessions - read only
+    match /userSessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    // Default deny
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
