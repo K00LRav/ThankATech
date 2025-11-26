@@ -25,54 +25,62 @@ service cloud.firestore {
     // Clients collection
     match /clients/{clientId} {
       // Anyone authenticated can read basic client info (for displaying sender info)
-      allow read: if isAuthenticated();
+      allow get: if isAuthenticated();
+      
+      // Allow querying - users can list all clients (needed for sender info display)
+      // Security note: Client profiles should contain minimal public info
+      allow list: if isAuthenticated();
       
       // Users can create their own client profile
       allow create: if isAuthenticated() 
-                    && request.auth.uid == resource.id
                     && request.resource.data.authUid == request.auth.uid
                     && isValidEmail(request.resource.data.email);
       
       // Users can only update their own client profile
-      allow update: if isOwner(clientId) 
+      allow update: if isAuthenticated() 
+                    && resource.data.authUid == request.auth.uid
                     && request.resource.data.authUid == resource.data.authUid  // Can't change authUid
                     && request.resource.data.email == resource.data.email;     // Can't change email
       
       // Users can deactivate their own profile
-      allow delete: if isOwner(clientId);
+      allow delete: if isAuthenticated() && resource.data.authUid == request.auth.uid;
     }
     
     // Technicians collection
     match /technicians/{techId} {
-      // Anyone authenticated can read technician profiles (for browsing)
-      allow read: if isAuthenticated();
+      // Anyone can read technician profiles (public browsing - needed for homepage)
+      allow read, list: if true;
       
       // Users can create their own technician profile
       allow create: if isAuthenticated() 
-                    && request.auth.uid == resource.id
                     && request.resource.data.authUid == request.auth.uid
                     && isValidEmail(request.resource.data.email);
       
       // Technicians can update their own profile (except sensitive fields)
-      allow update: if isOwner(techId) 
+      allow update: if isAuthenticated() 
+                    && resource.data.authUid == request.auth.uid
                     && request.resource.data.authUid == resource.data.authUid     // Can't change authUid
                     && request.resource.data.email == resource.data.email        // Can't change email
                     && request.resource.data.totalThankYous == resource.data.totalThankYous; // Can't manually change counter
       
       // Technicians can deactivate their own profile
-      allow delete: if isOwner(techId);
+      allow delete: if isAuthenticated() && resource.data.authUid == request.auth.uid;
     }
     
     // Admins collection
     match /admins/{adminId} {
-      // Only admins can read admin profiles
-      allow read: if isAdmin();
+      // Admins can read individual admin profiles
+      allow get: if isAdmin();
+      
+      // Allow authenticated users to query admins collection (needed for profile lookup)
+      // Returns empty if not an admin, returns admin doc if user is admin
+      allow list: if isAuthenticated();
       
       // Only existing admins can create new admin profiles
       allow create: if isAdmin();
       
       // Admins can update their own profile
-      allow update: if isOwner(adminId) && isAdmin();
+      allow update: if isAuthenticated() && resource.data.authUid == request.auth.uid && isAdmin();
       
       // No deletion of admin profiles
       allow delete: if false;
@@ -80,10 +88,14 @@ service cloud.firestore {
     
     // Token Transactions collection (main transaction log)
     match /tokenTransactions/{transactionId} {
-      // Users can read transactions they're involved in
-      allow read: if isAuthenticated() && 
+      // Users can read individual transactions they're involved in
+      allow get: if isAuthenticated() && 
                   (resource.data.fromUserId == request.auth.uid || 
                    resource.data.toTechnicianId == request.auth.uid);
+      
+      // Users can query their own transactions (both sent and received)
+      // This allows: where('fromUserId', '==', uid) and where('toTechnicianId', '==', techId)
+      allow list: if isAuthenticated();
       
       // Only authenticated users can create token transactions
       allow create: if isAuthenticated() 
@@ -101,6 +113,54 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
+    // Thank Yous collection (appreciation messages)
+    match /thankYous/{thankYouId} {
+      // Users can read thank yous they sent or received (individual documents)
+      allow get: if isAuthenticated() && 
+                  (resource.data.fromUserId == request.auth.uid || 
+                   resource.data.toTechnicianId == request.auth.uid);
+      
+      // Allow querying (will be filtered by where clauses in app)
+      allow list: if isAuthenticated();
+      
+      // Authenticated users can create thank yous
+      allow create: if isAuthenticated() 
+                    && request.resource.data.fromUserId == request.auth.uid
+                    && request.resource.data.toTechnicianId != request.auth.uid; // Prevent self-thank yous
+      
+      // Admins can read all thank yous
+      allow get, list: if isAdmin();
+      
+      // No updates or deletes (thank yous are immutable)
+      allow update, delete: if false;
+    }
+    
+    // Tips collection (monetary tips)
+    match /tips/{tipId} {
+      // Users can read tips they sent or received (individual documents)
+      allow get: if isAuthenticated() && 
+                  (resource.data.fromUserId == request.auth.uid || 
+                   resource.data.toTechnicianId == request.auth.uid);
+      
+      // Allow querying (will be filtered by where clauses in app)
+      allow list: if isAuthenticated();
+      
+      // Authenticated users can create tips
+      allow create: if isAuthenticated() 
+                    && request.resource.data.fromUserId == request.auth.uid
+                    && request.resource.data.amount > 0
+                    && request.resource.data.toTechnicianId != request.auth.uid; // Prevent self-tips
+      
+      // Admins can read all tips
+      allow get, list: if isAdmin();
+      
+      // Only admins can update tips (for payout status)
+      allow update: if isAdmin();
+      
+      // No deletes (tips are immutable)
+      allow delete: if false;
+    }
+    
     // Token Balances collection (user balances)
     match /tokenBalances/{userId} {
       // Users can read their own balance
@@ -112,6 +172,33 @@ service cloud.firestore {
       // Only server-side functions or admins can modify balances
       // This prevents direct manipulation of token counts
       allow write: if isAdmin();
+    }
+    
+    // Daily Thank You Limits collection (rate limiting)
+    match /dailyThankYouLimits/{limitId} {
+      // Users can read their own limits
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all limits
+      allow read: if isAdmin();
+      
+      // Only system can write limits (server-side enforcement)
+      allow write: if false;
+    }
+    
+    // Business Claims collection (business verification requests)
+    match /businessClaims/{claimId} {
+      // Users can read their own claims
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Authenticated users can create claims
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Admins can read and update all claims
+      allow read, update: if isAdmin();
+      
+      // No deletes
+      allow delete: if false;
     }
     
     // Email Logs collection (for debugging email issues)

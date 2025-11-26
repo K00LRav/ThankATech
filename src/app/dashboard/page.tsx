@@ -121,6 +121,15 @@ export default function ModernDashboard() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        try {
+          // Force token refresh to ensure we have the latest auth claims
+          // This is crucial after Firestore rules updates
+          await currentUser.getIdToken(true);
+          logger.info('Auth token refreshed successfully');
+        } catch (error) {
+          logger.error('Failed to refresh auth token:', error);
+        }
+        
         setUser(currentUser);
         await loadUserProfile(currentUser.uid, currentUser);
       } else {
