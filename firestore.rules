@@ -31,11 +31,9 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.authUid;
     }
     
-    // Admins - own data only
+    // Admins - authenticated can query, only owners can write
     match /admins/{adminId} {
-      allow read: if isAuthenticated() && 
-                     (request.auth.uid == resource.data.authUid || 
-                      request.auth.uid == adminId);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
                        (request.auth.uid == resource.data.authUid || 
