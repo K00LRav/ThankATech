@@ -1835,10 +1835,6 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01))
               >
                 ⚙️ Manual Token Adjustment
               </button>
-              <p className="text-xs text-slate-400 mt-1">
-                ⚠️ For customer refunds: Use Stripe Dashboard (webhook auto-deducts tokens)<br/>
-                ℹ️ Use this only for: Bug compensation, special cases, manual adjustments
-              </p>
             </div>
           </div>
           <div className="space-y-4">
