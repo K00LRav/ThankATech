@@ -323,11 +323,14 @@ export default function Terms() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Refunds and Disputes</h3>
                 <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                  <li><strong>Tip Refunds:</strong> Tips are generally non-refundable once processed</li>
-                  <li><strong>Platform Fee Refunds:</strong> Platform fees may be refunded in cases of technical errors</li>
-                  <li><strong>Disputed Transactions:</strong> Contact us immediately for unauthorized transactions</li>
-                  <li><strong>Chargeback Policy:</strong> Chargebacks may result in account suspension pending investigation</li>
-                  <li><strong>Resolution Process:</strong> We work with Stripe to resolve payment disputes fairly</li>
+                  <li><strong>Token Purchase Refunds:</strong> Token purchases may be refunded within 30 days if tokens remain unspent. Partial refunds available if less than 50% of tokens have been used. All token sales are final after 30 days or if more than 50% spent.</li>
+                  <li><strong>Refund Process:</strong> To request a refund, contact support via our contact form with your purchase details. Refunds are reviewed on a case-by-case basis and processed within 5-7 business days.</li>
+                  <li><strong>Tip Refunds:</strong> Tips sent to technicians are generally non-refundable once processed, as funds are immediately allocated to the technician's account</li>
+                  <li><strong>Platform Fee Refunds:</strong> Platform fees may be refunded in cases of technical errors or duplicate charges</li>
+                  <li><strong>Token Deduction:</strong> If a refund is granted, the corresponding tokens will be deducted from your account balance. If you have already spent the tokens, your balance may become negative, and you will be unable to send tokens until the balance is restored.</li>
+                  <li><strong>Disputed Transactions:</strong> Contact us immediately for unauthorized transactions. We investigate all disputes thoroughly.</li>
+                  <li><strong>Chargeback Policy:</strong> Chargebacks and payment disputes may result in immediate account suspension pending investigation. Fraudulent chargebacks may result in permanent account termination.</li>
+                  <li><strong>Resolution Process:</strong> We work with Stripe to resolve payment disputes fairly and in accordance with applicable laws</li>
                 </ul>
               </div>
 
