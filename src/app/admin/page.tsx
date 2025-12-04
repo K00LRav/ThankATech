@@ -1011,16 +1011,64 @@ export default function AdminPage() {
   };
 
   const handleTokenRefund = async () => {
-    const userId = prompt('Enter User ID for token refund:');
+    const userId = prompt('Enter User ID (Firebase Auth UID) for token refund:');
     if (!userId) return;
     
-    const refundAmount = prompt('Enter number of tokens to refund (will be converted to USD):');
-    if (!refundAmount || isNaN(Number(refundAmount))) return;
+    const refundAmount = prompt('Enter number of tokens to refund:');
+    if (!refundAmount || isNaN(Number(refundAmount))) {
+      setTokenManagementResults('❌ Invalid token amount');
+      return;
+    }
     
-    const confirmRefund = confirm(`Process ${refundAmount} token refund for user ${userId}?`);
+    const tokensToRefund = Number(refundAmount);
+    const dollarAmount = tokensToRefund * 0.10; // $0.10 per token
+    
+    const reason = prompt('Enter refund reason (optional):') || 'Manual admin refund';
+    
+    const confirmRefund = confirm(
+      `Process refund of ${tokensToRefund} tokens ($${dollarAmount.toFixed(2)}) for user ${userId}?\n\n` +
+      `Reason: ${reason}\n\n` +
+      `WARNING: This will immediately deduct tokens from the user's balance. ` +
+      `If they have already spent the tokens, their balance will go negative.`
+    );
+    
     if (!confirmRefund) return;
     
-    setTokenManagementResults(`💰 Processing refund of ${refundAmount} tokens for user ${userId}. This requires Stripe integration for actual refunds.`);
+    setTokenManagementResults(`🔄 Processing refund of ${tokensToRefund} tokens for user ${userId}...`);
+    
+    try {
+      // Call admin API to process refund
+      const response = await fetch('/api/admin/process-refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          tokensToRefund,
+          refundAmount: dollarAmount,
+          reason,
+          adminId: user?.uid,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setTokenManagementResults(
+          `✅ Refund processed successfully!\n\n` +
+          `- User: ${userId}\n` +
+          `- Tokens Refunded: ${tokensToRefund}\n` +
+          `- Amount: $${dollarAmount.toFixed(2)}\n` +
+          `- New Balance: ${result.newBalance} tokens\n` +
+          (result.negativeBalance ? `\n⚠️ WARNING: User now has NEGATIVE balance!\n` : '') +
+          `\nNote: Stripe refund must be processed separately in Stripe Dashboard.`
+        );
+      } else {
+        setTokenManagementResults(`❌ Refund failed: ${result.message}`);
+      }
+    } catch (error) {
+      logger.error('Error processing refund:', error);
+      setTokenManagementResults(`❌ Error processing refund: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   // Financial Reconciliation Functions

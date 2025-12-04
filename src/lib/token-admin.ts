@@ -106,3 +106,117 @@ export async function addTokensToBalance(
     throw error;
   }
 }
+
+/**
+ * Process token refund (server-side)
+ * Called from Stripe webhook when a refund is issued
+ */
+export async function processTokenRefund(
+  userId: string,
+  tokensToRefund: number,
+  refundAmount: number,
+  paymentIntentId: string,
+  reason?: string
+): Promise<{ success: boolean; message: string; negativeBalance?: boolean }> {
+  try {
+    // Check for duplicate refund processing
+    const existingRefundQuery = db
+      .collection(COLLECTIONS.TOKEN_TRANSACTIONS)
+      .where('stripePaymentIntentId', '==', paymentIntentId)
+      .where('type', '==', 'token_refund')
+      .limit(1);
+
+    const existingRefund = await existingRefundQuery.get();
+
+    if (!existingRefund.empty) {
+      console.warn(`⚠️ Duplicate refund detected - payment ${paymentIntentId} already refunded`);
+      return { success: false, message: 'Refund already processed' };
+    }
+
+    // Get user's current balance
+    const balanceRef = db.collection(COLLECTIONS.TOKEN_BALANCES).doc(userId);
+    const balanceDoc = await balanceRef.get();
+
+    const currentBalance = balanceDoc.exists ? balanceDoc.data()?.tokens || 0 : 0;
+    const newBalance = currentBalance - tokensToRefund;
+
+    // Check if refund would create negative balance
+    const willBeNegative = newBalance < 0;
+
+    if (willBeNegative) {
+      console.warn(
+        `⚠️ Refund will create negative balance for user ${userId}: ${currentBalance} - ${tokensToRefund} = ${newBalance}`
+      );
+      // We'll still process it but flag it
+    }
+
+    // Update balance (allow negative)
+    if (balanceDoc.exists) {
+      await balanceRef.update({
+        tokens: FieldValue.increment(-tokensToRefund),
+        totalRefunded: FieldValue.increment(tokensToRefund),
+        lastUpdated: FieldValue.serverTimestamp(),
+      });
+    } else {
+      // User doesn't have a balance record - create one with negative balance
+      await balanceRef.set({
+        userId,
+        tokens: -tokensToRefund,
+        totalPurchased: 0,
+        totalSpent: 0,
+        totalRefunded: tokensToRefund,
+        lastUpdated: FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Create refund transaction record
+    await db.collection(COLLECTIONS.TOKEN_TRANSACTIONS).add({
+      fromUserId: userId,
+      toTechnicianId: '',
+      tokens: -tokensToRefund, // Negative to indicate refund
+      message: `Refund: ${tokensToRefund} TOA tokens ($${refundAmount.toFixed(2)})${reason ? ` - Reason: ${reason}` : ''}`,
+      isRandomMessage: false,
+      timestamp: FieldValue.serverTimestamp(),
+      type: 'token_refund',
+      dollarValue: -refundAmount, // Negative amount
+      pointsAwarded: 0,
+      stripePaymentIntentId: paymentIntentId,
+      refundReason: reason || 'Customer requested refund',
+      createdNegativeBalance: willBeNegative,
+    });
+
+    const message = willBeNegative
+      ? `⚠️ Refunded ${tokensToRefund} tokens for user ${userId} - WARNING: Negative balance (${newBalance} tokens)`
+      : `✅ Refunded ${tokensToRefund} tokens for user ${userId} (new balance: ${newBalance})`;
+
+    console.log(message);
+
+    return {
+      success: true,
+      message,
+      negativeBalance: willBeNegative,
+    };
+  } catch (error) {
+    console.error('❌ Error processing token refund:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's token balance (server-side)
+ */
+export async function getUserTokenBalance(userId: string): Promise<number> {
+  try {
+    const balanceRef = db.collection(COLLECTIONS.TOKEN_BALANCES).doc(userId);
+    const balanceDoc = await balanceRef.get();
+
+    if (!balanceDoc.exists) {
+      return 0;
+    }
+
+    return balanceDoc.data()?.tokens || 0;
+  } catch (error) {
+    console.error('❌ Error getting user token balance:', error);
+    return 0;
+  }
+}

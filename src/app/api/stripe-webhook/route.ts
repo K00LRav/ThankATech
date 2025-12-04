@@ -62,8 +62,16 @@ export async function POST(request: NextRequest) {
         await handleCheckoutCompleted(event.data.object);
         break;
       
+      case 'charge.refunded':
+        await handleRefund(event.data.object);
+        break;
+      
       case 'charge.dispute.created':
         await handleDispute(event.data.object);
+        break;
+      
+      case 'charge.dispute.closed':
+        await handleDisputeClosed(event.data.object);
         break;
       
       case 'invoice.payment_succeeded':
@@ -151,12 +159,149 @@ async function handlePaymentFailed(paymentIntent: any) {
 }
 
 async function handleDispute(charge: any) {
+  console.log('🚨 Dispute created:', charge.id);
   
   try {
-    // Handle dispute logic here
-    // Maybe notify admin or freeze payments
+    // Get payment intent to find associated purchase
+    const paymentIntentId = charge.payment_intent;
+    
+    // Check if this was a token purchase
+    const { getFirestore } = await import('firebase-admin/firestore');
+    const db = getFirestore();
+    
+    const txQuery = db
+      .collection('tokenTransactions')
+      .where('stripeSessionId', '==', paymentIntentId)
+      .limit(1);
+    
+    const txSnapshot = await txQuery.get();
+    
+    if (!txSnapshot.empty) {
+      const tx = txSnapshot.docs[0].data();
+      
+      // Create dispute record
+      await db.collection('disputes').add({
+        chargeId: charge.id,
+        paymentIntentId,
+        userId: tx.fromUserId,
+        tokens: tx.tokens,
+        amount: charge.amount,
+        reason: charge.dispute?.reason || 'unknown',
+        status: 'open',
+        createdAt: new Date().toISOString(),
+      });
+      
+      console.log(`🚨 Dispute logged for user ${tx.fromUserId} - ${tx.tokens} tokens`);
+      
+      // TODO: Send admin notification email about dispute
+    }
   } catch (error) {
     console.error('❌ Error processing dispute:', error);
+  }
+}
+
+async function handleDisputeClosed(charge: any) {
+  console.log('⚖️ Dispute closed:', charge.id, 'Status:', charge.dispute?.status);
+  
+  try {
+    const { getFirestore } = await import('firebase-admin/firestore');
+    const db = getFirestore();
+    
+    // Update dispute record
+    const disputeQuery = db
+      .collection('disputes')
+      .where('chargeId', '==', charge.id)
+      .limit(1);
+    
+    const disputeSnapshot = await disputeQuery.get();
+    
+    if (!disputeSnapshot.empty) {
+      const disputeRef = disputeSnapshot.docs[0].ref;
+      await disputeRef.update({
+        status: charge.dispute?.status || 'closed',
+        closedAt: new Date().toISOString(),
+      });
+      
+      // If dispute was lost (customer won), process refund
+      if (charge.dispute?.status === 'lost') {
+        console.log('❌ Dispute lost - processing token refund');
+        await handleRefund(charge);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error processing dispute closure:', error);
+  }
+}
+
+async function handleRefund(charge: any) {
+  console.log('💰 Refund processed:', charge.id);
+  
+  try {
+    const paymentIntentId = charge.payment_intent;
+    const refundAmount = charge.amount_refunded / 100; // Convert cents to dollars
+    
+    // Find the original token purchase
+    const { getFirestore } = await import('firebase-admin/firestore');
+    const db = getFirestore();
+    
+    // Look for token purchase by session ID or payment intent
+    const txQuery = db
+      .collection('tokenTransactions')
+      .where('type', '==', 'token_purchase')
+      .where('stripeSessionId', '==', paymentIntentId)
+      .limit(1);
+    
+    const txSnapshot = await txQuery.get();
+    
+    if (txSnapshot.empty) {
+      console.warn(`⚠️ No token purchase found for payment intent: ${paymentIntentId}`);
+      return;
+    }
+    
+    const purchaseTx = txSnapshot.docs[0].data();
+    const userId = purchaseTx.fromUserId;
+    const tokensToRefund = purchaseTx.tokens;
+    
+    // Process the token refund
+    const { processTokenRefund } = await import('@/lib/token-admin');
+    const result = await processTokenRefund(
+      userId,
+      tokensToRefund,
+      refundAmount,
+      paymentIntentId,
+      charge.refund?.reason || 'Stripe refund processed'
+    );
+    
+    if (result.success) {
+      console.log(`✅ Token refund completed: ${tokensToRefund} tokens for user ${userId}`);
+      
+      if (result.negativeBalance) {
+        console.warn(`⚠️ USER ${userId} NOW HAS NEGATIVE BALANCE - Manual review needed`);
+        
+        // TODO: Send admin alert email about negative balance
+        try {
+          const EmailService = (await import('@/lib/email')).default;
+          await EmailService.sendRawEmail(
+            process.env.ADMIN_EMAIL || 'admin@thankatech.com',
+            '🚨 ALERT: Negative Token Balance Detected',
+            `
+              <h2>Negative Balance Alert</h2>
+              <p>User ${userId} now has a negative token balance after refund.</p>
+              <ul>
+                <li><strong>Tokens Refunded:</strong> ${tokensToRefund}</li>
+                <li><strong>Amount:</strong> $${refundAmount.toFixed(2)}</li>
+                <li><strong>Payment Intent:</strong> ${paymentIntentId}</li>
+              </ul>
+              <p><strong>Action Required:</strong> Review user activity and consider account restrictions.</p>
+            `
+          );
+        } catch (emailError) {
+          console.error('❌ Failed to send negative balance alert:', emailError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error processing refund:', error);
   }
 }
 
