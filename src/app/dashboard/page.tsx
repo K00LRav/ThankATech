@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 // Force dynamic rendering for this page since it uses Firebase Auth
 export const dynamic = 'force-dynamic';
+
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
 import { auth, db, COLLECTIONS } from '@/lib/firebase';

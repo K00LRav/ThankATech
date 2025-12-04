@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+
+// Force dynamic rendering to prevent Firebase auth errors during build
+export const dynamic = 'force-dynamic';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { signOut } from 'firebase/auth';
 import { auth, getTechnician, getClient } from '@/lib/firebase';

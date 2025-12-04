@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to prevent Firebase auth errors during build
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
