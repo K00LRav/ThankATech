@@ -1011,10 +1011,20 @@ export default function AdminPage() {
   };
 
   const handleTokenRefund = async () => {
-    const userId = prompt('Enter User ID (Firebase Auth UID) for token refund:');
+    alert(
+      '⚠️ IMPORTANT: Manual Token Adjustment\n\n' +
+      'This tool is for MANUAL token adjustments only (bug compensation, special cases).\n\n' +
+      'For CUSTOMER REFUNDS:\n' +
+      '1. Process refund in Stripe Dashboard\n' +
+      '2. Webhook automatically deducts tokens\n' +
+      '3. Do NOT use this tool (will deduct twice!)\n\n' +
+      'Continue only if you need to manually adjust tokens without a Stripe refund.'
+    );
+    
+    const userId = prompt('Enter User ID (Firebase Auth UID) for token adjustment:');
     if (!userId) return;
     
-    const refundAmount = prompt('Enter number of tokens to refund:');
+    const refundAmount = prompt('Enter number of tokens to deduct:');
     if (!refundAmount || isNaN(Number(refundAmount))) {
       setTokenManagementResults('❌ Invalid token amount');
       return;
@@ -1023,18 +1033,20 @@ export default function AdminPage() {
     const tokensToRefund = Number(refundAmount);
     const dollarAmount = tokensToRefund * 0.10; // $0.10 per token
     
-    const reason = prompt('Enter refund reason (optional):') || 'Manual admin refund';
+    const reason = prompt('Enter reason for token adjustment:') || 'Manual admin adjustment';
     
     const confirmRefund = confirm(
-      `Process refund of ${tokensToRefund} tokens ($${dollarAmount.toFixed(2)}) for user ${userId}?\n\n` +
+      `⚠️ MANUAL TOKEN ADJUSTMENT\n\n` +
+      `Deduct ${tokensToRefund} tokens from user ${userId}?\n\n` +
       `Reason: ${reason}\n\n` +
-      `WARNING: This will immediately deduct tokens from the user's balance. ` +
-      `If they have already spent the tokens, their balance will go negative.`
+      `This will immediately deduct tokens from the user's balance.\n` +
+      `If they have already spent the tokens, their balance will go negative.\n\n` +
+      `DO NOT use this for Stripe refunds (use Stripe Dashboard instead).`
     );
     
     if (!confirmRefund) return;
     
-    setTokenManagementResults(`🔄 Processing refund of ${tokensToRefund} tokens for user ${userId}...`);
+    setTokenManagementResults(`🔄 Processing manual token adjustment: ${tokensToRefund} tokens for user ${userId}...`);
     
     try {
       // Call admin API to process refund
@@ -1054,20 +1066,20 @@ export default function AdminPage() {
       
       if (result.success) {
         setTokenManagementResults(
-          `✅ Refund processed successfully!\n\n` +
+          `✅ Manual token adjustment completed!\n\n` +
           `- User: ${userId}\n` +
-          `- Tokens Refunded: ${tokensToRefund}\n` +
-          `- Amount: $${dollarAmount.toFixed(2)}\n` +
+          `- Tokens Deducted: ${tokensToRefund}\n` +
+          `- Equivalent Value: $${dollarAmount.toFixed(2)}\n` +
           `- New Balance: ${result.newBalance} tokens\n` +
           (result.negativeBalance ? `\n⚠️ WARNING: User now has NEGATIVE balance!\n` : '') +
-          `\nNote: Stripe refund must be processed separately in Stripe Dashboard.`
+          `\n📝 Note: If this was a customer refund, remember to also process the Stripe refund separately.`
         );
       } else {
-        setTokenManagementResults(`❌ Refund failed: ${result.message}`);
+        setTokenManagementResults(`❌ Token adjustment failed: ${result.message}`);
       }
     } catch (error) {
-      logger.error('Error processing refund:', error);
-      setTokenManagementResults(`❌ Error processing refund: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error('Error processing token adjustment:', error);
+      setTokenManagementResults(`❌ Error processing token adjustment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -1819,9 +1831,14 @@ ${Math.abs(stats.tokenPurchaseRevenue - (stats.totalTokensInCirculation * 0.01))
               <button
                 onClick={() => handleTokenRefund()}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg text-sm transition-colors"
+                title="Use only for manual token adjustments. For customer refunds, process in Stripe Dashboard first (webhook handles tokens automatically)."
               >
-                💰 Process Refunds
+                ⚙️ Manual Token Adjustment
               </button>
+              <p className="text-xs text-slate-400 mt-1">
+                ⚠️ For customer refunds: Use Stripe Dashboard (webhook auto-deducts tokens)<br/>
+                ℹ️ Use this only for: Bug compensation, special cases, manual adjustments
+              </p>
             </div>
           </div>
           <div className="space-y-4">
